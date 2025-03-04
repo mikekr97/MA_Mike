@@ -208,14 +208,14 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
     
     
     # shift (on the log-odds scale)
-    #x_2_dash = h_0(x_2) + beta * X_1
+    #x_2_dash = h_0(x_2) + beta * X_1    --> h_0(x2) = 5*x2 (just defined here)
     # X_2 = 1/0.42 * (x_2_dash - 2 * X_1)
     # X_2 = 1/5. * (x_2_dash - 0.4 * X_1) # 0.39450
     # X_2 = 1/5. * (x_2_dash - 1.2 * X_1) 
     #h2 = x_2_dash = 5 * x_2 + 2 * X_1
     X_2 = 1/5. * (x_2_dash - 2 * X_1)  # 
     
-    # question: why scaled with 1/5.?
+    # question: why scaled with 1/5.? -> 5*x2 was selected as h_0(x2), then reform the term
     
     
   } else{
@@ -284,6 +284,14 @@ test  = dgp(100, seed=ifelse(SEED > 0, SEED + 1, -1))
 (global_max = train$max) # the upper 5% quantiles
 data_type = train$type   # c for continuous, o for ordinal
 
+# fit a Colr() to the data to estimate the betas
+
+
+# make a histogram of the 3 variables
+par(mfrow=c(1,3))
+hist(train$df_R[,1], freq=FALSE, 100)
+hist(train$df_R[,2], freq=FALSE, 100)
+hist(train$df_R[,3], freq=FALSE, 100)
 
 
 #==============================================================================
@@ -318,13 +326,51 @@ param_model = create_param_model(MA, hidden_features_I = hidden_features_I,
 
 summary(param_model)
 
+
+#==============================================================================
+# set custom weights
+
 # input the samples into the model
 h_params = param_model(train$df_orig)
 
-# loss before training
+# loss before training  # 2.4
 struct_dag_loss(t_i=train$df_orig, h_params=h_params)
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
-optimizer = optimizer_adam()
+optimizer = optimizer_adam(learning_rate=0.005)
+
+# set weight (betas) according to Colr
+
+fit.21 = Colr(x2~x1,data = train$df_R, order=len_theta)
+summary(fit.21)
+fit.3 = Colr(x3~x1 + x2, data = train$df_R, order = len_theta)
+summary(fit.3)
+
+# beta_matrix_colr <- matrix(c(0,coef(fit.21), coef(fit.3)[1],
+#                              0,0,coef(fit.3)[2],
+#                              0,0,0), nrow=3, byrow = TRUE)
+
+beta_matrix_colr <- matrix(c(0,1.95, -0.2,
+                             0,0,0.30,
+                             0,0,0), nrow=3, byrow = TRUE)
+
+# Extract current weights (the betas in the Adjacency Matrix)
+param_model$get_layer(name = "beta")$get_weights()[[1]]
+
+# Set weights to Colr estimates
+param_model$get_layer(name = "beta")$set_weights(list(tf$constant(beta_matrix_colr, dtype = 'float32')))
+
+# Check newly set weights
+param_model$get_layer(name = "beta")$get_weights()[[1]]
+
+
+h_params = param_model(train$df_orig)
+# loss before training after beta initialization  # 2.49
+struct_dag_loss(t_i=train$df_orig, h_params=h_params)
+
+
+#==============================================================================
+
+
 param_model$compile(optimizer, loss=struct_dag_loss)
 param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)
 
@@ -333,7 +379,7 @@ param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)
 #==============================================================================
 # Train the TRAM-DAG model
 #==============================================================================
-num_epochs <- 16000
+num_epochs <- 10000
 
 ##### Training or readin of weights if h5 available ####
 fnh5 = paste0(fn, '_E', num_epochs, '.h5')
@@ -385,9 +431,10 @@ if (file.exists(fnh5)){
 
 # Learned betas w12, w13, w23 (weights) for each epoch  
 ws
+tail(ws)
 
 
-####### FINISHED TRAINING #####
+ ####### FINISHED TRAINING #####
 #pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
 plot(1:length(train_loss), train_loss, type='l', main='Training (black: train, green: valid)')

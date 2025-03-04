@@ -42,12 +42,12 @@ source('utils_tfp.R')
 ##### Flavor of experiment ######
 
 #### Saving the current version of the script into runtime
-DIR = 'runs/experiment_5_teleconnections_real_data/run'
+DIR = 'runs/experiment_5_teleconnections_real_data_complex/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
 # Copy this file to the directory DIR
-file.copy('MA_Mike/experiment_5_teleconnections_real_data.R', file.path(DIR, 'experiment_5_teleconnections_real_data.R'), overwrite=TRUE)
+file.copy('MA_Mike/experiment_5_teleconnections_real_data_complex.R', file.path(DIR, 'experiment_5_teleconnections_real_data_complex.R'), overwrite=TRUE)
 
 
 #==============================================================================
@@ -60,16 +60,20 @@ file.copy('MA_Mike/experiment_5_teleconnections_real_data.R', file.path(DIR, 'ex
 # first entry is the type of DGP (1=simple, 4= complex)
 # second entry is the type of TRAM-DAG shift (ls=linear, cs=complex)
 
-args <- c(1, 'ls') # 
+# args <- c(1, 'ls') # 
 # args <- c(1, 'cs') # 
-#args <- c(4, 'cs') # 
+args <- c(4, 'cs') # 
 
 
 # example of a connection
-F32 <- as.numeric(args[1]) # DGP complex shift
-M32 <- args[2] # Model complex shift
-print(paste("F32:", F32, "M32:", M32))
+# F32 <- as.numeric(args[1]) # DGP complex shift
+# M32 <- args[2] # Model complex shift
+# print(paste("F32:", F32, "M32:", M32))
 
+# example of a connection
+F21 <- as.numeric(args[1]) # DGP complex shift
+M21 <- args[2] # Model complex shift
+print(paste("F21:", F21, "M21:", M21))
 
 num_epochs <- 200  # 500
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
@@ -79,46 +83,51 @@ hidden_features_CS = c(2,25,25,2)
 
 SEED = -1 #If seed > 0 then the seed is set
 
-if (F32 == 1){
-  FUN_NAME = 'DPGLinear'
-  f <- function(x) -0.3 * x
-} else if (F32 == 2){
-  f = function(x) 2 * x**3 + x
-  FUN_NAME = 'DPG2x3+x'
-} else if (F32 == 3){
-  f = function(x) 0.5*exp(x)
-  FUN_NAME = 'DPG0.5exp'
-} else if (F32 == 4){
-  f = function(x) 0.75*atan(5*(x+0.12)) 
-  FUN_NAME = 'DPGatan'
-} else if (F32 == 5){
-  f = function(x) 2*sin(3*x)+x 
-  FUN_NAME = 'DPGSin'
-} else {
-  stop("Unknown Function F32")
-}
-
-# function name for DGP
-FUN_NAME
-
-
+# if (F32 == 1){
+#   FUN_NAME = 'DPGLinear'
+#   f <- function(x) -0.3 * x
+# } else if (F32 == 2){
+#   f = function(x) 2 * x**3 + x
+#   FUN_NAME = 'DPG2x3+x'
+# } else if (F32 == 3){
+#   f = function(x) 0.5*exp(x)
+#   FUN_NAME = 'DPG0.5exp'
+# } else if (F32 == 4){
+#   f = function(x) 0.75*atan(5*(x+0.12)) 
+#   FUN_NAME = 'DPGatan'
+# } else if (F32 == 5){
+#   f = function(x) 2*sin(3*x)+x 
+#   FUN_NAME = 'DPGSin'
+# } else {
+#   stop("Unknown Function F32")
+# }
+# 
+# # function name for DGP
+# FUN_NAME
 
 
 
-if (M32 == 'ls') {
-  MA =  matrix(c(
-    0, 'ls', 'ls', 
-    0,    0, 'ls', 
-    0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
-  MODEL_NAME = 'ModelLS'
-} else{
-  MA =  matrix(c(
-    0, 'ls', 'ls', 
-    0,    0, 'cs', 
-    0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
-  MODEL_NAME = 'ModelCS'
-}
 
+
+# if (M32 == 'ls') {
+#   MA =  matrix(c(
+#     0, 'ls', 'ls', 
+#     0,    0, 'ls', 
+#     0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
+#   MODEL_NAME = 'ModelLS'
+# } else{
+#   MA =  matrix(c(
+#     0, 'ls', 'ls', 
+#     0,    0, 'cs', 
+#     0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
+#   MODEL_NAME = 'ModelCS'
+# }
+
+MA =  matrix(c(
+      0, 'cs', 'ls',
+      0,    0, 'ls',
+      0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
+MODEL_NAME = 'ModelCS'
 
 # adjacency matrix
 MA
@@ -127,9 +136,9 @@ MA
 MODEL_NAME
 
 if (SEED < 0){
-  fn = file.path(DIR, paste0('triangle_mixed_', FUN_NAME, '_', MODEL_NAME))
+  fn = file.path(DIR, paste0('triangle_mixed_',  '_', MODEL_NAME))
 } else{
-  fn = file.path(DIR, paste0('triangle_mixed_', FUN_NAME, '_', MODEL_NAME, '_SEED', SEED))
+  fn = file.path(DIR, paste0('triangle_mixed_',  '_', MODEL_NAME, '_SEED', SEED))
 }
 print(paste0("Starting experiment ", fn))
 
@@ -250,10 +259,10 @@ hist(AU_detrended, main = "Precipitation", xlab = "Precipitation")
 
 
 raw_df <- data.frame(
-    ENSO = ENSO_detrended,
-    IOD = IOD_detrended,
-    AU = AU_detrended
-  )
+  ENSO = ENSO_detrended,
+  IOD = IOD_detrended,
+  AU = AU_detrended
+)
 
 
 set.seed(123)
@@ -265,7 +274,7 @@ test_df <- raw_df[-train_indizes,]
 
 
 # create the data object
-  
+
 dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1, data = NULL) {
   
   # n_obs <- 1000
@@ -297,7 +306,7 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1, data = NULL) {
   #hist(X_2)
   
   if (is.na(doX[3])){
-
+    
     X_3 = data$AU
   } else{
     X_3 = rep(doX[3], n_obs)
@@ -360,12 +369,12 @@ for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for th
   }
 }
 
-
 # > MA
 # [,1] [,2] [,3]
-# [1,] "0"  "ls" "ls"
+# [1,] "0"  "cs" "ls"
 # [2,] "0"  "0"  "ls"
 # [3,] "0"  "0"  "0" 
+
 # > hidden_features_I
 # [1]  2 25 25  2
 # > len_theta
@@ -534,15 +543,16 @@ p = ggplot(ws, aes(x=1:nrow(ws))) +
     legend.position = c(0.85, 0.25),  # Adjust this to position the legend inside the plot (lower-right)
     legend.background = element_rect(fill="white", colour="black")  # Optional: white background with border
   )
-if (F32 == 4){ # We don't have beta23
+# if (F32 == 4){ # We don't have beta23
+if (F21 == 4){
   p =  ggplot(ws, aes(x=1:nrow(ws))) + 
-    geom_line(aes(y=w12, color="beta12")) + 
+    geom_line(aes(y=w23, color="beta23")) + 
     geom_line(aes(y=w13, color="beta13")) + 
-    geom_hline(aes(yintercept=2, color="beta12"), linetype=2) +
-    geom_hline(aes(yintercept=-0.2, color="beta13"), linetype=2) +
+    geom_hline(aes(yintercept=coef(fit.3)[2], color="beta23"), linetype=2) +
+    geom_hline(aes(yintercept=coef(fit.3)[1], color="beta13"), linetype=2) +
     scale_color_manual(
-      values=c('beta12'='skyblue', 'beta13'='red'),
-      labels=c(expression(beta[12]), expression(beta[13]), expression(beta[23]))
+      values=c('beta23'='skyblue', 'beta13'='red'),
+      labels=c(expression(beta[13]), expression(beta[23]))
     ) +
     labs(x='Epoch', y='Coefficients') +
     theme_minimal() +
@@ -558,7 +568,7 @@ if (FALSE){
   # Remove 'mixed' in filename
   file_name <- paste0(fn, "_coef_epoch.pdf")
   file_name <- gsub("mixed", "", file_name)
-  file_path <- file.path("runs/experiment_5_teleconnections_real_data/run/", basename(file_name))
+  file_path <- file.path("runs/experiment_5_teleconnections_real_data_complex/run/", basename(file_name))
   ggsave(file_path, plot = p, width = 8, height = 6/2)  
 }
 
@@ -588,7 +598,7 @@ if (FALSE){
   file_name <- paste0(fn, "_coef_epoch.pdf")
   # Save the plot
   ggsave(file_name, plot = p, width = 8, height = 6)
-  file_path <- file.path("runs/experiment_5_teleconnections_real_data/run/", basename(file_name))
+  file_path <- file.path("runs/experiment_5_teleconnections_real_data_complex/run/", basename(file_name))
   ggsave(file_path, plot = p, width = 8/2, height = 6/2)
 }
 
@@ -678,7 +688,7 @@ if (TRUE){
   file_name <- paste0(fn, "_L0_L1.pdf")
   file_name <- gsub("mixed", "", file_name) #We have wrongly mixed in fn
   if (TRUE){
-    file_path <- file.path("runs/experiment_5_teleconnections_real_data/run/", basename(file_name))
+    file_path <- file.path("runs/experiment_5_teleconnections_real_data_complex/run/", basename(file_name))
     print(file_path)
     ggsave(file_path, plot=p, width = 8/2, height = 6/2)
   }
@@ -697,7 +707,7 @@ h_I = r$h_I
 
 
 par(mfrow=c(1,3))
-    
+
 ##### X1 (added, not sure if correct)
 
 df = data.frame(train$df_orig$numpy())
@@ -791,7 +801,7 @@ lines(density(sample_dag), col='red', lw=2)
 
 
 ###### Comparison of estimated f(x2) vs TRUE f(x2) #######
-shift_12 = shift_23 = shift1 = cs_23 = xs = seq(-1,1,length.out=41)
+shift_12 = shift_13 = shift1 = cs_12 = xs = seq(-1,1,length.out=41)
 idx0 = which(xs == 0) #Index of 0 xs needs to be odd
 for (i in 1:length(xs)){
   #i = 1

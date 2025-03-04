@@ -61,9 +61,9 @@ if (!dir.exists(DIR)) {
 # first entry is the type of DGP (1=simple, 4= complex)
 # second entry is the type of TRAM-DAG shift (ls=linear, cs=complex)
 
-args <- c(1, 'ls') # 
+# args <- c(1, 'ls') # 
 # args <- c(1, 'cs') # 
-# args <- c(4, 'cs') # 
+args <- c(4, 'cs') # 
 
 
 # example of a connection

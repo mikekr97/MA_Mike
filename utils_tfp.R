@@ -4,6 +4,8 @@
 
 do_dag_struct = function(param_model, MA, doX = c(0.5, NA, NA, NA), num_samples=1042){
   num_samples = as.integer(num_samples)
+  
+  
   N = length(doX) #NUmber of nodes
   
   #### Checking the input #####
@@ -17,6 +19,7 @@ do_dag_struct = function(param_model, MA, doX = c(0.5, NA, NA, NA), num_samples=
   xl = list() 
   s = tf$ones(c(num_samples, N))
   for (i in 1:N){
+    # i = 1
     ts = NA
     parents = which(MA[,i] != "0")
     if (length(parents) == 0) { #Root node?
@@ -49,10 +52,16 @@ do_dag_struct = function(param_model, MA, doX = c(0.5, NA, NA, NA), num_samples=
 
 sample_from_target_MAF_struct = function(param_model, node, parents){
   DEBUG_NO_EXTRA = FALSE
+  # parents = s
+  
+  # if no parents, then h_params is model output for x1=1, x2=1, x3=1
   h_params = param_model(parents)
   
+  # Extracting the CS & LS for each Sample and Variable
   h_cs <- h_params[,,1, drop = FALSE]
   h_ls <- h_params[,,2, drop = FALSE]
+  
+  # Extracting the theta' parameters and convert to (increasing) theta
   theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
   theta = to_theta3(theta_tilde)
   h_LS = tf$squeeze(h_ls, axis=-1L)
@@ -78,6 +87,8 @@ sample_from_target_MAF_struct = function(param_model, node, parents){
   } else {
     #h_0_old =  tf$expand_dims(h_dag(L_START, theta), axis=-1L)
     #h_1 = tf$expand_dims(h_dag(R_START, theta), axis=-1L)
+    
+    # h_dag returns the intercept (single value)
     h_0 =  h_LS + h_CS + h_dag(L_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(L_START, theta), axis=-1L)
     h_1 =  h_LS + h_CS + h_dag(R_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(R_START, theta), axis=-1L)
     if (DEBUG_NO_EXTRA){

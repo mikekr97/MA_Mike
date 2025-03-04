@@ -214,6 +214,8 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
 ###### to_theta3 ####
 # See zuko but fixed for order 3
 # Used in Loss
+
+# ensures that theta's are increasing (theta1 left as it is, then increasing)
 to_theta3 = function(theta_tilde){
   shift = tf$convert_to_tensor(log(2) * dim(theta_tilde)[[length(dim(theta_tilde))]] / 2)
   order = tf$shape(theta_tilde)[3]
@@ -225,10 +227,11 @@ to_theta3 = function(theta_tilde){
 # Used in Loss
 
 ### h_dag
+# returns bernstein polynomial from equation 4 (paper)
 h_dag = function(t_i, theta){
   len_theta = tf$shape(theta)[3L] #TODO tied to 3er Tensors
   Be = bernstein_basis(t_i, len_theta-1L) 
-  return (tf$reduce_mean(theta * Be, -1L))
+  return (tf$reduce_mean(theta * Be, -1L))  
 }
 
 ### h_dag_dash
@@ -352,22 +355,28 @@ bernstein_basis <- function(tensor, M) {
 
 #### Loss NLL
 
+
 struct_dag_loss = function (t_i, h_params){
-  #t_i = train$df_orig
+  #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
+  #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
   k_min <- k_constant(global_min)
   k_max <- k_constant(global_max)
   
   # from the last dimension of h_params the first entry is h_cs1
   # the second to |X|+1 are the LS
   # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
   h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
   h_ls <- h_params[,,2, drop = FALSE]
   #LS
-  h_LS = tf$squeeze(h_ls, axis=-1L)#tf$einsum('bx,bxx->bx', t_i, beta)
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
   #CS
   h_CS = tf$squeeze(h_cs, axis=-1L)
   theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
-  #Thetas for intercept
+  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
   theta = to_theta3(theta_tilde)
   
   if (!exists('data_type')){ #Defaulting to all continuous 
@@ -385,11 +394,24 @@ struct_dag_loss = function (t_i, h_params){
   ### Continiuous dimensions
   #### At least one continuous dimension exits
   if (length(cont_dims) != 0){
+    
+    # inputs in h_dag_extra:
+    # data=(40000, 3), 
+    # theta=(40000, 3, 20), k_min=(3), k_max=(3))
+
+    # creates the value of the Bernstein at each observation
+    # and current parameters: output shape=(40000, 3)
     h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 
+    
+    # adding the intercepts and shifts: results in shape=(40000, 3)
+    # basically the estimated value of the latent variable
     h = h_I + h_LS[,cont_dims, drop=FALSE] + h_CS[,cont_dims, drop=FALSE]
     
     #Compute terms for change of variable formula
+    
+    # log of standard logistic density at h
     log_latent_density = -h - 2 * tf$math$softplus(-h) #log of logistic density at h
+    
     ## h' dh/dtarget is 0 for all shift terms
     log_hdash = tf$math$log(tf$math$abs(
       h_dag_dash_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]))
@@ -475,10 +497,13 @@ check_baselinetrafo = function(h_params){
   theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
   theta = to_theta3(theta_tilde)
   length.out  = nrow(theta_tilde)
+  
+  # generate dataframe for x1, x2, x3 ranging from lowest to highest
   X = matrix(NA, nrow=length.out, ncol=length(k_min))
   for(i in 1:length(k_min.df)){
     X[,i] = seq(k_min.df[i], k_max.df[i], length.out = length.out)
   }
+  # convert to tensor
   t_i = k_constant(X)
   
   h_I = h_dag_extra(t_i, theta, k_min, k_max) 
