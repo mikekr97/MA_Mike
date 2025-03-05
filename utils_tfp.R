@@ -53,6 +53,7 @@ do_dag_struct = function(param_model, MA, doX = c(0.5, NA, NA, NA), num_samples=
 sample_from_target_MAF_struct = function(param_model, node, parents){
   DEBUG_NO_EXTRA = FALSE
   # parents = s
+  # node = 1
   
   # if no parents, then h_params is model output for x1=1, x2=1, x3=1
   h_params = param_model(parents)
@@ -88,7 +89,7 @@ sample_from_target_MAF_struct = function(param_model, node, parents){
     #h_0_old =  tf$expand_dims(h_dag(L_START, theta), axis=-1L)
     #h_1 = tf$expand_dims(h_dag(R_START, theta), axis=-1L)
     
-    # h_dag returns the intercept (single value)
+    # h_dag returns the intercept h (single value) at 0 and 1
     h_0 =  h_LS + h_CS + h_dag(L_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(L_START, theta), axis=-1L)
     h_1 =  h_LS + h_CS + h_dag(R_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(R_START, theta), axis=-1L)
     if (DEBUG_NO_EXTRA){
@@ -104,6 +105,12 @@ sample_from_target_MAF_struct = function(param_model, node, parents){
     #h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS)
     #h_dag_extra(t_i, theta)
     # h_dag_extra_struc(target_sample, theta, shift, k_min, k_max) - latent_sample
+    
+    # We want to know for which t_i, h(t_i) is equal to the latent_sample
+    # h(t_i) = rlogis()
+    
+    # for this we define function f(t_i) that is zero when the observation t_i fulfills the condition:
+    # f(t_i) = h(t_i) - rlogis() == 0
     object_fkt = function(t_i){
       return(h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS, k_min, k_max) - latent_sample)
     }
@@ -111,6 +118,8 @@ sample_from_target_MAF_struct = function(param_model, node, parents){
     #shape = tf$shape(parents)[1]
     #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -1E5*tf$ones(c(shape,1L)), high = 1E5*tf$ones(c(shape,1L)))$estimated_root
     #TODO better checking
+    
+    # find the root of f(t_i) = h(t_i) - rlogis() == 0, those samples are the target samples
     target_sample = tfp$math$find_root_chandrupatla(object_fkt)$estimated_root
     #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -10000., high = 10000.)$estimated_root
     #wtfness = object_fkt(target_sample)$numpy()

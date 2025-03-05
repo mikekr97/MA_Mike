@@ -271,6 +271,8 @@ h_dag_extra = function(t_i, theta, k_min, k_max){
 }
 
 
+# returns the shifted h() for the given t_i, with the quantiles linearly interpolated
+
 h_dag_extra_struc = function(t_i, theta, shift, k_min, k_max){
   #Throw unsupported error
   DEBUG = FALSE
@@ -310,8 +312,8 @@ h_dag_dash_extra = function(t_i, theta, k_min, k_max){
   t_i3 = tf$expand_dims(t_i, axis=-1L)
   
   #Left extrapolation
-  slope0 <- tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L) 
-  mask0 <- tf$math$less(t_i3, L_START)
+  slope0 <- tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L) # creates the slope by 
+  mask0 <- tf$math$less(t_i3, L_START) 
   h_dash <- tf$where(mask0, slope0, t_i3)
   
   #Right extrapolation
