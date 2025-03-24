@@ -142,7 +142,7 @@ hist(f(xs), freq=FALSE, 100)
 
 
 # influence of x2 on x3
-xs = seq(-1,1,0.1)
+xs = seq(-4,4,0.1)
 plot(xs, -f(xs), xlab='x2', ylab='f(x2)', main='DGP influence of x2 on x3', cex.sub=0.4)
 
 
@@ -201,7 +201,7 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
     # sample n_obs values from a logistic distribution (latent space)
     U2 = runif(n_obs)
     x_2_dash = qlogis(U2) 
-    x_2_dash = qnorm(U2) # ATTENTION: changed to normal latent
+    #x_2_dash = qnorm(U2) # ATTENTION: changed to normal latent
     # hist(x_2_dash)
     
     # could also directly sample from logistic
@@ -233,7 +233,7 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
   if (is.na(doX[3])){
     U3 = runif(n_obs)
     x_3_dash = qlogis(U3)
-    x_3_dash = qnorm(U3)   # ATTENTION: changed to normal latent
+    #x_3_dash = qnorm(U3)   # ATTENTION: changed to normal latent
     #h(x3|x1,x2) = 0.63*x3 - 0.2*x1 - f(x2)
     #x_3_dash = h_0_3(x_3) + gamma_1 * X_1 + gamma_2 * X_2
     #x_3_dash = 0.63 * x_3 -0.2 * X_1 + 1.3 * X_2
@@ -284,6 +284,11 @@ test  = dgp(40000, seed=ifelse(SEED > 0, SEED + 1, -1))
 (global_max = train$max) # the upper 5% quantiles
 data_type = train$type   # c for continuous, o for ordinal
 
+# check gam smooth functions
+library(mgcv)
+gam_model <- gam(x3 ~ s(x1) + s(x2) , data = train$df_R)
+par(mfrow=c(1,3))
+plot(gam_model)
 
 
 #==============================================================================
@@ -450,6 +455,11 @@ if (FALSE){
   ggsave(file_path, plot = p, width = 8, height = 6/2)  
 }
 
+fit_21 <- Colr(x2~x1, train$df_R, order=len_theta)
+summary(fit_21)
+
+fit_312 <- Colr(x3 ~ x1 + x2, train$df_R, order=len_theta)
+summary(fit_312)
 
 if (FALSE){
   # Creating the figure for the paper 

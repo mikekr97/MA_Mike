@@ -696,11 +696,19 @@ h_I = r$h_I
 
 
 
+
+# check max of each row in Xs
+apply(Xs, 2, max)
+
+
 par(mfrow=c(1,3))
-    
+
 ##### X1 (added, not sure if correct)
 
 df = data.frame(train$df_orig$numpy())
+# check max of each row in Xs
+apply(df, 2, max)
+
 fit.1 = Colr(X1~0,df, order=len_theta)
 temp = model.frame(fit.1)[1:2,-1, drop=FALSE] #WTF!  -> yields the values for h_I(x2_min), h_I(x2_(min+1))
 # plots the transfomration function fitted by Colr()
@@ -708,10 +716,10 @@ plot(fit.1, which = 'baseline only', newdata = temp, lwd=2, col='blue',
      main='h_I(X1) Black: COLR, Red: Our Model', cex.main=0.8)
 # add for the range over q0.05 to q0.95 the transformation function (Intercept h_I) fitted by the NN
 lines(Xs[,1], h_I[,1], col='red', lty=2, lwd=5)
-rug(train$df_orig$numpy()[,2], col='blue')
+rug(train$df_orig$numpy()[,1], col='blue')
 
 
-### X2
+### X2 
 df = data.frame(train$df_orig$numpy())
 fit.21 = Colr(X2~X1,df, order=len_theta)
 temp = model.frame(fit.21)[1:2,-1, drop=FALSE] #WTF!  -> yields the values for h_I(x2_min), h_I(x2_(min+1))
@@ -730,6 +738,8 @@ plot(fit.312, which = 'baseline only', newdata = temp, lwd=2, col='blue',
      main='h_I(X3) Colr and Our Model', cex.main=0.8)
 lines(Xs[,3], h_I[,3], col='red', lty=2, lwd=5)
 rug(train$df_orig$numpy()[,3], col='blue')
+
+
 
 
 
@@ -791,22 +801,31 @@ lines(density(sample_dag), col='red', lw=2)
 
 
 ###### Comparison of estimated f(x2) vs TRUE f(x2) #######
-shift_12 = shift_23 = shift1 = cs_23 = xs = seq(-1,1,length.out=41)
+shift_12 = shift_23 = shift_13 = xs = seq(-1,1,length.out=41)
 idx0 = which(xs == 0) #Index of 0 xs needs to be odd
 for (i in 1:length(xs)){
   #i = 1
   x = xs[i]
   # Varying x1
   X = tf$constant(c(x, 0.5, 3), shape=c(1L,3L)) 
-  shift1[i] =   param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
+  shift_13[i] =   param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
   shift_12[i] = param_model(X)[1,2,2]$numpy() #2=LS Term X1->X2
   
   #Varying x2
   X = tf$constant(c(0.5, x, 3), shape=c(1L,3L)) 
-  cs_23[i] = param_model(X)[1,3,1]$numpy() #1=CS Term
   shift_23[i] = param_model(X)[1,3,2]$numpy() #2-LS Term X2-->X3 (Mrs. Whites' Notation)
 }
 #plot(xs, shift1, type='l', col='red', lwd=2, xlab='x1', ylab='f(x2)', main='f(x2) vs x1')
+par(mfrow=c(1,3))
+plot(xs, shift_13, type='l', col='red', lwd=2, xlab='x1', ylab='f(x1)', main='b13 * x1 (linear)')
+plot(xs, shift_12, type='l', col='red', lwd=2, xlab='x1', ylab='f(x1)', main='b12 * x1 (linear)')
+plot(xs, shift_23, type='l', col='red', lwd=2, xlab='x2', ylab='f(x2)', main='b23 * x2 (linear)')
+
+
+
+
+
+
 
 
 

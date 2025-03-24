@@ -172,6 +172,7 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
     layer_sizes_I = c(ncol(MA), nrow(MA))
     masks_I = list(matrix(FALSE, nrow=nrow(MA), ncol=ncol(MA)))
     h_I = create_param_net(len_param = len_theta, input_layer=input_layer, layer_sizes = layer_sizes_I, masks_I, last_layer_bias=TRUE)
+    #dag_maf_plot(masks_I, layer_sizes_I)
   }
   
   ##### Creating the Complex Shift Model
@@ -357,6 +358,11 @@ bernstein_basis <- function(tensor, M) {
 
 #### Loss NLL
 
+# Define the function to calculate the logistic CDF
+logistic_cdf <- function(x) {
+  return(tf$math$reciprocal(tf$math$add(1, tf$math$exp(-x))))
+}
+
 
 struct_dag_loss = function (t_i, h_params){
   #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
@@ -517,4 +523,77 @@ sample_standard_logistic <- function(shape, epsilon=1e-7) {
   clipped_uniform_samples <- tf$clip_by_value(uniform_samples, epsilon, 1 - epsilon)
   logistic_samples <- tf$math$log(clipped_uniform_samples / (1 - clipped_uniform_samples))
   return(logistic_samples)
+}
+
+
+
+
+# Load the required library
+library(ggplot2)
+library(grid)
+
+# Function to draw the network
+dag_maf_plot <- function(layer_masks, layer_sizes) {
+  max_nodes <- max(layer_sizes)
+  width <- max_nodes * 100
+  min_x <- 0
+  max_x <- width  # Adjust max_x to include input layer
+  min_y <- Inf
+  max_y <- -Inf
+  
+  # Create a data frame to store node coordinates
+  nodes <- data.frame(x = numeric(0), y = numeric(0), label = character(0))
+  
+  # Draw the nodes for all layers
+  for (i in 1:length(layer_sizes)) {
+    size <- layer_sizes[i]
+    layer_top <- max_nodes / 2 - size / 2
+    
+    for (j in 1:size) {
+      x <- (i-1) * width
+      y <- layer_top + j * 100
+      label <- ifelse(i == 1, paste("x_", j, sep = ""), "")  # Add labels for the first column
+      nodes <- rbind(nodes, data.frame(x = x, y = y, label=label))
+      max_x <- max(max_x, x)
+      min_y <- min(min_y, y)
+      max_y <- max(max_y, y)
+    }
+  }
+  
+  # Create a data frame to store connection coordinates
+  connections <- data.frame(x_start = numeric(0), y_start = numeric(0),
+                            x_end = numeric(0), y_end = numeric(0))
+  
+  # Draw the connections
+  for (i in 1:length(layer_masks)) {
+    mask <- t(layer_masks[[i]])
+    input_size <- nrow(mask)
+    output_size <- ncol(mask)
+    
+    for (j in 1:input_size) {
+      for (k in 1:output_size) {
+        if (mask[j, k]) {
+          start_x <- (i - 1) * width
+          start_y <- max_nodes / 2 - input_size / 2 + j * 100
+          end_x <- i * width
+          end_y <- max_nodes / 2 - output_size / 2 + k * 100
+          
+          connections <- rbind(connections, data.frame(x_start = start_x, y_start = start_y,
+                                                       x_end = end_x, y_end = end_y))
+        }
+      }
+    }
+  }
+  
+  
+  # Create the ggplot object
+  network_plot <- ggplot() +
+    geom_segment(data = connections, aes(x = x_start, y = -y_start, xend = x_end, yend = -y_end),
+                 color = 'black', size = 1,
+                 arrow = arrow()) +
+    geom_point(data = nodes, aes(x = x, y = -y), color = 'blue', size = 8,alpha = 0.5) +
+    geom_text(data = nodes, aes(x = x, y = -y, label = label), vjust = 0, hjust = 0.5) +  # Add labels
+    theme_void() 
+  
+  return(network_plot)
 }
