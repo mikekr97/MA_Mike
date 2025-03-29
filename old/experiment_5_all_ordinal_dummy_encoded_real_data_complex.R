@@ -6,8 +6,10 @@ if (FALSE){
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   args <- c(3, 'cs')
-  args <- c(1, 'ls')
+  # args <- c(1, 'ls')
 }
+
+# args <- c(4, 'cs')
 F32 <- as.numeric(args[1])
 M32 <- args[2]
 print(paste("FS:", F32, "M32:", M32))
@@ -22,26 +24,26 @@ library(MASS)
 library(tensorflow)
 library(keras)
 library(tidyverse)
-source('utils_tf.R')
+source('utils_tf_ordinal_dummy.R')    # new tf file for ordinal data (predictors)
 
 #### For TFP
 library(tfprobability)
-source('utils_tfp.R')
+source('utils_tfp_ordinal_dummy.R')
 
 ##### Flavor of experiment ######
 
 #### Saving the current version of the script into runtime
-DIR = 'runs/experiment_5_ordinal_outcome_real_data/run'
+DIR = 'runs/experiment_5_all_ordinal_dummy_encoded_real_data_complex/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
 # Copy this file to the directory DIR
-file.copy('/experiment_5_ordinal_outcome_real_data.R', file.path(DIR, 'experiment_5_ordinal_outcome_real_data.R'), overwrite=TRUE)
+file.copy('/experiment_5_all_ordinal_dummy_encoded_real_data_complex.R', file.path(DIR, 'experiment_5_all_ordinal_dummy_encoded_real_data_complex.R'), overwrite=TRUE)
 
 
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
 hidden_features_I = c(2,2,2,2) 
-hidden_features_CS = c(2,2,2,2)
+hidden_features_CS = c(2,5, 5,2)
 
 if (F32 == 1){
   FUN_NAME = 'DPGLinear'
@@ -56,17 +58,22 @@ if (F32 == 1){
 
 if (M32 == 'ls') {
   MA =  matrix(c(
-    0, 'ls', 'ls', 
-    0,    0, 'ls', 
+    0, 'ls', 'ls',
+    0,    0, 'ls',
     0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
   MODEL_NAME = 'ModelLS'
 } else{
   MA =  matrix(c(
-    0, 'ls', 'ls', 
-    0,    0, 'cs', 
+    0, 'cs', 'ls',
+    0,    0, 'ls',
     0,    0,   0), nrow = 3, ncol = 3, byrow = TRUE)
   MODEL_NAME = 'ModelCS'
 }
+
+
+
+
+FUN_NAME = 'RealData'
 
 MA
 
@@ -159,10 +166,10 @@ plot(precip_y, AU_detrended, type = "l", xlab = "Year", ylab = "AU Precipitation
      main = "standardized-detrended")
 
 # 3 histograms of the detrended data
-par(mfrow=c(1,3))
+par(mfrow=c(3,1))
 hist(ENSO_detrended, main = "ENSO", xlab = "ENSO")
 hist(IOD_detrended, main = "IOD", xlab = "IOD")
-hist(AU_detrended, main = "AU Precipitation", xlab = "Precipitation")
+hist(AU_detrended, main = "Precipitation", xlab = "Precipitation")
 
 
 
@@ -178,11 +185,12 @@ pairs(raw_df)
 
 
 # # Step 2: Convert Numeric Variables to ordinal
+raw_df$ENSO_ordinal <- cut(raw_df$ENSO, breaks = quantile(raw_df$ENSO, probs = c(0, 1/3, 2/3, 1)), labels = c(1, 2, 3), include.lowest = TRUE)
+raw_df$IOD_ordinal <- cut(raw_df$IOD, breaks = quantile(raw_df$IOD, probs = c(0, 1/3, 2/3, 1)), labels = c(1, 2, 3), include.lowest = TRUE)
 raw_df$AU_binary <- cut(raw_df$AU, breaks = quantile(raw_df$AU, probs = c(0, 0.5, 1)), labels = c(1, 2), include.lowest = TRUE)
 
 # 
-# df$ENSO <- cut(df$ENSO, breaks = quantile(df$ENSO, probs = c(0, 1/3, 2/3, 1)), labels = c("Nina", "neut", "Nino"), include.lowest = TRUE)
-# df$IOD <- cut(df$IOD, breaks = quantile(df$IOD, probs = c(0, 1/3, 2/3, 1)), labels = c("neg", "zero", "pos"), include.lowest = TRUE)
+raw_df
 
 
 
@@ -206,17 +214,18 @@ test_df <- raw_df[-train_indizes,]
 dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
   
   # n_obs <- 1000
-  # doX <- c(NA, NA, NA, NA)
+  # doX <- c(NA, NA, NA)
   # seed=-1
+  # data = train_df
   
   set.seed(seed)
   
   
-  # if dataset is provided, then use data, else simulate
   if (!is.null(data)){
-
+    
     if (is.na(doX[1])){
-      X_1 = data$ENSO
+      X_1 = data$ENSO_ordinal
+      X_1 = ordered(X_1, levels=c(1,2,3))
     } else{
       X_1 = rep(doX[1], n_obs)
     }
@@ -224,7 +233,8 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
     
     if (is.na(doX[2])){
       
-      X_2 = data$IOD
+      X_2 = data$IOD_ordinal
+      X_2 = ordered(X_2, levels=c(1,2,3))
       
     } else{
       X_2 = rep(doX[2], n_obs)
@@ -234,77 +244,48 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
     if (is.na(doX[3])){
       
       X_3 = data$AU_binary
-
+      
       X_3 = ordered(X_3, levels=c(1,2))
       
     } else{
       X_3 = rep(doX[3], n_obs)
     }
-  } else {
-    
-    
-    # if no dataset is provided, then simulate data
-    
-    if (is.na(doX[1])){
-      X_1_A = rnorm(n_obs, 0.25, 0.1)
-      X_1_B = rnorm(n_obs, 0.73, 0.05)
-      X_1 = ifelse(sample(1:2, replace = TRUE, size = n_obs) == 1, X_1_A, X_1_B)
-    } else{
-      X_1 = rep(doX[1], n_obs)
-    }
-    #hist(X_1)
-    
-    # Sampling according to colr
-    if (is.na(doX[2])){
-      U2 = runif(n_obs)
-      x_2_dash = qlogis(U2)
-      #x_2_dash = h_0(x_2) + beta * X_1
-      #x_2_dash = 0.42 * x_2 + 2 * X_1
-      X_2 = 1/0.42 * (x_2_dash - 2 * X_1)
-      X_2 = 1/5. * (x_2_dash - 0.4 * X_1) # 0.39450
-      X_2 = 1/5. * (x_2_dash - 1.2 * X_1) 
-      X_2 = 1/5. * (x_2_dash - 2 * X_1)  # 
-      
-      
-    } else{
-      X_2 = rep(doX[2], n_obs)
-    }
-    
-    #hist(X_2)
-    #ds = seq(-5,5,0.1)
-    #plot(ds, dlogis(ds))
-    
-    if (is.na(doX[3])){
-      # x3 is an ordinal variable with K = 4 levels x3_1, x3_2, x3_3, x3_4
-      # h(x3 | x1, x2) = h0 + gamma_1 * x1 + gamma_2 * x2
-      # h0(x3_1) = theta_1, h0(x_3_2) =  theta_2, h0(x_3_3) = theta_3 
-      theta_k = c(-2, 0.42, 1.02)
-      
-      h = matrix(, nrow=n_obs, ncol=3)
-      for (i in 1:n_obs){
-        h[i,] = theta_k + 0.2 * X_1[i] + f(X_2[i]) #- 0.3 * X_2[i]
-      }
-      
-      U3 = rlogis(n_obs)
-      # chooses the correct X value if U3 is smaller than -2 that is level one if it's between -2 and 0.42 it's level two answer on
-      x3 = rep(1, n_obs)
-      x3[U3 > h[,1]] = 2
-      x3[U3 > h[,2]] = 3
-      x3[U3 > h[,3]] = 4
-      x3 = ordered(x3, levels=1:4)
-    } else{
-      x3 = rep(doX[3], n_obs)
-    }
-    
-    
-  }
-
+  } 
   
-  #hist(X_3)
+  
+  
   # par(mfrow=c(1,3))
-  # hist(X_1)
-  # hist(X_2)
-  # hist(X_3)
+  # plot(X_1)
+  # plot(X_2)
+  # plot(X_3)
+  
+  
+  # define dummy encoded variables
+  
+  
+  if (is.na(doX[1])){
+    X_1_t1 = as.numeric(data$ENSO_ordinal == 2)  # 1 if level 2 else 0
+    X_1_t2 = as.numeric(data$ENSO_ordinal == 3)  # 1 if level 3 else 0
+  } else{
+    X_1_t1 = rep(as.numeric(doX[1] == 2), n_obs)
+    X_1_t2 = rep(as.numeric(doX[1] == 3), n_obs)
+  }
+  
+  if (is.na(doX[2])){
+    X_2_t1 = as.numeric(data$IOD_ordinal == 2)  
+    X_2_t2 = as.numeric(data$IOD_ordinal == 3)  
+  } else{
+    X_2_t1 = rep(as.numeric(doX[2] == 2), n_obs)
+    X_2_t2 = rep(as.numeric(doX[2] == 3), n_obs)
+  }
+  
+  if (is.na(doX[3])){
+    X_3_t1 = as.numeric(data$AU_binary == 2)  # Only one threshold for binary variable
+  } else{
+    X_3_t1 = rep(as.numeric(doX[3] == 2), n_obs)
+  }
+  
+  
   
   # Define adjacency matrix
   A <- matrix(c(0, 1, 1, 0, 0, 1, 0, 0, 0), nrow = 3, ncol = 3, byrow = TRUE)
@@ -314,9 +295,28 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
   dat.tf = tf$constant(as.matrix(dat.orig), dtype = 'float32')
   
   # calculate 5% quantiles of the sampled variables
-  q1 = quantile(dat.orig[,1], probs = c(0.05, 0.95)) 
-  q2 = quantile(dat.orig[,2], probs = c(0.05, 0.95))
+  q1 = c(1,3)
+  q2 = c(1,3)
   q3 = c(1,2) #no quantiles for ordinal outcomes
+  
+  
+  # same for encoded variables
+  A_e <- matrix(c(0, 1, 1,0, 1, 1, 0, 0, 1, 0, 0, 1,0, 0, 0), nrow = 5, ncol = 3, byrow = TRUE)
+  dat.encoded = data.frame(x1_t1 = X_1_t1, x1_t2 = X_1_t2, 
+                           x2_t1 = X_2_t1, x2_t2 = X_2_t2, 
+                           x3_t1 = X_3_t1)
+  dat.encoded.tf = tf$constant(as.matrix(dat.encoded), dtype = 'float32')
+  
+  # quantiles of variables (only 0 and 1)
+  q1_e = c(0,1)
+  q2_e = c(0,1)
+  q3_e = c(0,1)
+  q4_e = c(0,1)
+  q5_e = c(0,1)
+  
+  
+  
+  
   
   
   # return samples in a tensor, the original dataframe, the min and max values 
@@ -328,18 +328,51 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
     #max =  tf$reduce_max(dat.tf, axis=0L),
     min = tf$constant(c(q1[1], q2[1], q3[1]), dtype = 'float32'),
     max = tf$constant(c(q1[2], q2[2], q3[2]), dtype = 'float32'),
-    type = c('c', 'c', 'o'),
-    A=A))
+    type = c('o', 'o', 'o'),
+    A=A,
+    
+    df_encoded = dat.encoded.tf,
+    df_R_encoded = dat.encoded,
+    
+    min_encoded = tf$constant(c(q1_e[1], q2_e[1], q3_e[1], q4_e[1], q5_e[1]), dtype = 'float32'),
+    max_encoded = tf$constant(c(q1_e[2], q2_e[2], q3_e[2], q4_e[2], q5_e[2]), dtype = 'float32'),
+    
+    type_encoded = c('o', 'o', 'o', 'o', 'o'),
+    A_e = A_e
+    
+  ))
 } 
 
 # generate data
 train <- dgp(nrow(train_df), seed=123, data = train_df)
 test <- dgp(nrow(test_df), seed=123, data = test_df)
 
+# example, X1 on ordinal scale
+train$df_R$x1
 
+# can be reconstructed as
+
+
+# Reconstruct x1, x2, and x3
+x1_reconstructed <- as.matrix(train$df_R_encoded[, c("x1_t1", "x1_t2")]) %*% c(1, 2) + 1
+x1_reconstructed
+# x2_reconstructed <- as.matrix(train$df_R_encoded[, c("x2_t1", "x2_t2")]) %*% c(1, 2) + 1
+# x3_reconstructed <- ifelse(train$df_R_encoded[, "x3_t1"] == 1, 1, 2)
+
+# Combine into a dataframe
+# df_reconstructed <- data.frame(x1 = x1_reconstructed, x2 = x2_reconstructed, x3 = x3_reconstructed)
+
+
+# ordinal scale
 global_min = train$min
 global_max = train$max
 data_type = train$type
+
+
+# endoded scale
+global_min_encoded = train$min_encoded
+global_max_encoded = train$max_encoded
+data_type_encoded = train$type_encoded
 
 
 len_theta_max = len_theta
@@ -348,21 +381,30 @@ for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for th
     len_theta_max = max(len_theta_max, nlevels(train$df_R[,i]) - 1)
   }
 }
-param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
+
+MA_encoded = ifelse(train$A_e, "ls", 0)
+MA_encoded[1:2, 2] <- c('cs', 'cs')
+MA_encoded
+
+param_model = create_param_model(MA, MA_encoded = MA_encoded,  hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS, train = train)
 
 # input the samples into the model
-h_params = param_model(train$df_orig)
+# h_params = param_model(train$df_orig)
+h_params = param_model(train$df_encoded)
 
-# loss before training  # 2.76
-struct_dag_loss(t_i=train$df_orig, h_params=h_params)
+# Attention: in loss, the levels in ordinal varaibles are hard-coded !!!
+struct_dag_loss(t_i=train$df_encoded, h_params=h_params)
 
 optimizer = optimizer_adam(learning_rate = 0.005)
 param_model$compile(optimizer, loss=struct_dag_loss)
-param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)
+param_model$evaluate(x = train$df_encoded, y=train$df_encoded, batch_size =  7L) # 6.29
 summary(param_model)
 
+# show the beta layer
+param_model$get_layer(name = "beta")$get_weights()
+
 ##### Training ####
-num_epochs <- 100001
+num_epochs <- 10000
 fnh5 = paste0(fn, '_E', num_epochs, '.h5')
 fnRdata = paste0(fn, '_E', num_epochs, '.RData')
 if (file.exists(fnh5)){
@@ -384,10 +426,11 @@ if (file.exists(fnh5)){
     
     # Training loop
     for (e in 1:num_epochs) {
+      # e <- 1
       print(paste("Epoch", e))
-      hist <- param_model$fit(x = train$df_orig, y = train$df_orig, 
+      hist <- param_model$fit(x = train$df_encoded, y = train$df_encoded, 
                               epochs = 1L, verbose = TRUE, 
-                              validation_data = list(test$df_orig,test$df_orig))
+                              validation_data = list(test$df_encoded, test$df_encoded))
       
       # Append losses to history
       train_loss <- c(train_loss, hist$history$loss)
@@ -396,9 +439,11 @@ if (file.exists(fnh5)){
       # Extract specific weights
       w <- param_model$get_layer(name = "beta")$get_weights()[[1]]
       
-      ws <- rbind(ws, data.frame(w12 = w[1, 2], w13 = w[1, 3], w23 = w[2, 3]))
+      ws <- rbind(ws, data.frame(w12 = w[1, 2], w13 = w[1, 3], w22 = w[2, 2],
+                                 w23 = w[2, 3], w33 = w[3, 3], w43 = w[4, 3]))
     }
     # Save the model
+    f <- "realData"
     param_model$save_weights(fnh5)
     save(train_loss, val_loss, train_loss, f, MA, len_theta,
          hidden_features_I,
@@ -412,7 +457,7 @@ if (file.exists(fnh5)){
 par(mfrow=c(1,1))
 #pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
-plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)')
+plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)', ylim = c(2.45, 13))
 lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
 
 # Last 50
@@ -430,65 +475,104 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 # fit Polr form tram package (negative shift, so different as in Colr)
-fit_21 <- Colr(x2 ~ x1, data = train$df_R)  # Colr for continuous outcome (positive shift)
+# fit_21 <- Colr(x2 ~ x1, data = train$df_R)  # Colr for continuous outcome (positive shift)
 
 # logistic regression of the form x3 ~ x1 + x2 (x3 is binary)
 fit_321 <- glm(x3 ~ x1 + x2, data = train$df_R, family = binomial(link = "logit"))
+summary(fit_321)
+
+# fit_21 <- glm(x2 ~ x1 , data = train$df_R, family = binomial(link = "logit"))
+# summary(fit_21)
+
+
+wes <- round(ws[nrow(ws),],3)
+
+
+contrasts(train$df_R$x1) <- contr.treatment(nlevels(train$df_R$x1))
+contrasts(train$df_R$x2) <- contr.treatment(nlevels(train$df_R$x2))
+contrasts(train$df_R$x3) <- contr.treatment(nlevels(train$df_R$x3))
+polr(x2 ~ x1, data = train$df_R, Hess=TRUE)
+
+fit_321 <- glm(x3 ~ x1 + x2, data = train$df_R, family = binomial(link = "logit"))
+
+
+fit_21 <- polr(x2 ~ x1, data = train$df_R, Hess=TRUE)
+
+
+comp <- round(rbind(-c(coef(fit_21)[1], coef(fit_321)[2], 
+                       coef(fit_21)[2], coef(fit_321)[3], 
+                       coef(fit_321)[4], coef(fit_321)[5]),
+                    wes), 3)
+rownames(comp) <- c("glm/polr", "TRAM-DAG")
+comp
 
 
 
+
+# do the same plot for all 5 weights previously saved
 p <- ggplot(ws, aes(x=1:nrow(ws))) + 
-  geom_line(aes(y=w12, color='x1 --> x2')) + 
-  geom_line(aes(y=w13, color='x1 --> x3')) + 
-  geom_line(aes(y=w23, color='x2 --> x3')) + 
-  # geom_hline(aes(yintercept=2, color='x1 --> x2'), linetype=2) +
-  # geom_hline(aes(yintercept=0.2, color='x1 --> x3'), linetype=2) +
-  # geom_hline(aes(yintercept=-0.3, color='x2 --> x3'), linetype=2) +
-  geom_hline(aes(yintercept=coef(fit_21), color='Colr/glm'), linetype=2) +
-  geom_hline(aes(yintercept=-coef(fit_321)[1], color='Colr/glm'), linetype=2) +
-  geom_hline(aes(yintercept=-coef(fit_321)[2], color='Colr/glm'), linetype=2) +
-  #scale_color_manual(values=c('x1 --> x2'='skyblue', 'x1 --> x3='red', 'x2 --> x3'='darkgreen')) +
+  # geom_line(aes(y=w12, color='x1.1 --> x2')) + 
+  # geom_line(aes(y=w22, color='x1.2 --> x2')) + 
+  geom_line(aes(y=w13, color='x1.1 --> x3')) + 
+  geom_line(aes(y=w23, color='x1.2 --> x3')) + 
+  geom_line(aes(y=w33, color='x2.1 --> x3')) + 
+  geom_line(aes(y=w43, color='x2.2 --> x3')) + 
+  # geom_hline(aes(yintercept=coef(fit_21)[2], color='Colr/glm'), linetype=2) +
+  # geom_hline(aes(yintercept=coef(fit_21)[3], color='Colr/glm'), linetype=2) +
+  # geom_hline(aes(yintercept=-(coef(fit_21)[1]), color='x1.1 --> x2'), linetype=2) +
+  # geom_hline(aes(yintercept=-(coef(fit_21)[2]), color='x1.2 --> x2'), linetype=2) +
+  geom_hline(aes(yintercept=-(coef(fit_321)[2]), color='x1.1 --> x3'), linetype=2) +
+  geom_hline(aes(yintercept=-(coef(fit_321)[3]), color='x1.2 --> x3'), linetype=2) +
+  geom_hline(aes(yintercept=-(coef(fit_321)[4]), color='x2.1 --> x3'), linetype=2) +
+  geom_hline(aes(yintercept=-(coef(fit_321)[5]), color='x2.2 --> x3'), linetype=2) +
   labs(x='Epoch', y='Coefficients') +
   theme_minimal() +
   theme(legend.title = element_blank())  # Removes the legend title
-
 p
 
-
-###### Coefficient Plot for Paper #######
-if (FALSE){
-  p = ggplot(ws, aes(x=1:nrow(ws))) + 
-    geom_line(aes(y=w12, color="beta12")) + 
-    geom_line(aes(y=w13, color="beta13")) + 
-    geom_line(aes(y=w23, color="beta23")) + 
-    geom_hline(aes(yintercept=2, color="beta12"), linetype=2) +
-    geom_hline(aes(yintercept=0.2, color="beta13"), linetype=2) +
-    geom_hline(aes(yintercept=-0.3, color="beta23"), linetype=2) +
-    scale_color_manual(
-      values=c('beta12'='skyblue', 'beta13'='red', 'beta23'='darkgreen'),
-      labels=c(expression(beta[12]), expression(beta[13]), expression(beta[23]))
-    ) +
-    labs(x='Epoch', y='Coefficients') +
-    theme_minimal() +
-    theme(
-      legend.title = element_blank(),   # Removes the legend title
-      legend.position = c(0.85, 0.17),  # Adjust this to position the legend inside the plot (lower-right)
-      legend.background = element_rect(fill="white", colour="black")  # Optional: white background with border
-    )
-  
-  p
-  file_name <- paste0(fn, "_coef_epoch.pdf")
-  if (FALSE){
-    file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
-    ggsave(file_path, plot = p, width = 8, height = 6/2)
-  }
+file_name <- paste0(fn, "_coef_epoch.pdf")
+if (TRUE){
+  file_path <- file.path("runs/experiment_5_all_ordinal_dummy_encoded_real_data_complex/run/", basename(file_name))
+  ggsave(file_path, plot = p, width = 8, height = 6/2)
 }
 
+###### Coefficient Plot for Paper #######
+# if (FALSE){
+#   p = ggplot(ws, aes(x=1:nrow(ws))) + 
+#     geom_line(aes(y=w12, color="beta12")) + 
+#     geom_line(aes(y=w13, color="beta13")) + 
+#     geom_line(aes(y=w23, color="beta23")) + 
+#     geom_hline(aes(yintercept=2, color="beta12"), linetype=2) +
+#     geom_hline(aes(yintercept=0.2, color="beta13"), linetype=2) +
+#     geom_hline(aes(yintercept=-0.3, color="beta23"), linetype=2) +
+#     scale_color_manual(
+#       values=c('beta12'='skyblue', 'beta13'='red', 'beta23'='darkgreen'),
+#       labels=c(expression(beta[12]), expression(beta[13]), expression(beta[23]))
+#     ) +
+#     labs(x='Epoch', y='Coefficients') +
+#     theme_minimal() +
+#     theme(
+#       legend.title = element_blank(),   # Removes the legend title
+#       legend.position = c(0.85, 0.17),  # Adjust this to position the legend inside the plot (lower-right)
+#       legend.background = element_rect(fill="white", colour="black")  # Optional: white background with border
+#     )
+#   
+#   p
+#   file_name <- paste0(fn, "_coef_epoch.pdf")
+#   if (FALSE){
+#     file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
+#     ggsave(file_path, plot = p, width = 8, height = 6/2)
+#   }
+# }
+
+# estimated beta weights
 param_model$get_layer(name = "beta")$get_weights() * param_model$get_layer(name = "beta")$mask
 
 
 ##### Checking observational distribution ####
-s = do_dag_struct(param_model, train$A, doX=c(NA, NA, NA), num_samples = 5000)
+# s = do_dag_struct(param_model, train$A, doX=c(NA, NA, NA), num_samples = 5000)
+##### Checking observational distribution ####
+s = do_dag_struct(param_model, MA = train$A, MA_encoded = MA_encoded, doX=c(NA, NA, NA), num_samples = 5000, data = train)
 plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
      main='Black = Observations, Red samples from TRAM-DAG',
      xlab='X3')
@@ -497,10 +581,15 @@ points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
 table(s[,3]$numpy())/5000
 
 par(mfrow=c(1,3))
+# for (i in 1:2){
+#   hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X",i, " red: ours, black: data"), xlab='samples')
+#   #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
+#   lines(density(s[,i]$numpy()), col='red')
+# }
 for (i in 1:2){
-  hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X",i, " red: ours, black: data"), xlab='samples')
+  plot(table(train$df_orig$numpy()[,i])/sum(table(train$df_orig$numpy()[,i])),main=paste0("X",i, " red: ours, black: data"), xlab='samples')
   #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
-  lines(density(s[,i]$numpy()), col='red')
+  points(as.numeric(table(s[,i]$numpy()))/5000, col='red')
 }
 plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
      main='Black = Observations, Red samples from TRAM-DAG',
@@ -511,47 +600,52 @@ table(s[,3]$numpy())/5000
 par(mfrow=c(1,1))
 
 ######### Simulation of do-interventions #####
-doX=c(0.2, NA, NA)
-dx0.2 = dgp(10000, doX=doX)
-dx0.2$df_orig$numpy()[1:5,]
-
-
-doX=c(0.7, NA, NA)
-dx7 = dgp(10000, doX=doX)
-#hist(dx0.2$df_orig$numpy()[,2], freq=FALSE,100)
-mean(dx7$df_orig$numpy()[,2]) - mean(dx0.2$df_orig$numpy()[,2])  
-mean(dx7$df_orig$numpy()[,3]) - mean(dx0.2$df_orig$numpy()[,3])  
-
-s_dag = do_dag_struct(param_model, train$A, doX=c(0.2, NA, NA))
-hist(dx0.2$df_orig$numpy()[,2], freq=FALSE, 50, main='X2 | Do(X1=0.2)', xlab='samples', 
-     sub='Histogram from DGP with do. red:TRAM_DAG')
-sample_dag_0.2 = s_dag[,2]$numpy()
-lines(density(sample_dag_0.2), col='red', lw=2)
-m_x2_do_x10.2 = median(sample_dag_0.2)
-
-i = 3 
-d = dx0.2$df_orig$numpy()[,i]
-plot(table(d)/length(d), ylab='Probability ', 
-     main='X3 | do(X1=0.2)',
-     xlab='X3', ylim=c(0,0.6),  sub='Black DGP with do. red:TRAM_DAG')
-points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
+# doX=c(1, NA, NA)
+# dx0.2 = dgp(10000, doX=doX)
+# dx0.2$df_orig$numpy()[1:5,]
+# 
+# 
+# doX=c(0.7, NA, NA)
+# dx7 = dgp(10000, doX=doX)
+# #hist(dx0.2$df_orig$numpy()[,2], freq=FALSE,100)
+# mean(dx7$df_orig$numpy()[,2]) - mean(dx0.2$df_orig$numpy()[,2])  
+# mean(dx7$df_orig$numpy()[,3]) - mean(dx0.2$df_orig$numpy()[,3])  
+# 
+# s_dag = do_dag_struct(param_model, train$A, doX=c(0.2, NA, NA))
+# hist(dx0.2$df_orig$numpy()[,2], freq=FALSE, 50, main='X2 | Do(X1=0.2)', xlab='samples', 
+#      sub='Histogram from DGP with do. red:TRAM_DAG')
+# sample_dag_0.2 = s_dag[,2]$numpy()
+# lines(density(sample_dag_0.2), col='red', lw=2)
+# m_x2_do_x10.2 = median(sample_dag_0.2)
+# 
+# i = 3 
+# d = dx0.2$df_orig$numpy()[,i]
+# plot(table(d)/length(d), ylab='Probability ', 
+#      main='X3 | do(X1=0.2)',
+#      xlab='X3', ylim=c(0,0.6),  sub='Black DGP with do. red:TRAM_DAG')
+# points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
 
 ###### Figure for paper ######
 if (TRUE){
   doX=c(NA, NA, NA)
-  s_obs_fitted = do_dag_struct(param_model, train$A, doX, num_samples = 5000)$numpy()
-  dx1 = -1.5
+  s_obs_fitted = do_dag_struct(param_model, MA = train$A, MA_encoded = MA_encoded, 
+                               doX=doX, num_samples = 5000, 
+                               data = train)$numpy()
+  
+  dx1 = 1
   # dx1 = 2
   doX=c(dx1, NA, NA)
-  s_do_fitted = do_dag_struct(param_model, train$A, doX=doX)$numpy()
+  s_do_fitted = do_dag_struct(param_model, MA = train$A, MA_encoded = MA_encoded, 
+                              doX=doX, num_samples = 5000, 
+                              data = train)$numpy()
   
   df = data.frame(vals=s_obs_fitted[,1], type='Model', X=1, L='L0')
   df = rbind(df, data.frame(vals=s_obs_fitted[,2], type='Model', X=2, L='L0'))
   df = rbind(df, data.frame(vals=s_obs_fitted[,3], type='Model', X=3, L='L0'))
   
-  df = rbind(df, data.frame(vals=train$df_R[,1], type='DGP', X=1, L='L0'))
-  df = rbind(df, data.frame(vals=train$df_R[,2], type='DGP', X=2, L='L0'))
-  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,3]), type='DGP', X=3, L='L0'))
+  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,1]), type='Real Data', X=1, L='L0'))
+  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,2]), type='Real Data', X=2, L='L0'))
+  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,3]), type='Real Data', X=3, L='L0'))
   
   df = rbind(df, data.frame(vals=s_do_fitted[,1], type='Model', X=1, L='L1'))
   df = rbind(df, data.frame(vals=s_do_fitted[,2], type='Model', X=2, L='L1'))
@@ -562,20 +656,26 @@ if (TRUE){
   # df = rbind(df, data.frame(vals=d[,2], type='DGP', X=2, L='L1'))
   # df = rbind(df, data.frame(vals=as.numeric(d[,3]), type='DGP', X=3, L='L1'))
   
+  # plot df
+  
   p = ggplot() +
     # For X = 1 and X = 2, use position = "identity" (no dodging)
-    geom_histogram(data = subset(df, X != 3), 
-                   aes(x=vals, col=type, fill=type, y=..density..), 
-                   position = "identity", alpha=0.4) +
+    # geom_histogram(data = subset(df, X != 3), 
+    #                aes(x=vals, col=type, fill=type, y=..density..), 
+    #                position = "identity", alpha=0.4) +
     # For X = 3, use a bar plot for discrete data
-    geom_bar(data = subset(df, X == 3), 
-             aes(x=vals, y=..prop.. * 4,  col=type, fill=type), 
+    # geom_bar(data = subset(df, X == 3), 
+    #          aes(x=vals, y=..prop.. * 4,  col=type, fill=type), 
+    #          position = "dodge", alpha=0.4, size = 0.5)+
+    
+    geom_bar(data = df, 
+             aes(x=vals, y=..prop.. ,  col=type, fill=type), 
              position = "dodge", alpha=0.4, size = 0.5)+
     #limit between 0,1 but not removing the data
-    coord_cartesian(ylim = c(0, 4)) +
+    coord_cartesian(ylim = c(0, 1)) +
     facet_grid(L ~ X, scales = 'free',
                labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=',dx1), 'L0' = 'Obs')))+ 
-    labs(y = "Density / (Frequency × 4)", x='')  + # Update y-axis label
+    labs(y = "Probability", x='')  + # Update y-axis label
     theme_minimal() +
     theme(
       legend.title = element_blank(),   # Removes the legend title
@@ -585,8 +685,8 @@ if (TRUE){
   p
   file_name <- paste0(fn, "_L0_L1.pdf")
   ggsave(file_name, plot=p, width = 8, height = 6)
-  if (FALSE){
-    file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
+  if (TRUE){
+    file_path <- file.path("runs/experiment_5_all_ordinal_dummy_encoded_real_data_complex/run/", basename(file_name))
     print(file_path)
     ggsave(file_path, plot=p, width = 8/2, height = 6/2)
   }
@@ -607,34 +707,43 @@ m_x2_do_x10.7 = median(sample_dag_07)
 m_x2_do_x10.7 - m_x2_do_x10.2
 
 ###### Comparison of estimated f(x2) vs TRUE f(x2) #######
-shift_12 = shift_23 = shift1 = cs_23 = xs = seq(-1,1,length.out=41)
-idx0 = which(xs == 0) #Index of 0 xs needs to be odd
+shift_23 = shift_13 = shift_12 = cs_12 = xs = list(c(0,0), c(1,0), c(0,1))
+idx0 = 1 # c(0,0) -> reference #Index of 0 xs needs to be odd
 for (i in 1:length(xs)){
   #i = 1
-  x = xs[i]
+  x = xs[[i ]]
   # Varying x1
-  X = tf$constant(c(x, 0.5, 3), shape=c(1L,3L)) 
-  shift1[i] =   param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
-  shift_12[i] = param_model(X)[1,2,2]$numpy() #2=LS Term X1->X2
+  # X = tf$constant(c(x, 2, 1), shape=c(1L,3L)) 
+  X = tf$constant(c(x, 1, 0 , 1), shape=c(1L,5L)) 
+  shift_13[i] = param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
+  cs_12[i] = param_model(X)[1,2,1]$numpy() #2=CS Term X1->X2
   
   #Varying x2
-  X = tf$constant(c(0.5, x, 3), shape=c(1L,3L)) 
-  cs_23[i] = param_model(X)[1,3,1]$numpy() #1=CS Term
+  # X = tf$constant(c(1, x, 1), shape=c(1L,3L)) 
+  X = tf$constant(c(0,0, x, 1), shape=c(1L,5L)) 
+  # cs_23[i] = param_model(X)[1,3,1]$numpy() #1=CS Term
   shift_23[i] = param_model(X)[1,3,2]$numpy() #2-LS Term X2-->X3 (Ms. Whites Notation)
 }
 
 par(mfrow=c(2,2))
 
-plot(xs, shift_12, main='LS-Term (black DGP, red Ours)', 
+plot(1:length(xs), cs_12, main='LS-Term (black DGP, red Ours)', 
      sub = 'Effect of x1 on x2',
      xlab='x1', col='red')
 # abline(0, 2)
 
-delta_0 = shift1[idx0] - 0
-plot(xs, shift1 - delta_0, main='LS-Term (black DGP, red Ours)', 
+delta_0 = shift_13[[idx0]] - 0
+plot(1:length(xs), unlist(shift_13) - delta_0, main='LS-Term (black DGP, red Ours)', 
      sub = paste0('Effect of x1 on x3, delta_0 ', round(delta_0,2)),
      xlab='x1', col='red')
 # abline(0, .2)
+
+delta_0 = shift_23[[idx0]] - 0
+plot(1:length(xs), unlist(shift_23) - delta_0, main='LS-Term (black DGP, red Ours)', 
+     sub = paste0('Effect of x2 on x3, delta_0 ', round(delta_0,2)),
+     xlab='x1', col='red')
+# abline(0, .2)
+
 
 
 if (F32 == 1){ #Linear DGP

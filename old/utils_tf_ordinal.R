@@ -129,6 +129,7 @@ LinearMasked(keras$layers$Layer) %py_class% {
 create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_layer_bias=TRUE) {
   outs = list()
   for (r in 1:len_param){
+    #r = 1
     d = input_layer
     if (length(layer_sizes) > 2){ #Hidden Layers
       for (i in 2:(length(layer_sizes) - 1)) {
@@ -145,21 +146,30 @@ create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_la
 
 
 # Creates a keras layer which takes as input (None, |x|) and returns (None, |x|, 1) which are all zero 
-create_null_net <- function(input_layer) {
+
+# attention changed with output_dim
+create_null_net <- function(input_layer, output_dim) {
   output_layer <- layer_lambda(input_layer, function(x) {
-    # Create a tensor of zeros with the same shape as x
-    zeros_like_x <- k_zeros_like(x)
-    # Add an extra dimension to match the desired output shape (None, |x|, 1)
+    # Select only the first 'output_dim' features
+    x_selected <- x[, 1:output_dim, drop = FALSE]
+    # Create a tensor of zeros with the selected shape
+    zeros_like_x <- k_zeros_like(x_selected)
+    # Expand dimensions to (None, output_dim, 1)
     expanded_zeros_like_x <- k_expand_dims(zeros_like_x, -1)
     return(expanded_zeros_like_x)
   })
   return(output_layer)
 }
 
-create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidden_features_CS = c(2,2)){
+
+create_param_model = function(MA, MA_encoded, hidden_features_I = c(2,2), len_theta=30, hidden_features_CS = c(2,2), train = NULL){
   
   # number of variable as input shape
+  # input_layer <- layer_input(shape = list(ncol(MA)))
+  
+  # number of variable (encoded) as input shape
   input_layer <- layer_input(shape = list(ncol(MA)))
+  input_layer_encoded <- layer_input(shape = list(nrow(MA_encoded)))
   
   ##### Creating the Intercept Model
   if ('ci' %in% MA == TRUE) { # At least one 'ci' in model
@@ -169,9 +179,12 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
     #dag_maf_plot(masks_I, layer_sizes_I)
     #model_ci = keras_model(inputs = input_layer, h_I)
   } else { # Adding simple intercepts
-    layer_sizes_I = c(ncol(MA), nrow(MA))
-    masks_I = list(matrix(FALSE, nrow=nrow(MA), ncol=ncol(MA)))
-    h_I = create_param_net(len_param = len_theta, input_layer=input_layer, layer_sizes = layer_sizes_I, masks_I, last_layer_bias=TRUE)
+    # layer_sizes_I = c(ncol(MA), nrow(MA))
+    layer_sizes_I = c(nrow(MA_encoded), ncol(MA_encoded))
+    # masks_I = list(matrix(FALSE, nrow=nrow(MA_encoded), ncol=ncol(MA_encoded)))
+    masks_I = list(matrix(FALSE, nrow=ncol(MA_encoded), ncol=nrow(MA_encoded)))  # (3x5)
+    
+    h_I = create_param_net(len_param = len_theta, input_layer=input_layer_encoded, layer_sizes = layer_sizes_I, masks_I, last_layer_bias=TRUE)
     #dag_maf_plot(masks_I, layer_sizes_I)
   }
   
@@ -183,15 +196,20 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
     #dag_maf_plot(masks_CS, layer_sizes_CS)
     # model_cs = keras_model(inputs = input_layer, h_CS)
   } else { #No 'cs' term in model --> return zero
-    h_CS = create_null_net(input_layer)
+    h_CS = create_null_net(input_layer_encoded, output_dim = ncol(MA_encoded))
   }
   
   ##### Creating the Linear Shift Model
   if ('ls' %in% MA == TRUE) {
+    
+    # new
+    # input_layer_encoded <- layer_input(shape = list(nrow(MA_encoded)))
+    
     #h_LS = keras::layer_dense(input_layer, use_bias = FALSE, units = 1L)
-    layer_sizes_LS <- c(ncol(MA), nrow(MA))
-    masks_LS = create_masks(adjacency =  t(MA == 'ls'), c())
-    out = LinearMasked(units=layer_sizes_LS[2], mask=t(masks_LS[[1]]), bias=FALSE, name='beta')(input_layer) 
+    # layer_sizes_LS <- c(ncol(MA), nrow(MA))
+    layer_sizes_LS <- c(nrow(MA_encoded), ncol(MA_encoded))
+    masks_LS = create_masks(adjacency =  t(MA_encoded == 'ls'), c())
+    out = LinearMasked(units=layer_sizes_LS[2], mask=t(masks_LS[[1]]), bias=FALSE, name='beta')(input_layer_encoded) 
     h_LS = tf$expand_dims(out, axis=-1L)#keras$layers$concatenate(outs, axis=-1L)
     #dag_maf_plot(masks_LS, layer_sizes_LS)
     #model_ls = keras_model(inputs = input_layer, h_LS)
@@ -206,7 +224,11 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
   # 2->|X|+1 LS
   # |X|+2 --> Ende M 
   outputs_tensor = keras$layers$concatenate(list(h_CS, h_LS, h_I), axis=-1L)
-  param_model = keras_model(inputs = input_layer, outputs = outputs_tensor)
+  # param_model = keras_model(inputs = input_layer, outputs = outputs_tensor)
+
+  
+  # new
+  param_model = keras_model(inputs = input_layer_encoded, outputs = outputs_tensor)
   return(param_model)
 }
 
@@ -365,8 +387,24 @@ logistic_cdf <- function(x) {
 
 
 struct_dag_loss = function (t_i, h_params){
-  #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
+  #t_i = train$df_encoded # (40000, 3)    # original data x1, x2, x3 for each obs
   #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
+  
+  t_i_encoded = t_i
+  
+  # Reconstruct original ordinal data from encoded data
+  
+  # example: data$df_R_encoded$x1_t1 + data$df_R_encoded$x1_t2 + 1
+  t_i <- tf$stack(list(
+    t_i_encoded[,1] + t_i_encoded[,2] + 1,
+    t_i_encoded[,3] + t_i_encoded[,4] + 1,
+    t_i_encoded[,5] + 1
+  ), axis = 1L)  # Stack along columns
+  
+
+  
+  
+  
   k_min <- k_constant(global_min)
   k_max <- k_constant(global_max)
   
@@ -393,10 +431,13 @@ struct_dag_loss = function (t_i, h_params){
   } else{ 
     cont_dims = which(data_type == 'c')
     cont_ord = which(data_type == 'o')
+    cont_dims_encoded = which(data_type_encoded == 'c')
+    cont_ord_encoded = which(data_type_encoded == 'o')
   }
   if (len_theta == -1){ 
     len_theta = dim(theta_tilde)[3]
   }
+  
   
   NLL = 0
   ### Continiuous dimensions
@@ -406,7 +447,7 @@ struct_dag_loss = function (t_i, h_params){
     # inputs in h_dag_extra:
     # data=(40000, 3), 
     # theta=(40000, 3, 20), k_min=(3), k_max=(3))
-
+    
     # creates the value of the Bernstein at each observation
     # and current parameters: output shape=(40000, 3)
     h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 

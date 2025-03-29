@@ -314,6 +314,8 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
   }
   
   
+  
+  
   #hist(X_3)
   # par(mfrow=c(1,3))
   # hist(X_1)
@@ -451,7 +453,7 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 # logistic regression of the form x3 ~ x1 + x2 (x3 is binary)
 fit_321 <- glm(x3 ~ x1 + x2, data = train$df_R, family = binomial(link = "logit"))
-
+summary(fit_321)
 summary(param_model)
 
 

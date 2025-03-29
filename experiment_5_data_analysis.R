@@ -35,7 +35,7 @@ precip <- nc_open("data/precip_au_son.nc")
 print(precip)
 precip_y <- ncvar_get(precip, "year")
 precip_v <- ncvar_get(precip, "precip")
-
+# hist(precip_v)
 
 # plot all together
 par(mfrow=c(3,1))
@@ -118,6 +118,11 @@ df <- raw_df
 df$AU <- cut(df$AU, breaks = quantile(df$AU, probs = c(0, 0.5, 1)), labels = c("low", "high"), include.lowest = TRUE)
 df$ENSO <- cut(df$ENSO, breaks = quantile(df$ENSO, probs = c(0, 1/3, 2/3, 1)), labels = c("Nina", "neut", "Nino"), include.lowest = TRUE)
 df$IOD <- cut(df$IOD, breaks = quantile(df$IOD, probs = c(0, 1/3, 2/3, 1)), labels = c("neg", "zero", "pos"), include.lowest = TRUE)
+
+par(mfrow=c(1,3))
+plot(df$ENSO, main = "ENSO")
+plot(df$IOD, main = "IOD")
+plot(df$AU, main = "AU")
 # 
 # # Step 3a: Contingency Table (Absolute Frequencies)
 table1 <- xtabs(~ AU + IOD + ENSO, data = df)
@@ -158,6 +163,27 @@ plot(gam_model_1)
 
 
 
+#===============================================================================
+# Check Polr
+#===============================================================================
+
+# make the df ordered
+df$ENSO <- factor(df$ENSO, levels = c("Nina", "neut", "Nino"), ordered = TRUE)
+df$IOD <- factor(df$IOD, levels = c("neg", "zero", "pos"), ordered = TRUE)
+df$AU <- factor(df$AU, levels = c("low", "high"), ordered = TRUE)
+
+df$ENSO
+
+library(tram)
+
+fit21 <- polr(IOD ~ ENSO , data = df, Hess=TRUE)
+summary(fit21)
+
+# same coefficients as polr
+fit21 <- Polr(IOD ~ ENSO , data = df)
+summary(fit21)
+
+fit22 <- polr(AU ~ ENSO + IOD , data = df, Hess=TRUE)
 
 #===============================================================================
 # Check predictive value of variables
