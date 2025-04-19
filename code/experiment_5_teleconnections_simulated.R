@@ -82,7 +82,11 @@ SEED = -1 #If seed > 0 then the seed is set
 
 if (F32 == 1){
   FUN_NAME = 'DPGLinear'
-  f <- function(x) -0.3 * x
+  # f <- function(x) -0.3 * x
+  
+  f <- function(x) 0.2 * x   # for simulation representing real data
+  
+  
 } else if (F32 == 2){
   f = function(x) 2 * x**3 + x
   FUN_NAME = 'DPG2x3+x'
@@ -187,8 +191,10 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
   #n_obs = 1e5 n_obs = 10
   #Sample multi modal X_1, or fix at a value if Do-intervention
   if (is.na(doX[1])){
-    X_1_A = rnorm(n_obs, 0.25, 0.1)
-    X_1_B = rnorm(n_obs, 0.73, 0.05)
+    # X_1_A = rnorm(n_obs, 0.25, 0.1)
+    # X_1_B = rnorm(n_obs, 0.73, 0.05)
+    X_1_A = rnorm(n_obs, 28, 2)
+    X_1_B = rnorm(n_obs, 26, 3)
     X_1 = ifelse(sample(1:2, replace = TRUE, size = n_obs) == 1, X_1_A, X_1_B)
   } else{
     X_1 = rep(doX[1], n_obs)
@@ -213,7 +219,7 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
     # X_2 = 1/5. * (x_2_dash - 0.4 * X_1) # 0.39450
     # X_2 = 1/5. * (x_2_dash - 1.2 * X_1) 
     #h2 = x_2_dash = 5 * x_2 + 2 * X_1
-    X_2 = 1/5. * (x_2_dash - 2 * X_1)  # 
+    X_2 =  (x_2_dash - 1.3 * X_1) / 22 # 
     
     # question: why scaled with 1/5.? -> 5*x2 was selected as h_0(x2), then reform the term
     
@@ -236,7 +242,7 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
     #x_3_dash = h_0_3(x_3) + gamma_1 * X_1 + gamma_2 * X_2
     #x_3_dash = 0.63 * x_3 -0.2 * X_1 + 1.3 * X_2
     #x_3_dash = h(x3|x1,x2) = 0.63*x3 - 0.2*x1 - f(x2)
-    X_3 = (x_3_dash + 0.2 * X_1 + f(X_2))/0.63
+    X_3 = (x_3_dash - 0.24 * X_1 + f(X_2))/13
   } else{
     X_3 = rep(doX[3], n_obs)
   }
@@ -280,6 +286,10 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), seed=-1) {
 
 train = dgp(100, seed=ifelse(SEED > 0, SEED, -1))
 test  = dgp(100, seed=ifelse(SEED > 0, SEED + 1, -1))
+
+
+
+
 (global_min = train$min) # the lower 5% quantiles
 (global_max = train$max) # the upper 5% quantiles
 data_type = train$type   # c for continuous, o for ordinal
@@ -336,7 +346,7 @@ h_params = param_model(train$df_orig)
 # loss before training  # 2.4
 struct_dag_loss(t_i=train$df_orig, h_params=h_params)
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
-optimizer = optimizer_adam(learning_rate=0.005)
+optimizer = optimizer_adam(learning_rate=0.01)
 
 # set weight (betas) according to Colr
 
@@ -345,13 +355,13 @@ summary(fit.21)
 fit.3 = Colr(x3~x1 + x2, data = train$df_R, order = len_theta)
 summary(fit.3)
 
-# beta_matrix_colr <- matrix(c(0,coef(fit.21), coef(fit.3)[1],
-#                              0,0,coef(fit.3)[2],
-#                              0,0,0), nrow=3, byrow = TRUE)
-
-beta_matrix_colr <- matrix(c(0,1.95, -0.2,
-                             0,0,0.30,
+beta_matrix_colr <- matrix(c(0,coef(fit.21), coef(fit.3)[1],
+                             0,0,coef(fit.3)[2],
                              0,0,0), nrow=3, byrow = TRUE)
+
+# beta_matrix_colr <- matrix(c(0,1.95, -0.2,
+#                              0,0,0.30,
+#                              0,0,0), nrow=3, byrow = TRUE)
 
 # Extract current weights (the betas in the Adjacency Matrix)
 param_model$get_layer(name = "beta")$get_weights()[[1]]
@@ -379,7 +389,7 @@ param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)
 #==============================================================================
 # Train the TRAM-DAG model
 #==============================================================================
-num_epochs <- 10000
+num_epochs <- 19001
 
 ##### Training or readin of weights if h5 available ####
 fnh5 = paste0(fn, '_E', num_epochs, '.h5')
@@ -432,8 +442,9 @@ if (file.exists(fnh5)){
 # Learned betas w12, w13, w23 (weights) for each epoch  
 ws
 tail(ws)
+ws[nrow(ws),]
 
-
+par(mfrow=c(1,1))
  ####### FINISHED TRAINING #####
 #pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
@@ -455,9 +466,9 @@ p = ggplot(ws, aes(x=1:nrow(ws))) +
   geom_line(aes(y=w12, color="beta12")) + 
   geom_line(aes(y=w13, color="beta13")) + 
   geom_line(aes(y=w23, color="beta23")) + 
-  geom_hline(aes(yintercept=2, color="beta12"), linetype=2) +
-  geom_hline(aes(yintercept=-0.2, color="beta13"), linetype=2) +
-  geom_hline(aes(yintercept=+0.3, color="beta23"), linetype=2) +
+  geom_hline(aes(yintercept=(coef(fit.21)), color="beta12"), linetype=2) +
+  geom_hline(aes(yintercept=(coef(fit.3)[1]), color="beta13"), linetype=2) +
+  geom_hline(aes(yintercept=(coef(fit.3)[2]), color="beta23"), linetype=2) +
   scale_color_manual(
     values=c('beta12'='skyblue', 'beta13'='red', 'beta23'='darkgreen'),
     labels=c(expression(beta[12]), expression(beta[13]), expression(beta[23]))

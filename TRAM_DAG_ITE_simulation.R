@@ -31,12 +31,12 @@ source('utils_tfp.R')
 ##### Flavor of experiment ######
 
 #### Saving the current version of the script into runtime
-DIR = 'runs/experiment_5_ordinal_outcome/run'
+DIR = 'runs/TRAM_DAG_ITE_simulation/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
 # Copy this file to the directory DIR
-file.copy('/experiment_5_ordinal_outcome.R', file.path(DIR, 'experiment_5_ordinal_outcome.R'), overwrite=TRUE)
+file.copy('/TRAM_DAG_ITE_simulation.R', file.path(DIR, 'TRAM_DAG_ITE_simulation.R'), overwrite=TRUE)
 
 
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
@@ -79,15 +79,55 @@ xs = seq(-1,1,0.1)
 
 plot(xs, f(xs), sub=fn, xlab='x2', ylab='f(x2)', main='DGP influence of x2 on x3')
 
+
+
+
+
+###############################################################################
+# ITE in a simple RCT
+###############################################################################
+
+# draw following DAG with ggdag
+
+# T = treatment, D = outcome, X = covariate
+# R = randomization
+
+par(mfrow=c(1,2))
+library(dagitty)
+library(ggdag)
+library(ggplot2)
+dag <- dagify(T ~ R,
+              X1 ~ T,
+              D ~ T + X1 + X2,
+              exposure = "T",
+              outcome = "D" )
+
+tidy_dagitty(dag)
+ggdag(dag, layout = "sugiyama") +
+  theme_dag()
+
+
+
+
+dag <- dagify(X1 ~ R,
+              X2 ~ X1,
+              X4 ~ X1 + X2 + X3,
+              exposure = "X1",
+              outcome = "X4" )
+
+tidy_dagitty(dag)
+ggdag(dag, layout = "sugiyama") +
+  theme_dag()
+
+
 ##### DGP ########
-dgp <- function(n_obs, doX=c(NA, NA, NA), SEED=123) {
+dgp <- function(n_obs=1000, doX=c(NA, NA, NA, NA), SEED=123) {
   #n_obs = 1e5 n_obs = 10
   set.seed(SEED)
-  #Sample X_1 from GMM with 2 components
+  
   if (is.na(doX[1])){
-    X_1_A = rnorm(n_obs, 0.25, 0.1)
-    X_1_B = rnorm(n_obs, 0.73, 0.05)
-    X_1 = ifelse(sample(1:2, replace = TRUE, size = n_obs) == 1, X_1_A, X_1_B)
+    # Generate random binary treatment T
+    X_1 <- rbinom(n_obs, size = 1, prob = 0.5) + 1
   } else{
     X_1 = rep(doX[1], n_obs)
   }
@@ -98,51 +138,79 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), SEED=123) {
     U2 = runif(n_obs)
     x_2_dash = qlogis(U2)
     #x_2_dash = h_0(x_2) + beta * X_1
-    #x_2_dash = 0.42 * x_2 + 2 * X_1
-    X_2 = 1/0.42 * (x_2_dash - 2 * X_1)
-    X_2 = 1/5. * (x_2_dash - 0.4 * X_1) # 0.39450
-    X_2 = 1/5. * (x_2_dash - 1.2 * X_1) 
-    X_2 = 1/5. * (x_2_dash - 2 * X_1)  # 
+    #x_2_dash = 5 * x_2 + 2 * X_1
+    X_2 = 1/5. * (x_2_dash - 2 * (X_1-1))
+    
+    X_2_N <- 1/5. * (x_2_dash - 2 * 0)  # potential X2 under X1=0
+    X_2_Y <- 1/5. * (x_2_dash - 2 * 1)  # potential X2 under X1=1
     
     
   } else{
     X_2 = rep(doX[2], n_obs)
   }
   
+  if (is.na(doX[3])){
+    U3 = runif(n_obs)
+    x_3_dash = qlogis(U3)
+    #x_3_dash = h_0(x_3) = 0.9*x_3
+    X_3 = 1/0.9 * (x_3_dash)
+    
+  } else{
+    X_3 = rep(doX[1], n_obs)
+  }
   #hist(X_2)
   #ds = seq(-5,5,0.1)
   #plot(ds, dlogis(ds))
   
-  if (is.na(doX[3])){
-    # x3 is an ordinal variable with K = 4 levels x3_1, x3_2, x3_3, x3_4
+  if (is.na(doX[4])){
+    # x3 is an ordinal variable with K = 2 levels x4_1, x4_2
     # h(x3 | x1, x2) = h0 + gamma_1 * x1 + gamma_2 * x2
     # h0(x3_1) = theta_1, h0(x_3_2) =  theta_2, h0(x_3_3) = theta_3 
-    theta_k = c(-2, 0.42, 1.02)
+    k <- 1 # levels
+    theta_k = -0.5
     
-    h = matrix(, nrow=n_obs, ncol=3)
+    h = matrix(, nrow=n_obs, ncol=k)
     for (i in 1:n_obs){
-      h[i,] = theta_k + 0.2 * X_1[i] + f(X_2[i]) #- 0.3 * X_2[i]
+      # i=1
+      h[i,] = theta_k + 0.46 * (X_1[i]-1) + f(X_2[i]) + (-0.6) * X_3[i] #- 0.3 * X_2[i]
     }
     
-    U3 = rlogis(n_obs)
+    U4 = rlogis(n_obs)
     # chooses the correct X value if U3 is smaller than -2 that is level one if it's between -2 and 0.42 it's level two answer on
-    x3 = rep(1, n_obs)
-    x3[U3 > h[,1]] = 2
-    x3[U3 > h[,2]] = 3
-    x3[U3 > h[,3]] = 4
-    x3 = ordered(x3, levels=1:4)
+    x4 = rep(1, n_obs)
+    x4[U4 > h[,1]] = 2
+    # x4[U4 > h[,2]] = 3
+    # x4[U4 > h[,3]] = 4
+    # x4 = ordered(x4, levels=1:k)
   } else{
-    x3 = rep(doX[3], n_obs)
+    x4 = rep(doX[4], n_obs)
   }
   
+  
+  h1 = matrix(, nrow=n_obs, ncol=k)
+  h0 = matrix(, nrow=n_obs, ncol=k)
+  for (i in 1:n_obs){
+    # i=1
+    h1[i,] = theta_k + 0.46 * 1 + f(X_2_Y[i]) + (-0.6) * X_3[i] #- 0.3 * X_2_Y[i] potential X2 under X1=1
+    h0[i,] = theta_k + 0.46 * 0 + f(X_2_N[i]) + (-0.6) * X_3[i] #- 0.3 * X_2_n[i] potential X2 under X1=0
+  }
+  # Potential outcome for treated and untreated
+  Y1 <- plogis(h1)
+  Y0 <- plogis(h0)
+  
+  # Calculate the individual treatment effect
+  ITE_true <- Y1 - Y0
+  
+  
   #hist(X_3)
-  A <- matrix(c(0, 1, 1, 0,0,1,0,0,0), nrow = 3, ncol = 3, byrow = TRUE)
-  dat.orig =  data.frame(x1 = X_1, x2 = X_2, x3 = x3)
+  A <- matrix(c(0, 1, 0, 1,0,0,0,1,0,0,0,1,0,0,0,0), nrow = 4, ncol = 4, byrow = TRUE)
+  dat.orig =  data.frame(x1 = X_1, x2 = X_2, x3 = X_3, x4 = x4)
   dat.tf = tf$constant(as.matrix(dat.orig), dtype = 'float32')
   
-  q1 = quantile(dat.orig[,1], probs = c(0.05, 0.95)) 
-  q2 = quantile(dat.orig[,2], probs = c(0.05, 0.95))
-  q3 = c(1, 4) #No Quantiles for ordinal data
+  q1 = c(1,2)
+  q2 = quantile(dat.orig[,2], probs = c(0.05, 0.95)) 
+  q3 = quantile(dat.orig[,3], probs = c(0.05, 0.95))
+  q4 = c(1, 2) #No Quantiles for ordinal data
   
   
   return(list(
@@ -150,18 +218,169 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), SEED=123) {
     df_R = dat.orig,
     #min =  tf$reduce_min(dat.tf, axis=0L),
     #max =  tf$reduce_max(dat.tf, axis=0L),
-    min = tf$constant(c(q1[1], q2[1], q3[1]), dtype = 'float32'),
-    max = tf$constant(c(q1[2], q2[2], q3[2]), dtype = 'float32'),
-    type = c('c', 'c', 'o'),
-    A=A))
+    min = tf$constant(c(q1[1], q2[1], q3[1], q4[1]), dtype = 'float32'),
+    max = tf$constant(c(q1[2], q2[2], q3[2], q4[2]), dtype = 'float32'),
+    type = c('o', 'c', 'c', 'o'),
+    A=A, 
+    ITE_true = ITE_true,
+    Y1 = Y1,
+    Y0 = Y0))
 } 
 
-train = dgp(20000)
+n_obs <- 20000
+
+train = dgp(n_obs)
 test  = dgp(5000)
+
+
+ITE_true <- train$ITE_true
+hist(ITE_true)
+
+
+
+#### make ITE analysis with glm()
+
+source("ITE_utils.R")
+
+# treatment
+Tr <- train$df_R$x1 -1
+
+# outcome
+Y <- train$df_R$x4 -1
+
+data <- train$df_R[, -c(1,4)]
+colnames(data) <- c("X1", "X2")
+
+# Combine all variables into a single data frame
+simulated_full_data <- data.frame(ID = 1:n_obs, Y=Y, Treatment=Tr, data, Y1=train$Y1, Y0=train$Y0, ITE_true)
+
+
+fitt <- glm(Y ~ X1 + X2 + Treatment, data = simulated_full_data, family = binomial(link = "logit"))
+
+treated <- simulated_full_data %>%
+  mutate(Treatment = 1) %>%
+  select(X1, X2, Treatment)
+
+untreated <- simulated_full_data %>%
+  mutate(Treatment = 0) %>%
+  select(X1, X2, Treatment)
+
+pred.dev <- predict(fitt, newdata = treated, type = "response") -
+  predict(fitt, newdata = untreated, type = "response")
+
+hist(pred.dev) # ite estimated
+
+
+Tr
+
+
+
+
+
+library(dplyr)
+# Data for testing ITE models
+simulated_data <- data.frame(ID =1:n_obs, Y=Y, Treatment=Tr, data, ITE_true = ITE_true) %>%  
+  mutate(Treatment = ifelse(Treatment==1,"Y", "N")) %>% 
+  mutate(Treatment = factor(Treatment, levels = c("N", "Y")))
+
+head(simulated_full_data)
+head(simulated_data)
+
+set.seed(12345)
+test.data <- split_data(simulated_data, 2/3)
+test.compl.data <- remove_NA_data(test.data)
+test.results <- logis.ITE(test.compl.data , p=2)
+
+
+data.dev.rs = test.results[["data.dev.rs"]] %>%  as.data.frame()
+data.val.rs = test.results[["data.val.rs"]] %>%  as.data.frame()
+
+library(ggpubr)
+plot_outcome_ITE(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs, x_lim = c(-0.5,0.05))
+
+
+
+### simple ITE, using only one glm and no treatment variable interaction
+set.seed(12345)
+test.results <- logis.ITE.simple(test.compl.data , p=2)
+
+
+data.dev.rs = test.results[["data.dev.rs"]] %>%  as.data.frame()
+data.val.rs = test.results[["data.val.rs"]] %>%  as.data.frame()
+
+library(ggpubr)
+plot_outcome_ITE(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs, x_lim = c(-0.5,0.05))
+
+par(mfrow=c(1,2))
+hist(data.dev.rs$ITE)
+hist(data.val.rs$ITE_true)
+
+plot_ITE_density(test.results = test.results, true.data = simulated_full_data)
+
+
+hist(simulated_full_data$ITE_true)
+
+plot_ITE_density_tx_ct(data = data.dev.rs)
+plot_ITE_density_tx_ct(data = data.val.rs)
+
+par(mfrow=c(1,2))
+plot(ITE ~ ITE_true, data = data.dev.rs, col = "orange", pch = 19, cex = 0.5, main = "Training Data")
+plot(ITE ~ ITE_true, data = data.val.rs, col = "#36648B", pch = 19, cex = 0.5, main = "Test Data")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# fit individual models one for T=0 and one for T=1
+fit.dev.tx <- glm(Y ~X1 + X2, data = test.compl.data$data.dev.tx, family = binomial(link = "logit"))
+fit.dev.ct <- glm(Y ~X1 + X2 , data = test.compl.data$data.dev.ct,  family = binomial(link = "logit"))
+
+
+## P(Y=1 | do(X1=0), X)
+prob_T0 <- predict(fit.dev.ct, newdata = test.compl.data$data.dev, type = "response")
+
+## P(Y=1 | do(X1=1), X)
+prob_T1 <- predict(fit.dev.tx, newdata = test.compl.data$data.dev, type = "response")
+
+# same as above
+vars <- paste0("X", 1:2)
+prob_T1 <- predict(fit.dev.tx, newdata = test.compl.data$data.dev[, vars], type = "response")
+prob_T0 <- predict(fit.dev.ct, newdata = test.compl.data$data.dev[, vars], type = "response")
+
+ITE_i <- prob_T1 - prob_T0
+
+# validation
+ITE_i_val <- predict(fit.dev.tx, newdata = test.compl.data$data.val, type = "response") - 
+  predict(fit.dev.ct, newdata = test.compl.data$data.val, type = "response")
+
+
+# histogram of ITE_i
+par(mfrow=c(1,1))
+hist(ITE_i, main='ITE_i')
+hist(ITE_i_val, main='ITE_i_val')
+
+
+
+
+
+
+
+
 (global_min = train$min)
 (global_max = train$max)
 data_type = train$type
 
+MA <- ifelse(train$A ==1, "LS", "0")
 
 len_theta_max = len_theta
 for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for the ordinal)
@@ -294,6 +513,352 @@ if (FALSE){
 }
 
 param_model$get_layer(name = "beta")$get_weights() * param_model$get_layer(name = "beta")$mask
+
+
+
+
+
+
+
+########################### Calculate ITE_i ####
+
+# Our 3 variables:
+
+par(mfrow=c(1,3))
+hist(train$df_R$x1, main = "X1 = T_i")
+hist(train$df_R$x2, main = "X2 = X_i")
+plot(train$df_R$x3, main = "X3 = Y_i")
+
+
+# X1 is the "treatment" variable:
+summary(train$df_R$x1)
+# we will make the do-interventions X1=0 and X1 = 0.8
+
+# X2 represent the covariate(s) of the individuals
+
+# X3 is the outcome variable with 4 levels.
+summary(train$df_R$x3)
+# We will evaluate the probability for level 4 after our do-interventions.
+
+#ITE_i = P[Y_i=4 | do(T_i=0.8), X_i ] - P[Y_4=1 | do(T_i=0), X_i ]
+
+
+#####################################################
+# calculate ITE_i for test set
+#####################################################
+
+# If we input the tensor of our samples into the param_model, we get h_i, LS
+# and CS for each sample as ouotput
+
+param_model(train$df_orig)
+
+
+# check the current tensor for test samples:
+test$df_orig
+
+# manipulate the dataframe instead of the tensor
+head(test$df_R)
+
+
+
+# set the do-intervention (X1=0)
+intervention_0 <- test$df_R
+intervention_0[,1] <- 0
+
+# set the outcome of interest (X3 = 4)
+intervention_0[,3] <- 4
+
+# manipulated dataframe for do(x1=0)
+head(intervention_0)
+
+# convert to tensor
+intervention_0_tf = tf$constant(as.matrix(intervention_0), dtype = 'float32')
+intervention_0_tf
+
+
+# calculate h_i, LS and CS for do(X1=0)
+(h_params_0 <- param_model(intervention_0_tf) )
+
+
+
+# set the do-intervention (X1=0.8)
+intervention_08 <- test$df_R
+intervention_08[,1] <- 0.8
+
+# set the outcome of interest (X3 = 4)
+intervention_08[,3] <- 4
+
+# manipulated dataframe for do(x1=0.8)
+head(intervention_08)
+
+# convert to tensor
+intervention_08_tf = tf$constant(as.matrix(intervention_08), dtype = 'float32')
+intervention_08_tf
+
+# calculate h_i, LS and CS for do(X1=0.8)
+(h_params_08 <- param_model(intervention_08_tf) )
+
+
+
+
+
+
+do_probability = function (t_i, h_params){
+  #t_i = intervention_0_tf # (40000, 3)    # original data x1, x2, x3 for each obs
+  #h_params = h_params_0                 # NN outputs (CS, LS, theta') for each obs
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  # from the last dimension of h_params the first entry is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  # NLL = 0
+  ### Continiuous dimensions
+  #### At least one continuous dimension exits
+  # if (length(cont_dims) != 0){
+  #   
+  #   # inputs in h_dag_extra:
+  #   # data=(40000, 3), 
+  #   # theta=(40000, 3, 20), k_min=(3), k_max=(3))
+  #   
+  #   # creates the value of the Bernstein at each observation
+  #   # and current parameters: output shape=(40000, 3)
+  #   h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 
+  #   
+  #   # adding the intercepts and shifts: results in shape=(40000, 3)
+  #   # basically the estimated value of the latent variable
+  #   h = h_I + h_LS[,cont_dims, drop=FALSE] + h_CS[,cont_dims, drop=FALSE]
+  #   
+  #   #Compute terms for change of variable formula
+  #   
+  #   # log of standard logistic density at h
+  #   log_latent_density = -h - 2 * tf$math$softplus(-h) #log of logistic density at h
+  #   
+  #   ## h' dh/dtarget is 0 for all shift terms
+  #   log_hdash = tf$math$log(tf$math$abs(
+  #     h_dag_dash_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]))
+  #   ) - 
+  #     tf$math$log(k_max[cont_dims] - k_min[cont_dims])  #Chain rule! See Hathorn page 12 
+  #   
+  #   NLL = NLL - tf$reduce_mean(log_latent_density + log_hdash)
+  # }
+  
+  ### Ordinal dimensions
+  if (length(cont_ord) != 0){
+    B = dim(h_params)[1]
+    for (col in cont_ord){
+      # col=3
+      nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+      theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+      
+      
+      h = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+      # putting -Inf and +Inf to the left and right of the cutpoints
+      neg_inf = tf$fill(c(B,1L), -Inf)
+      pos_inf = tf$fill(c(B,1L), +Inf)
+      h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+      logistic_cdf_values = logistic_cdf(h_with_inf)
+      #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+      cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+      
+      # Picking the observed cdf_diff entry for column 4:
+      class_indices <- tf$cast(t_i[, col] - 1, tf$int32)  # Convert to zero-based index
+      # Create batch indices to pair with class indices
+      batch_indices <- tf$range(tf$shape(class_indices)[1])
+      # Combine batch_indices and class_indices into pairs of indices
+      gather_indices <- tf$stack(list(batch_indices, class_indices), axis=1)
+      cdf_diff_picked <- tf$gather_nd(cdf_diffs, gather_indices)
+    }
+  }
+  
+  ### DEBUG 
+  #if (sum(is.infinite(log_lik$numpy())) > 0){
+  #  print("Hall")
+  #}
+  return (cdf_diff_picked)
+}
+
+
+
+
+
+probs_0 <- do_probability(intervention_0_tf, h_params_0)
+
+probs_08 <- do_probability(intervention_08_tf, h_params_08)
+
+
+
+ITE_i <- probs_08 - probs_0
+
+par(mfrow=c(1,1))
+hist(ITE_i$numpy(), main='ITE_i')
+
+Y_1 <- ifelse(test$df_R$x3==4, 1, 0)
+plot(ITE_i$numpy(), Y_1, main='ITE_i vs Y_i', xlab='ITE_i', ylab='Y_i')
+
+
+# to create the glm lines stratified by X1=0 and x1=0.8, we would have
+# to be able to have 2 groups that represent the true X1 (as in treated or 
+# untreated. but since x1 is continuous, this is very arbitrary)
+
+# here i just divide the 2 groups at 0.5 because the histogram is bimodal
+hist(test$df_R$x1, main = "X1 = T_i")
+
+x1_strat_05 <- ifelse(test$df_R$x1 < 0.5, 0, 1)
+
+
+# fit logistic regression, stratified by x1_strat_05
+ITE_I <- ITE_i$numpy()
+fit_ITE <- glm(Y_1 ~ ITE_I + factor(x1_strat_05), family = binomial(link = "logit"))
+
+
+# make predictions for x1_strat_05 = 0 and x1_strat_05 = 1
+pred_0 <- predict(fit_ITE, newdata = data.frame(ITE_I = ITE_I, x1_strat_05 = 0), type = "response")
+pred_1 <- predict(fit_ITE, newdata = data.frame(ITE_I = ITE_I, x1_strat_05 = 1), type = "response")
+
+plot(ITE_I, Y_1, main='ITE_i vs Y_i', xlab='ITE_i', ylab='Y_i')
+lines(ITE_I, pred_0, col = "red", lwd = 2)
+lines(ITE_I, pred_1, col = "blue", lwd = 2)
+
+
+
+
+
+##################### now do the same for the test set:
+
+
+
+### calculate ITE for the training set:
+
+# set the do-intervention (X1=0)
+intervention_0 <- train$df_R
+intervention_0[,1] <- 0
+
+# set the outcome of interest (X3 = 4)
+intervention_0[,3] <- 4
+
+# manipulated dataframe for do(x1=0)
+head(intervention_0)
+
+# convert to tensor
+intervention_0_tf = tf$constant(as.matrix(intervention_0), dtype = 'float32')
+intervention_0_tf
+
+
+# calculate h_i, LS and CS for do(X1=0)
+(h_params_0 <- param_model(intervention_0_tf) )
+
+
+
+# set the do-intervention (X1=0.8)
+intervention_08 <- train$df_R
+intervention_08[,1] <- 0.8
+
+# set the outcome of interest (X3 = 4)
+intervention_08[,3] <- 4
+
+# manipulated dataframe for do(x1=0.8)
+head(intervention_08)
+
+# convert to tensor
+intervention_08_tf = tf$constant(as.matrix(intervention_08), dtype = 'float32')
+intervention_08_tf
+
+# calculate h_i, LS and CS for do(X1=0.8)
+(h_params_08 <- param_model(intervention_08_tf) )
+
+
+
+
+
+
+probs_0 <- do_probability(intervention_0_tf, h_params_0)
+
+probs_08 <- do_probability(intervention_08_tf, h_params_08)
+
+
+
+ITE_i <- probs_08 - probs_0
+
+par(mfrow=c(1,1))
+hist(ITE_i$numpy(), main='ITE_i')
+
+Y_1 <- ifelse(train$df_R$x3==4, 1, 0)
+plot(ITE_i$numpy(), Y_1, main='ITE_i vs Y_i', xlab='ITE_i', ylab='Y_i')
+
+
+
+x1_strat_05 <- ifelse(train$df_R$x1 < 0.5, 0, 1)
+
+
+# fit logistic regression, stratified by x1_strat_05
+ITE_I <- ITE_i$numpy()
+fit_ITE <- glm(Y_1 ~ ITE_I + factor(x1_strat_05), family = binomial(link = "logit"))
+
+
+# make predictions for x1_strat_05 = 0 and x1_strat_05 = 1
+pred_0 <- predict(fit_ITE, newdata = data.frame(ITE_I = ITE_I, x1_strat_05 = 0), type = "response")
+pred_1 <- predict(fit_ITE, newdata = data.frame(ITE_I = ITE_I, x1_strat_05 = 1), type = "response")
+
+plot(ITE_I, Y_1, main='ITE_i vs Y_i', xlab='ITE_i', ylab='Y_i')
+lines(ITE_I, pred_0, col = "red", lwd = 2)
+lines(ITE_I, pred_1, col = "blue", lwd = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ##### Checking observational distribution ####

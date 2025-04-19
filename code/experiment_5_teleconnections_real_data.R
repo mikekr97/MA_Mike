@@ -205,10 +205,11 @@ plot(precip_y, precip_v, type = "l", xlab = "Year", ylab = "AU Precipitation")
 # precip_v
 
 # 3 histograms of the data
-# par(mfrow=c(3,1))
-# hist(enso_v, main = "ENSO", xlab = "ENSO")
-# hist(iod_v, main = "IOD", xlab = "IOD")
-# hist(precip_v, main = "Precipitation", xlab = "Precipitation")
+par(mfrow=c(3,1))
+hist(enso_v, main = "ENSO", xlab = "ENSO")
+hist(iod_v, main = "IOD", xlab = "IOD")
+hist(precip_v, main = "Precipitation", xlab = "Precipitation")
+
 
 #===============================================================================
 # Data preprocessing
@@ -218,6 +219,10 @@ plot(precip_y, precip_v, type = "l", xlab = "Year", ylab = "AU Precipitation")
 ENSO <- (enso_v - mean(enso_v))/sd(enso_v)
 IOD <- (iod_v - mean(iod_v))/sd(iod_v)
 AU <- (precip_v - mean(precip_v))/sd(precip_v)
+
+
+
+
 
 # 3 histograms of the standardized data
 par(mfrow=c(3,1))
@@ -249,12 +254,18 @@ hist(AU_detrended, main = "Precipitation", xlab = "Precipitation")
 
 
 
-raw_df <- data.frame(
-    ENSO = ENSO_detrended,
-    IOD = IOD_detrended,
-    AU = AU_detrended
-  )
+# raw_df <- data.frame(
+#     ENSO = ENSO_detrended,
+#     IOD = IOD_detrended,
+#     AU = AU_detrended
+#   )
 
+# original scale / not detrended
+raw_df <- data.frame(
+  ENSO = enso_v,
+  IOD = iod_v,
+  AU = precip_v
+)
 
 set.seed(123)
 
@@ -345,7 +356,7 @@ test <- dgp(nrow(test_df), seed=ifelse(SEED > 0, SEED, -1), data = test_df)
 (global_max = train$max) # the upper 5% quantiles
 data_type = train$type   # c for continuous, o for ordinal
 
-
+max(train$df_R[,1])
 
 #==============================================================================
 # Define the TRAM-DAG model
@@ -399,6 +410,13 @@ summary(fit.21)
 fit.3 = Colr(x3~x1 + x2, data = train$df_R, order = len_theta)
 summary(fit.3)
 
+
+fit.21 = Colr(x2~x1,data = train$df_R, order=len_theta)
+summary(fit.21)
+fit.3 = Colr(x3~x1 + x2, data = train$df_R, order = len_theta)
+summary(fit.3)
+
+
 beta_matrix_colr <- matrix(c(0,coef(fit.21), coef(fit.3)[1],
                              0,0,coef(fit.3)[2],
                              0,0,0), nrow=3, byrow = TRUE)
@@ -434,7 +452,7 @@ param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)
 #==============================================================================
 # Train the TRAM-DAG model
 #==============================================================================
-num_epochs <- 10000
+num_epochs <- 9000
 
 ##### Training or readin of weights if h5 available ####
 fnh5 = paste0(fn, '_E', num_epochs, '.h5')
@@ -512,6 +530,12 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 
+fit.21 = Colr(x2~x1,data = train$df_R, order=len_theta)
+summary(fit.21)
+fit.3 = Colr(x3~x1 + x2, data = train$df_R, order = len_theta)
+summary(fit.3)
+
+ws[nrow(ws),]
 
 
 #### Plotting of the Loss Curve ##########
@@ -624,6 +648,8 @@ param_model$get_layer(name = "beta")$get_weights() * param_model$get_layer(name 
 #==============================================================================
 
 
+########## Attention: currently amended for un-scaled data. ##########
+
 ###### Figure for paper Observational and Do intervention ######
 if (TRUE){
   
@@ -634,7 +660,9 @@ if (TRUE){
   
   # do intervention
   # dx1 = -1
-  dx1 = 1.5
+  # dx1 = 1.5
+  # dx1 = 29
+  dx1 = 22.5
   doX=c(dx1, NA, NA)
   s_do_fitted = do_dag_struct(param_model, train$A, doX=doX)$numpy()
   
@@ -658,11 +686,14 @@ if (TRUE){
   # df = rbind(df, data.frame(vals=as.numeric(d[,3]), type='DGP', X=3, L='L1'))
   
   p = ggplot() +
-    geom_histogram(data = df, 
+    geom_histogram(data = df[df$X %in% c(1,2),], 
                    aes(x=vals, col=type, fill=type, y=..density..), 
                    position = "identity", alpha=0.4) +
-    facet_grid(L ~ X, scales = 'free_y',
-               labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=', dx1), 'L0' = 'Obs'))) +
+    geom_histogram(data = df[df$X ==3,], 
+                   aes(x=vals, col=type, fill=type, y=..density..), 
+                   position = "identity", alpha=0.4) +
+    # facet_grid(L ~ X, scales = 'free_y',
+    #            labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=', dx1), 'L0' = 'Obs'))) +
     labs(y = "Density", x='Values') + # Update y-axis label
     theme_minimal() +
     theme(
@@ -675,6 +706,8 @@ if (TRUE){
     coord_cartesian(ylim = c(0, 2), xlim = NULL) # Adjust y-axis zoom for facets 
   p
   
+  
+  
   file_name <- paste0(fn, "_L0_L1.pdf")
   file_name <- gsub("mixed", "", file_name) #We have wrongly mixed in fn
   if (TRUE){
@@ -685,7 +718,40 @@ if (TRUE){
   
 }
 
+# plot with x axis log transformed for X3. (attention, NaN created because some negative samples)
+p = ggplot() +
+  # Histogram for X1 and X2
+  geom_histogram(data = df[df$X %in% c(1,2),], 
+                 aes(x=vals, col=type, fill=type, y=..density..), 
+                 position = "identity", alpha=0.4) +
+  
+  # Histogram for X3 with transformed x-axis (e.g., log scale)
+  geom_histogram(data = df[df$X == 3,], 
+                 aes(x=log(vals), col=type, fill=type, y=..density..), 
+                 position = "identity", alpha=0.4) +
+  
+  labs(y = "Density", x='Values') + # Update y-axis label
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),   # Removes the legend title
+    legend.position = c(0.17, 0.25),  # Adjust this to position the legend inside the plot (lower-right)
+    legend.background = element_rect(fill="white", colour="white")  # Optional: white background with border
+  ) +
+  
+  facet_grid(L ~ X, scales = "free",
+             labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=', dx1), 'L0' = 'Obs'))) +
+  
+  coord_cartesian(ylim = c(0, 2), xlim = NULL) # Adjust y-axis zoom for facets 
 
+p
+
+
+min(s_obs_fitted[,3])
+tail(sort(s_obs_fitted[,3], decreasing = TRUE))
+
+min(s_do_fitted[,3])
+tail(sort(s_do_fitted[,3], decreasing = TRUE))
+hist(s_do_fitted[,3], probability = TRUE)
 
 
 #### Checking the transformation ####
