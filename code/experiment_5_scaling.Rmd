@@ -92,6 +92,75 @@ summary_table[, 2:5] <- round(summary_table[, 2:5], 2)
 kable(summary_table, caption = "Summary table of the 3 variables raw and standardized")
 ```
 
+### Coefficients change when scaling
+
+Linear Regression:
+
+Fit Lm() with raw or standardized predictors or outcome.
+
+```{r}
+lm_raw <- lm(x3 ~ x1 + x2)
+lm_std <- lm(x3 ~ x1_std + x2_std)
+lm_all_std <- lm(x3_std ~ x1_std + x2_std)
+
+round(coef(lm_raw), 5)
+round(coef(lm_std), 5)
+round(coef(lm_all_std), 5)
+```
+
+Coefficients of the model with the raw outcome and standardized predictors lm(x3 ~ x1_std + x2_std) 
+are the same as the coefficients of the all standardized model lm(x3_std ~ x1_std + x2_std) multiplied by the standard deviation of the raw outcome. Makes sense, because the models imply a linear shift in the expected raw or standardized value for a 1 unit increase in standardized predictors.
+
+```{r}
+
+round(coef(lm_all_std)*sd(x3), 5)
+```
+The coefficients of the standardized predictor model lm(x3 ~ x1_std + x2_std) are equal to the predictors in the raw predictor model lm(x3 ~ x1 + x2) times the standard deviations of the respective predictors.
+
+
+```{r}
+
+paste0("sd(x1): ", round(sd(x1), 5), 
+       ", sd(x2): ", round(sd(x2), 5))
+round(coef(lm_std)/coef(lm_raw), 5)
+
+```
+
+
+
+Now same analysis for the Colr model:
+
+The coefficients for the the models with standardized predictors and raw or standardized outcomes are equal. The reason is, that the log-odds are scale invariant. It does not matter if the outcome is standardized or not.
+
+```{r}
+
+colr_raw <- Colr(x3 ~ x1 + x2)
+colr_std <- Colr(x3 ~ x1_std + x2_std)
+colr_all_std <- Colr(x3_std ~ x1_std + x2_std)
+
+round(coef(colr_raw), 5)
+round(coef(colr_std), 5)
+round(coef(colr_all_std), 5)
+```
+
+The coefficients of the standardized predictor model should be equal to the predictors in the raw predictor model times the standard deviations of the respective predictors. However, there is a small difference. Maybe numerical issue?
+--> in a linear model, this is exact. so could the issue be that in the Colr model we model a smooth transformation function and scaling (btw. subtracting the mean), changes the reference configuration and therefore lead to another smooth transformation function?
+
+```{r}
+paste0("sd(x1): ", round(sd(x1), 5), 
+       ", sd(x2): ", round(sd(x2), 5))
+
+round(coef(colr_std)/coef(colr_raw), 5)
+```
+
+
+
+
+
+### Analyze Colr() when scaling
+
+
+
 Analyze Colr(x2 ~ x1, order=len_theta):
 
 ```{r}
@@ -907,8 +976,7 @@ Read raw data:
 library(ncdf4)
 
 # read the file "enso_son.nc"  without raster stored in the same directory
-
-enso <- nc_open("data/enso_son.nc")
+enso <- nc_open("../data/enso_son.nc")
 enso_y <- ncvar_get(enso, "Year")
 enso_raw <- ncvar_get(enso, "enso")
 
@@ -918,7 +986,7 @@ enso_raw <- ncvar_get(enso, "enso")
 
 # read the file "iod_son.nc" stored in the same directory
 
-iod <- nc_open("data/iod_son.nc")
+iod <- nc_open("../data/iod_son.nc")
 iod_y <- ncvar_get(iod, "Year")
 iod_raw <- ncvar_get(iod, "iod")
 
@@ -928,7 +996,7 @@ iod_raw <- ncvar_get(iod, "iod")
 
 # read the file "precip_au_son.nc" stored in the same directory
 
-au <- nc_open("data/precip_au_son.nc")
+au <- nc_open("../data/precip_au_son.nc")
 au_y <- ncvar_get(au, "year")
 au_raw <- ncvar_get(au, "precip")
 # hist(au_raw)

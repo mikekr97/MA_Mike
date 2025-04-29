@@ -8,6 +8,7 @@ if (length(args) == 0) {
   args <- c(3, 'cs')
   args <- c(1, 'ls')
 }
+args <- c(3, 'cs')
 F32 <- as.numeric(args[1])
 M32 <- args[2]
 print(paste("FS:", F32, "M32:", M32))
@@ -22,11 +23,11 @@ library(MASS)
 library(tensorflow)
 library(keras)
 library(tidyverse)
-source('utils_tf.R')
+source('code/utils/ITE_utils.R')
 
 #### For TFP
 library(tfprobability)
-source('utils_tfp.R')
+source('code/utils/utils_tfp.R')
 
 ##### Flavor of experiment ######
 
@@ -75,7 +76,7 @@ MA
 fn = file.path(DIR, paste0('triangle_mixed_', FUN_NAME, '_', MODEL_NAME))
 print(paste0("Starting experiment ", fn))
 
-xs = seq(-1,1,0.1)
+xs = seq(-2,2,0.1)
 
 plot(xs, f(xs), sub=fn, xlab='x2', ylab='f(x2)', main='DGP influence of x2 on x3')
 
@@ -169,6 +170,14 @@ for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for th
     len_theta_max = max(len_theta_max, nlevels(train$df_R[,i]) - 1)
   }
 }
+
+par(mfrow=c(1,3))
+hist(train$df_R$x1, main = "X1")
+hist(train$df_R$x2, main = "X2")
+plot(train$df_R$x3, main = "X3")
+
+MA
+
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
 optimizer = optimizer_adam(learning_rate = 0.005)
 param_model$compile(optimizer, loss=struct_dag_loss)
@@ -222,6 +231,7 @@ if (file.exists(fnh5)){
          file = fnRdata)
   }
 }
+par(mfrow=c(1,1))
 
 #pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
@@ -242,26 +252,38 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 
-# fit Polr form tram package (negative shift, so different as in Colr)
-fit_21 <- Colr(x2 ~ x1, data = train$df_R)  # Colr for continuous outcome (positive shift)
-fit_321 <- Polr(x3 ~ x1 + x2, data = train$df_R) # polr for ordinal (negative shift)
+# # fit Polr form tram package (negative shift, so different as in Colr)
+# fit_21 <- Colr(x2 ~ x1, data = train$df_R)  # Colr for continuous outcome (positive shift)
+# fit_321 <- Polr(x3 ~ x1 + x2, data = train$df_R) # polr for ordinal (negative shift)
+# 
+# p <- ggplot(ws, aes(x=1:nrow(ws))) + 
+#   geom_line(aes(y=w12, color='x1 --> x2')) + 
+#   geom_line(aes(y=w13, color='x1 --> x3')) + 
+#   geom_line(aes(y=w23, color='x2 --> x3')) + 
+#   geom_hline(aes(yintercept=2, color='x1 --> x2'), linetype=2) +
+#   geom_hline(aes(yintercept=0.2, color='x1 --> x3'), linetype=2) +
+#   geom_hline(aes(yintercept=-0.3, color='x2 --> x3'), linetype=2) +
+#   geom_hline(aes(yintercept=coef(fit_21), color='Colr/polr'), linetype=2) +
+#   geom_hline(aes(yintercept=-coef(fit_321)[1], color='Colr/polr'), linetype=2) +
+#   geom_hline(aes(yintercept=-coef(fit_321)[2], color='Colr/polr'), linetype=2) +
+#   #scale_color_manual(values=c('x1 --> x2'='skyblue', 'x1 --> x3='red', 'x2 --> x3'='darkgreen')) +
+#   labs(x='Epoch', y='Coefficients') +
+#   theme_minimal() +
+#   theme(legend.title = element_blank())  # Removes the legend title
+# 
+# p
 
 p <- ggplot(ws, aes(x=1:nrow(ws))) + 
   geom_line(aes(y=w12, color='x1 --> x2')) + 
   geom_line(aes(y=w13, color='x1 --> x3')) + 
-  geom_line(aes(y=w23, color='x2 --> x3')) + 
-  geom_hline(aes(yintercept=2, color='x1 --> x2'), linetype=2) +
-  geom_hline(aes(yintercept=0.2, color='x1 --> x3'), linetype=2) +
-  geom_hline(aes(yintercept=-0.3, color='x2 --> x3'), linetype=2) +
-  geom_hline(aes(yintercept=coef(fit_21), color='Colr/polr'), linetype=2) +
-  geom_hline(aes(yintercept=-coef(fit_321)[1], color='Colr/polr'), linetype=2) +
-  geom_hline(aes(yintercept=-coef(fit_321)[2], color='Colr/polr'), linetype=2) +
+  # geom_line(aes(y=w23, color='x2 --> x3')) + 
   #scale_color_manual(values=c('x1 --> x2'='skyblue', 'x1 --> x3='red', 'x2 --> x3'='darkgreen')) +
   labs(x='Epoch', y='Coefficients') +
   theme_minimal() +
   theme(legend.title = element_blank())  # Removes the legend title
 
 p
+
 
 
 ###### Coefficient Plot for Paper #######
@@ -695,10 +717,13 @@ points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
 if (TRUE){
   doX=c(NA, NA, NA)
   s_obs_fitted = do_dag_struct(param_model, train$A, doX, num_samples = 5000)$numpy()
-  #dx1 = -1
-  dx1 = 0
-  doX=c(dx1, NA, NA)
-  s_do_fitted = do_dag_struct(param_model, train$A, doX=doX)$numpy()
+  # dx1 = 1.5
+  # # dx1 = 0
+  # doX=c(dx1, NA, NA)
+  dx2 = 1
+  # dx1 = 0
+  doX=c(NA, dx2, NA)
+  s_do_fitted = do_dag_struct(param_model, train$A, doX=doX, num_samples = 5000)$numpy()
   
   df = data.frame(vals=s_obs_fitted[,1], type='Model', X=1, L='L0')
   df = rbind(df, data.frame(vals=s_obs_fitted[,2], type='Model', X=2, L='L0'))

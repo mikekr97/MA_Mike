@@ -27,7 +27,7 @@ ggdag(dag)
 
 
 ###################################################################################################
-source("ITE_utils.R")
+source("code/utils/ITE_utils.R")
 
 #########################################
 
@@ -35,11 +35,12 @@ source("ITE_utils.R")
 
 ## Case 1: continuous random variables
 
-set.seed(1234)
+
 
 # Define sample size
-n <- 20000
+n <- 10000
 
+set.seed(123)
 # Generate random binary treatment T
 Tr <- rbinom(n, size = 1, prob = 0.5)
 
@@ -137,9 +138,6 @@ library(ggpubr)
 plot_outcome_ITE(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs, x_lim = c(-0.5,0.5))
 
 
-
-
-
 plot_ITE_density(test.results = test.results,true.data = simulated_full_data)
 
 
@@ -199,6 +197,173 @@ ggplot(data.val.rs, aes(x=ITE_true, y=ITE)) +
     axis.line = element_line(color = "black"),
     axis.ticks = element_line(color = "black")
   )
+
+
+
+
+# breaks <-  c(-0.3, -0.15, -0.07, 0, 0.07, 0.15, 0.35)
+#breaks <- c(-0.025, -0.01, -0.005, 0, 0.005, 0.01,  0.025)
+
+breaks <- c(-0.15, -0.07, -0.02, 0.02, 0.06)
+log.odds <- F
+data.dev.grouped.ATE <- data.dev.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup()
+data.val.grouped.ATE <- data.val.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup() 
+
+plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, 
+                      log.odds = log.odds, ylb = 0, yub = 2,
+                      train.data.name = "Train", test.data.name = "Test")
+
+
+
+
+
+
+
+
+###############################3
+
+#  Holly code:
+
+set.seed(1234)
+
+# Define sample size
+n <- 20000
+
+# Generate random binary treatment T
+Tr <- rbinom(n, size = 1, prob = 0.5)
+
+p <- 20  # number of variables
+
+# Define the mean vector (all zeros for simplicity)
+mu <- rep(0, p)  # Mean vector of length p
+
+# Define the covariance matrix (compound symmetric for simplicity)
+rho <- 0.1  # Correlation coefficient
+Sigma <- matrix(rho, nrow = p, ncol = p)  # Start with all elements as rho
+diag(Sigma) <- 1  # Set diagonal elements to 1 (variances)
+
+# Generate n samples from the multivariate normal distribution
+data <- MASS::mvrnorm(n, mu = mu, Sigma = Sigma)
+colnames(data) <- paste0("X", 1:p)
+
+# Define coefficients for the logistic model
+beta_0 <- runif(1, min=-1, max=1)             # Intercept
+beta_t <- runif(1, min=-0.5, max=0.5)             # Coefficient for treatment
+beta_X <- runif(p, min=-1, max=1)          # Coefficients for covariates
+beta_TX <- runif(p, min=-0.5, max=0.5)          # Coefficients for interaction terms
+
+# Calculate the linear predictor (logit)
+logit_Y <- beta_0 + beta_t * Tr + data %*% beta_X + (data %*% beta_TX) * Tr
+
+# Convert logit to probability of outcome
+Y_prob <- plogis(logit_Y)
+
+# Generate binary outcome Y based on the probability
+Y <- rbinom(n, size = 1, prob = Y_prob)
+
+# Potential outcome for treated and untreated
+Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + data %*% beta_TX)
+Y0 <- plogis(beta_0 + data %*% beta_X)
+
+# Calculate the individual treatment effect
+ITE_true <- Y1 - Y0
+
+
+# Combine all variables into a single data frame
+simulated_full_data <- data.frame(ID = 1:n, Y=Y, Treatment=Tr, data, Y1, Y0, ITE_true)
+
+# Data for testing ITE models
+simulated_data <- data.frame(ID =1:n, Y=Y, Treatment=Tr, data, ITE_true = ITE_true) %>% 
+  mutate(Treatment = ifelse(Treatment==1,"Y", "N")) %>% 
+  mutate(Treatment = factor(Treatment, levels = c("N", "Y")))
+
+
+# Visualize the distribution of the individual treatment effect
+simulated_full_data %>% ggplot(aes(x=ITE_true)) +
+  geom_histogram(color="gray8",bins = 100, alpha=.6) + 
+  theme_minimal() + 
+  xlab("True ITE") + 
+  geom_vline(xintercept = 0, linetype="dashed") + coord_cartesian(xlim = c(-.5,.5))
+simulated_full_data %>% ggplot(aes(x=ITE_true)) +
+  geom_density(color="gray8",fill="skyblue",alpha=.6) + 
+  theme_minimal() + 
+  xlab("True ITE") + 
+  geom_vline(xintercept = 0, linetype="dashed") + coord_cartesian(xlim = c(-.5,.5))
+
+
+str(simulated_data)
+
+# average treatment effects
+mean(simulated_full_data$ITE_true)
+
+
+simulated_data_truncated <- simulated_data %>% 
+  dplyr::select(ID, Y, Treatment, X4, X8, X9, X12, X15, X18, ITE_true) %>%
+  rename(X1 = X4, X2 = X8, X3 = X9, X4 = X12, X5 = X15, X6 = X18)
+
+str(simulated_data_truncated)
+
+filepath <- here("Results", "07_simulation", "20_continuous_covariates_20000_sample_insufficient_data")
+model_name <- "base_logistic_regression"
+
+set.seed(12345)
+test.data <- split_data(simulated_data_truncated, 2/3)
+test.compl.data <- remove_NA_data(test.data)
+test.results <- logis.ITE(test.compl.data , p=6)
+
+data.dev.rs = test.results[["data.dev.rs"]] %>%  as.data.frame()
+data.val.rs = test.results[["data.val.rs"]] %>%  as.data.frame()
+
+par(mfrow=c(1,2))
+plot(ITE ~ ITE_true, data = data.dev.rs, col = "orange", pch = 19, cex = 0.5,
+     xlab = "ITE", ylab = "True ITE", main = "Training Data")
+plot(ITE ~ ITE_true, data = data.val.rs, col = "#36648B", pch = 19, cex = 0.5,
+     xlab = "ITE", ylab = "True ITE", main = "Test Data")
+
+plot_outcome_ITE(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs, x_lim = c(-0.5,0.5))
+
+
+plot_ITE_density(test.results = test.results,true.data = simulated_full_data)
+ggsave(paste(model_name, "ITE_density.tiff", sep = "_"), width = 5, height = 5, units = "in", 
+       dpi = 300, path = filepath)
+
+plot_ITE_density_tx_ct(data = data.dev.rs)
+plot_ITE_density_tx_ct(data = data.val.rs)
+
+breaks <-  c(-0.3, -0.15, -0.07, 0, 0.07, 0.15, 0.35)
+#breaks <- c(-0.025, -0.01, -0.005, 0, 0.005, 0.01,  0.025)
+log.odds <- F
+data.dev.grouped.ATE <- data.dev.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup()
+data.val.grouped.ATE <- data.val.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup() 
+
+plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, log.odds = log.odds, ylb = 0, yub = 50)
+ggsave(paste(model_name, "ATE_ITE.tiff", sep = "_"), width = 7, height = 4, units = "in", 
+       dpi = 300, path = filepath)
+
+
+
+
+
+
+
+
+
 
 
 ###############################3
