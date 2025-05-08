@@ -33,12 +33,12 @@ library(MASS)
 library(tidyverse)
 
 # load the file with the functions
-source('utils_tf.R')
+source('code/utils/utils_tf.R')
 
 #### For TFP
 # reticulate::py_install("tensorflow_probability")
 library(tfprobability)
-source('utils_tfp.R')
+source('code/utils/utils_tfp.R')
 
 ##### Flavor of experiment ######
 
@@ -75,7 +75,7 @@ print(paste("F32:", F32, "M32:", M32))
 num_epochs <- 200  # 500
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
 hidden_features_I = c(2,25,25,2)    #hidden_features_CS=hidden_features_I = c(2,25,25,2)
-hidden_features_CS = c(2,25,25,2)
+hidden_features_CS = c(2,5,5,2)
 
 
 SEED = -1 #If seed > 0 then the seed is set

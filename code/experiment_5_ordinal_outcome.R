@@ -23,6 +23,7 @@ library(MASS)
 library(tensorflow)
 library(keras)
 library(tidyverse)
+source('code/utils/utils_tf.R')
 source('code/utils/ITE_utils.R')
 
 #### For TFP
@@ -176,6 +177,63 @@ hist(train$df_R$x1, main = "X1")
 hist(train$df_R$x2, main = "X2")
 plot(train$df_R$x3, main = "X3")
 
+
+# make 3 nice clean plots of X1, X2 (density lines) and X3 (barplot) without axis and labels etc with ggplot
+
+
+ggplot(train$df_R, aes(x = x1)) +
+  geom_density(fill = "#0072B2", alpha = 0.6) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_blank(),
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+ggplot(train$df_R, aes(x = x2)) +
+  geom_density(fill = "#0072B2", alpha = 0.6) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_blank(),
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+ggplot(train$df_R, aes(x=x1)) +
+  geom_density(fill="blue", alpha=0.5) +
+  theme_minimal() +
+  labs(title="X1", x="", y="") +
+  title("") +
+  theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+        axis.ticks.x=element_blank(), axis.ticks.y=element_blank(),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+        plot.title = element_text(hjust = 0.5)) # Center the title
+plot(train$df_R$x3)
+
+
+ggplot(train$df_R, aes(x = x3)) +
+  geom_bar(fill = "blue", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "X3", x = NULL, y = NULL) +
+  theme(
+    axis.text.x = element_text(size = 30),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+
 MA
 
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
@@ -235,8 +293,13 @@ par(mfrow=c(1,1))
 
 #pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
-plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)')
-lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
+# plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)')
+# lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
+
+plot(1:epochs, train_loss, type='l', main='', ylab='Loss', xlab='Epochs', ylim = c(1, 1.5))
+lines(1:epochs, val_loss, type = 'l', col = 'blue')
+legend('topright', legend=c('training', 'validation'), col=c('black', 'blue'), lty=1:1, cex=0.8, bty='n')
+
 
 # Last 50
 diff = max(epochs - 100,0)
@@ -273,9 +336,12 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 # 
 # p
 
+fit12 <- Colr(x2 ~ x1, data = train$df_R)
+
 p <- ggplot(ws, aes(x=1:nrow(ws))) + 
   geom_line(aes(y=w12, color='x1 --> x2')) + 
   geom_line(aes(y=w13, color='x1 --> x3')) + 
+  geom_line(aes(y=coef(fit12), color='x2 --> x3')) +
   # geom_line(aes(y=w23, color='x2 --> x3')) + 
   #scale_color_manual(values=c('x1 --> x2'='skyblue', 'x1 --> x3='red', 'x2 --> x3'='darkgreen')) +
   labs(x='Epoch', y='Coefficients') +
@@ -284,6 +350,35 @@ p <- ggplot(ws, aes(x=1:nrow(ws))) +
 
 p
 
+# with main: beta 1 and 2 (mathematical notation)
+plot(1:epochs, ws[,1], type='l', main= 'Coefficients for LS', ylab='Betas', xlab = 'Epochs')#, ylim=c(0, 6))
+lines(1:epochs, ws[,2], type='l', col='blue')
+abline(h=coef(fit12), col='black', lty=2)
+# legend
+legend('bottomright', legend=c('beta_12', 'beta_12 with Colr(x2~x1)', 'beta_23'), col=c('black', 'black', 'blue'), lty=c(1,2,1), cex=0.8, bty='n')
+
+ws[nrow(ws),]
+
+# Plot with mathematical notation for beta coefficients
+plot(1:epochs, ws[,1], type='l',  #"Coefficients for LS: " * beta[1] * " and " * beta[2]  ,main="Coefficients for LS"
+     ylab=expression(beta), xlab = 'Epochs', lwd=1.5)
+lines(1:epochs, ws[,2], type='l', col='blue', lwd=1.5)
+
+abline(h=2, col='black', lty=4, lwd=1.2)  # dgp for beta_12
+abline(h=0.2, col='blue', lty=4, lwd=1.2) # dgp for beta_13
+
+
+# Legend with clear mappings
+legend('bottomright',
+       legend = c(expression(hat(beta)[12]),
+                  expression(hat(beta)[13]),
+                  expression("DGP" ~ beta[12] == 2),
+                  expression("DGP" ~ beta[13] == 0.2)),
+       col = c('black', 'blue', 'black', 'blue'),
+       lty = c(1, 1, 4, 4),
+       lwd = c(1.5, 1.5, 1.2, 1.2),
+       cex = 0.8,
+       bty = 'n')
 
 
 ###### Coefficient Plot for Paper #######
@@ -316,6 +411,327 @@ if (FALSE){
 }
 
 param_model$get_layer(name = "beta")$get_weights() * param_model$get_layer(name = "beta")$mask
+
+
+
+
+
+
+
+
+
+
+##### Checking observational distribution ####
+s = do_dag_struct(param_model, train$A, doX=c(NA, NA, NA), num_samples = 5000)
+plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
+     main='Black = Observations, Red samples from TRAM-DAG',
+     xlab='X3')
+table(train$df_R[,3])/sum(table(train$df_R[,3]))
+points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
+table(s[,3]$numpy())/5000
+
+par(mfrow=c(1,3))
+for (i in 1:2){
+  hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X",i, " red: ours, black: data"), xlab='samples')
+  #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
+  lines(density(s[,i]$numpy()), col='red')
+}
+plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
+     main='Black = Observations, Red samples from TRAM-DAG',
+     xlab='X3')
+table(train$df_R[,3])/sum(table(train$df_R[,3]))
+points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
+table(s[,3]$numpy())/5000
+par(mfrow=c(1,1))
+
+######### Simulation of do-interventions #####
+doX=c(0.2, NA, NA)
+dx0.2 = dgp(10000, doX=doX)
+dx0.2$df_orig$numpy()[1:5,]
+
+
+doX=c(0.7, NA, NA)
+dx7 = dgp(10000, doX=doX)
+#hist(dx0.2$df_orig$numpy()[,2], freq=FALSE,100)
+mean(dx7$df_orig$numpy()[,2]) - mean(dx0.2$df_orig$numpy()[,2])  
+mean(dx7$df_orig$numpy()[,3]) - mean(dx0.2$df_orig$numpy()[,3])  
+
+s_dag = do_dag_struct(param_model, train$A, doX=c(0.2, NA, NA))
+hist(dx0.2$df_orig$numpy()[,2], freq=FALSE, 50, main='X2 | Do(X1=0.2)', xlab='samples', 
+     sub='Histogram from DGP with do. red:TRAM_DAG')
+sample_dag_0.2 = s_dag[,2]$numpy()
+lines(density(sample_dag_0.2), col='red', lw=2)
+m_x2_do_x10.2 = median(sample_dag_0.2)
+
+i = 3 
+d = dx0.2$df_orig$numpy()[,i]
+plot(table(d)/length(d), ylab='Probability ', 
+     main='X3 | do(X1=0.2)',
+     xlab='X3', ylim=c(0,0.6),  sub='Black DGP with do. red:TRAM_DAG')
+points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
+
+###### Figure for paper ######
+if (TRUE){
+  doX=c(NA, NA, NA)
+  s_obs_fitted = do_dag_struct(param_model, train$A, doX, num_samples = 5000)$numpy()
+  # dx1 = 1.5
+  # # dx1 = 0
+  # doX=c(dx1, NA, NA)
+  dx2 = 1
+  # dx1 = 0
+  doX=c(NA, dx2, NA)
+  s_do_fitted = do_dag_struct(param_model, train$A, doX=doX, num_samples = 5000)$numpy()
+  
+  df = data.frame(vals=s_obs_fitted[,1], type='Model', X=1, L='L0')
+  df = rbind(df, data.frame(vals=s_obs_fitted[,2], type='Model', X=2, L='L0'))
+  df = rbind(df, data.frame(vals=s_obs_fitted[,3], type='Model', X=3, L='L0'))
+  
+  df = rbind(df, data.frame(vals=train$df_R[,1], type='DGP', X=1, L='L0'))
+  df = rbind(df, data.frame(vals=train$df_R[,2], type='DGP', X=2, L='L0'))
+  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,3]), type='DGP', X=3, L='L0'))
+  
+  df = rbind(df, data.frame(vals=s_do_fitted[,1], type='Model', X=1, L='L1'))
+  df = rbind(df, data.frame(vals=s_do_fitted[,2], type='Model', X=2, L='L1'))
+  df = rbind(df, data.frame(vals=s_do_fitted[,3], type='Model', X=3, L='L1'))
+  
+  d = dgp(10000, doX=doX)$df_R
+  df = rbind(df, data.frame(vals=d[,1], type='DGP', X=1, L='L1'))
+  df = rbind(df, data.frame(vals=d[,2], type='DGP', X=2, L='L1'))
+  df = rbind(df, data.frame(vals=as.numeric(d[,3]), type='DGP', X=3, L='L1'))
+  
+  p = ggplot() +
+    # For X = 1 and X = 2, use position = "identity" (no dodging)
+    geom_histogram(data = subset(df, X != 3), 
+                   aes(x=vals, col=type, fill=type, y=..density..), 
+                   position = "identity", alpha=0.4) +
+    # For X = 3, use a bar plot for discrete data
+    geom_bar(data = subset(df, X == 3), 
+             aes(x=vals, y=..prop.. * 4,  col=type, fill=type), 
+             position = "dodge", alpha=0.4, size = 0.5)+
+    #limit between 0,1 but not removing the data
+    coord_cartesian(ylim = c(0, 4)) +
+    facet_grid(L ~ X, scales = 'free',
+               # labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=',dx1), 'L0' = 'Obs')))+ 
+              labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X2=',dx2), 'L0' = 'Obs')))+ 
+  labs(y = "Density / (Probability × 4)", x='')  + # Update y-axis label
+    theme_minimal() +
+    theme(
+      legend.title = element_blank(),   # Removes the legend title
+      legend.position = c(0.9, 0.35),  # Adjust this to position the legend inside the plot (lower-right)
+      legend.background = element_rect(fill="white", colour="white")  # Optional: white background with border
+    )
+  p
+  file_name <- paste0(fn, "_L0_L1.pdf")
+  ggsave(file_name, plot=p, width = 8, height = 6)
+  if (FALSE){
+    file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
+    print(file_path)
+    ggsave(file_path, plot=p, width = 8/2, height = 6/2)
+  }
+  
+}
+
+
+
+
+s_dag = do_dag_struct(param_model, train$A, doX=c(0.7, NA, NA))
+i = 2
+ds = dx7$df_orig$numpy()[,i]
+hist(ds, freq=FALSE, 50, main='X2 | Do(X1=0.7)', xlab='samples', 
+     sub='Histogram from DGP with do. red:TRAM_DAG')
+sample_dag_07 = s_dag[,i]$numpy()
+lines(density(sample_dag_07), col='red', lw=2)
+m_x2_do_x10.7 = median(sample_dag_07)
+m_x2_do_x10.7 - m_x2_do_x10.2
+
+###### Comparison of estimated f(x2) vs TRUE f(x2) #######
+shift1=shift_12 = shift_23 = shift13 = cs_23 = xs = seq(-1,1,length.out=41)
+idx0 = which(xs == 0) #Index of 0 xs needs to be odd
+for (i in 1:length(xs)){
+  #i = 1
+  x = xs[i]
+  # Varying x1
+  X = tf$constant(c(x, 0.5, 3), shape=c(1L,3L)) 
+  shift1[i] =   param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
+  shift_12[i] = param_model(X)[1,2,2]$numpy() #2=LS Term X1->X2
+  
+  #Varying x2
+  X = tf$constant(c(0.5, x, 3), shape=c(1L,3L)) 
+  cs_23[i] = param_model(X)[1,3,1]$numpy() #1=CS Term
+  shift_23[i] = param_model(X)[1,3,2]$numpy() #2-LS Term X2-->X3 (Ms. Whites Notation)
+}
+
+# plot the following 3 plots in one row and make the plots squared
+par(mfrow=c(1,3), mar=c(4, 4, 2, 1), pty='s')
+
+plot(xs, shift_12, main=expression(LS[X[1]]~"on"~X[2]), 
+     # sub = 'Effect of x1 on x2',
+     ylab=expression("Effect on "~X[2]),
+     xlab=expression(X[1]),
+     col='red')
+abline(0, 2)
+legend('topleft', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.6, bty='n')
+
+delta_0 = shift1[idx0] - 0
+plot(xs, shift1 - delta_0, main=expression(LS[X[1]]~"on"~X[3]),
+     # sub = paste0('Effect of x1 on x3, delta_0 ', round(delta_0,2)),
+     ylab=expression("Effect on "~X[3]),
+     xlab=expression(X[1]),
+     col='red')
+abline(0, .2)
+legend('topleft', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.6, bty='n')
+
+
+plot(xs, cs_23 + ( -cs_23[idx0] + f(0) ),
+     main = expression(CS[X[2]]~"on"~X[3]),
+     ylab=expression("Effect on "~X[3]),
+     xlab=expression(X[2]),
+     col='red')
+     # sub = 'Effect of x2 on x3',col='red')
+lines(xs, f(xs))
+legend('topleft', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.6, bty='n')
+
+
+par(mfrow=c(1,3))
+hist(train$df_R$x1, freq=FALSE, 100, main='X1', xlab='samples')
+hist(train$df_R$x2, freq=FALSE, 100, main='X2', xlab='samples')
+plot(train$df_R$x3, main='X3', xlab='samples')
+
+if (F32 == 1){ #Linear DGP
+  if (MA[2,3] == 'ls'){
+    delta_0 = shift_23[idx0] - f(0)
+    plot(xs, shift_23 - delta_0, main='LS-Term (black DGP, red Ours)', 
+         sub = paste0('Effect of x2 on x3, delta_0 ', round(delta_0,2)),
+         xlab='x2', col='red')
+    #abline(shift_23[length(shift_23)/2], -0.3)
+    abline(0, -0.3)
+  } 
+  if (MA[2,3] == 'cs'){
+    plot(xs, cs_23, main='CS-Term (black DGP, red Ours)', xlab='x2',  
+         sub = 'Effect of x2 on x3',col='red')
+    
+    abline(cs_23[idx0], -0.3)  
+  }
+} else{ #Non-Linear DGP
+  if (MA[2,3] == 'ls'){
+    delta_0 = shift_23[idx0] - f(0)
+    plot(xs, shift_23 - delta_0, main='LS-Term (black DGP, red Ours)', 
+         sub = paste0('Effect of x2 on x3, delta_0 ', round(delta_0,2)),
+         xlab='x2', col='red')
+    lines(xs, f(xs))
+  } else if (MA[2,3] == 'cs'){
+    plot(xs, cs_23 + ( -cs_23[idx0] + f(0) ),
+         ylab='CS',
+         main='CS-Term (black DGP f2(x), red Ours)', xlab='x2',  
+         sub = 'Effect of x2 on x3',col='red')
+    lines(xs, f(xs))
+  } else{
+    print(paste0("Unknown Model ", MA[2,3]))
+  }
+}
+#plot(xs,f(xs), xlab='x2', main='DGP')
+par(mfrow=c(1,1))
+
+h_params = param_model(train$df_orig)
+
+# check the model output and meaning
+h_params[1,,] # outputs for X1, X2 and X3 for first triple of observations [x1, x2, x3]
+h_params[1,1,] # outputs for X1 for first triple of observations [x1, x2, x3]
+h_params[1,1,1:2] # CS and LS for X1
+h_params[1,1,3:dim(h_params)[3]] # Theta for X1 
+# (note that for ordinal only first (#classes-1) thetas are used in the loss,
+# the others can be ignored.)
+
+
+
+
+if (FALSE){
+  ####### Compplete transformation Function #######
+  ### Copied from structured DAG Loss
+  t_i = train$df_orig
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  # from the last dimension of h_params the first entriy is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  h_cs <- h_params[,,1, drop = FALSE]
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L)#tf$einsum('bx,bxx->bx', t_i, beta)
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  theta = to_theta3(theta_tilde)
+  cont_dims = which(data_type == 'c') #1 2
+  cont_ord = which(data_type == 'o') #3
+  
+  ### Continiuous dimensions
+  #### At least one continuous dimension exits
+  h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 
+  
+  h_12 = h_I + h_LS[,cont_dims, drop=FALSE] + h_CS[,cont_dims, drop=FALSE]
+  
+  ### Ordingal Dimensions
+  B = tf$shape(t_i)[1]
+  col = 3
+  nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+  theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept
+  h_3 = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+  
+  ####### DGP Transformations #######
+  X_1 = t_i[,1]$numpy()
+  X_2 = t_i[,2]$numpy()
+  h2_DGP = 5 *X_2 + 2 * X_1
+  plot(h2_DGP[1:2000], h_12[1:2000,2]$numpy())
+  abline(0,1,col='red')
+  
+  h2_DGP_I = 5*X_2
+  h2_M_I = h_I[,2]
+  
+  plot(h2_DGP_I, h2_M_I)
+  abline(0,1,col='red')
+  
+  h_3 #Model
+  
+  ##### DGP 
+  theta_k = c(-2, 0.42, 1.02)
+  n_obs = B$numpy()
+  h_3_DPG = matrix(, nrow=n_obs, ncol=3)
+  for (i in 1:n_obs){
+    h_3_DPG[i,] = theta_k + 0.2 * X_1[i] + f(X_2[i]) #- 0.3 * X_2[i]
+  }
+  
+  plot(h_3_DPG[1:2000,3], h_3[1:2000,3]$numpy())
+  abline(0,1,col='green')
+  
+  #LS
+  plot(-0.2*X_1, h_LS[,3]$numpy())
+  abline(0,1,col='green')
+  
+  #LS
+  plot(f(X_2), h_CS[,3]$numpy())
+  abline(0,1,col='green')
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -660,280 +1076,6 @@ lines(ITE_I, pred_1, col = "blue", lwd = 2)
 
 
 
-
-
-
-
-##### Checking observational distribution ####
-s = do_dag_struct(param_model, train$A, doX=c(NA, NA, NA), num_samples = 5000)
-plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
-     main='Black = Observations, Red samples from TRAM-DAG',
-     xlab='X3')
-table(train$df_R[,3])/sum(table(train$df_R[,3]))
-points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
-table(s[,3]$numpy())/5000
-
-par(mfrow=c(1,3))
-for (i in 1:2){
-  hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X",i, " red: ours, black: data"), xlab='samples')
-  #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
-  lines(density(s[,i]$numpy()), col='red')
-}
-plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
-     main='Black = Observations, Red samples from TRAM-DAG',
-     xlab='X3')
-table(train$df_R[,3])/sum(table(train$df_R[,3]))
-points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
-table(s[,3]$numpy())/5000
-par(mfrow=c(1,1))
-
-######### Simulation of do-interventions #####
-doX=c(0.2, NA, NA)
-dx0.2 = dgp(10000, doX=doX)
-dx0.2$df_orig$numpy()[1:5,]
-
-
-doX=c(0.7, NA, NA)
-dx7 = dgp(10000, doX=doX)
-#hist(dx0.2$df_orig$numpy()[,2], freq=FALSE,100)
-mean(dx7$df_orig$numpy()[,2]) - mean(dx0.2$df_orig$numpy()[,2])  
-mean(dx7$df_orig$numpy()[,3]) - mean(dx0.2$df_orig$numpy()[,3])  
-
-s_dag = do_dag_struct(param_model, train$A, doX=c(0.2, NA, NA))
-hist(dx0.2$df_orig$numpy()[,2], freq=FALSE, 50, main='X2 | Do(X1=0.2)', xlab='samples', 
-     sub='Histogram from DGP with do. red:TRAM_DAG')
-sample_dag_0.2 = s_dag[,2]$numpy()
-lines(density(sample_dag_0.2), col='red', lw=2)
-m_x2_do_x10.2 = median(sample_dag_0.2)
-
-i = 3 
-d = dx0.2$df_orig$numpy()[,i]
-plot(table(d)/length(d), ylab='Probability ', 
-     main='X3 | do(X1=0.2)',
-     xlab='X3', ylim=c(0,0.6),  sub='Black DGP with do. red:TRAM_DAG')
-points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
-
-###### Figure for paper ######
-if (TRUE){
-  doX=c(NA, NA, NA)
-  s_obs_fitted = do_dag_struct(param_model, train$A, doX, num_samples = 5000)$numpy()
-  # dx1 = 1.5
-  # # dx1 = 0
-  # doX=c(dx1, NA, NA)
-  dx2 = 1
-  # dx1 = 0
-  doX=c(NA, dx2, NA)
-  s_do_fitted = do_dag_struct(param_model, train$A, doX=doX, num_samples = 5000)$numpy()
-  
-  df = data.frame(vals=s_obs_fitted[,1], type='Model', X=1, L='L0')
-  df = rbind(df, data.frame(vals=s_obs_fitted[,2], type='Model', X=2, L='L0'))
-  df = rbind(df, data.frame(vals=s_obs_fitted[,3], type='Model', X=3, L='L0'))
-  
-  df = rbind(df, data.frame(vals=train$df_R[,1], type='DGP', X=1, L='L0'))
-  df = rbind(df, data.frame(vals=train$df_R[,2], type='DGP', X=2, L='L0'))
-  df = rbind(df, data.frame(vals=as.numeric(train$df_R[,3]), type='DGP', X=3, L='L0'))
-  
-  df = rbind(df, data.frame(vals=s_do_fitted[,1], type='Model', X=1, L='L1'))
-  df = rbind(df, data.frame(vals=s_do_fitted[,2], type='Model', X=2, L='L1'))
-  df = rbind(df, data.frame(vals=s_do_fitted[,3], type='Model', X=3, L='L1'))
-  
-  d = dgp(10000, doX=doX)$df_R
-  df = rbind(df, data.frame(vals=d[,1], type='DGP', X=1, L='L1'))
-  df = rbind(df, data.frame(vals=d[,2], type='DGP', X=2, L='L1'))
-  df = rbind(df, data.frame(vals=as.numeric(d[,3]), type='DGP', X=3, L='L1'))
-  
-  p = ggplot() +
-    # For X = 1 and X = 2, use position = "identity" (no dodging)
-    geom_histogram(data = subset(df, X != 3), 
-                   aes(x=vals, col=type, fill=type, y=..density..), 
-                   position = "identity", alpha=0.4) +
-    # For X = 3, use a bar plot for discrete data
-    geom_bar(data = subset(df, X == 3), 
-             aes(x=vals, y=..prop.. * 4,  col=type, fill=type), 
-             position = "dodge", alpha=0.4, size = 0.5)+
-    #limit between 0,1 but not removing the data
-    coord_cartesian(ylim = c(0, 4)) +
-    facet_grid(L ~ X, scales = 'free',
-               labeller = as_labeller(c('1' = 'X1', '2' = 'X2', '3' = 'X3', 'L1' = paste0('Do X1=',dx1), 'L0' = 'Obs')))+ 
-    labs(y = "Density / (Frequency × 4)", x='')  + # Update y-axis label
-    theme_minimal() +
-    theme(
-      legend.title = element_blank(),   # Removes the legend title
-      legend.position = c(0.17, 0.25),  # Adjust this to position the legend inside the plot (lower-right)
-      legend.background = element_rect(fill="white", colour="white")  # Optional: white background with border
-    )
-  p
-  file_name <- paste0(fn, "_L0_L1.pdf")
-  ggsave(file_name, plot=p, width = 8, height = 6)
-  if (FALSE){
-    file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
-    print(file_path)
-    ggsave(file_path, plot=p, width = 8/2, height = 6/2)
-  }
-  
-}
-
-
-
-
-s_dag = do_dag_struct(param_model, train$A, doX=c(0.7, NA, NA))
-i = 2
-ds = dx7$df_orig$numpy()[,i]
-hist(ds, freq=FALSE, 50, main='X2 | Do(X1=0.7)', xlab='samples', 
-     sub='Histogram from DGP with do. red:TRAM_DAG')
-sample_dag_07 = s_dag[,i]$numpy()
-lines(density(sample_dag_07), col='red', lw=2)
-m_x2_do_x10.7 = median(sample_dag_07)
-m_x2_do_x10.7 - m_x2_do_x10.2
-
-###### Comparison of estimated f(x2) vs TRUE f(x2) #######
-shift_12 = shift_23 = shift1 = cs_23 = xs = seq(-1,1,length.out=41)
-idx0 = which(xs == 0) #Index of 0 xs needs to be odd
-for (i in 1:length(xs)){
-  #i = 1
-  x = xs[i]
-  # Varying x1
-  X = tf$constant(c(x, 0.5, 3), shape=c(1L,3L)) 
-  shift1[i] =   param_model(X)[1,3,2]$numpy() #2=LS Term X1->X3
-  shift_12[i] = param_model(X)[1,2,2]$numpy() #2=LS Term X1->X2
-  
-  #Varying x2
-  X = tf$constant(c(0.5, x, 3), shape=c(1L,3L)) 
-  cs_23[i] = param_model(X)[1,3,1]$numpy() #1=CS Term
-  shift_23[i] = param_model(X)[1,3,2]$numpy() #2-LS Term X2-->X3 (Ms. Whites Notation)
-}
-
-par(mfrow=c(2,2))
-
-plot(xs, shift_12, main='LS-Term (black DGP, red Ours)', 
-     sub = 'Effect of x1 on x2',
-     xlab='x1', col='red')
-abline(0, 2)
-
-delta_0 = shift1[idx0] - 0
-plot(xs, shift1 - delta_0, main='LS-Term (black DGP, red Ours)', 
-     sub = paste0('Effect of x1 on x3, delta_0 ', round(delta_0,2)),
-     xlab='x1', col='red')
-abline(0, .2)
-
-
-if (F32 == 1){ #Linear DGP
-  if (MA[2,3] == 'ls'){
-    delta_0 = shift_23[idx0] - f(0)
-    plot(xs, shift_23 - delta_0, main='LS-Term (black DGP, red Ours)', 
-         sub = paste0('Effect of x2 on x3, delta_0 ', round(delta_0,2)),
-         xlab='x2', col='red')
-    #abline(shift_23[length(shift_23)/2], -0.3)
-    abline(0, -0.3)
-  } 
-  if (MA[2,3] == 'cs'){
-    plot(xs, cs_23, main='CS-Term (black DGP, red Ours)', xlab='x2',  
-         sub = 'Effect of x2 on x3',col='red')
-    
-    abline(cs_23[idx0], -0.3)  
-  }
-} else{ #Non-Linear DGP
-  if (MA[2,3] == 'ls'){
-    delta_0 = shift_23[idx0] - f(0)
-    plot(xs, shift_23 - delta_0, main='LS-Term (black DGP, red Ours)', 
-         sub = paste0('Effect of x2 on x3, delta_0 ', round(delta_0,2)),
-         xlab='x2', col='red')
-    lines(xs, f(xs))
-  } else if (MA[2,3] == 'cs'){
-    plot(xs, cs_23 + ( -cs_23[idx0] + f(0) ),
-         ylab='CS',
-         main='CS-Term (black DGP f2(x), red Ours)', xlab='x2',  
-         sub = 'Effect of x2 on x3',col='red')
-    lines(xs, f(xs))
-  } else{
-    print(paste0("Unknown Model ", MA[2,3]))
-  }
-}
-#plot(xs,f(xs), xlab='x2', main='DGP')
-par(mfrow=c(1,1))
-
-h_params = param_model(train$df_orig)
-
-# check the model output and meaning
-h_params[1,,] # outputs for X1, X2 and X3 for first triple of observations [x1, x2, x3]
-h_params[1,1,] # outputs for X1 for first triple of observations [x1, x2, x3]
-h_params[1,1,1:2] # CS and LS for X1
-h_params[1,1,3:dim(h_params)[3]] # Theta for X1 
-# (note that for ordinal only first (#classes-1) thetas are used in the loss,
-# the others can be ignored.)
-
-
-
-
-if (FALSE){
-  ####### Compplete transformation Function #######
-  ### Copied from structured DAG Loss
-  t_i = train$df_orig
-  k_min <- k_constant(global_min)
-  k_max <- k_constant(global_max)
-  
-  # from the last dimension of h_params the first entriy is h_cs1
-  # the second to |X|+1 are the LS
-  # the 2+|X|+1 to the end is H_I
-  h_cs <- h_params[,,1, drop = FALSE]
-  h_ls <- h_params[,,2, drop = FALSE]
-  #LS
-  h_LS = tf$squeeze(h_ls, axis=-1L)#tf$einsum('bx,bxx->bx', t_i, beta)
-  #CS
-  h_CS = tf$squeeze(h_cs, axis=-1L)
-  
-  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
-  theta = to_theta3(theta_tilde)
-  cont_dims = which(data_type == 'c') #1 2
-  cont_ord = which(data_type == 'o') #3
-  
-  ### Continiuous dimensions
-  #### At least one continuous dimension exits
-  h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 
-  
-  h_12 = h_I + h_LS[,cont_dims, drop=FALSE] + h_CS[,cont_dims, drop=FALSE]
-  
-  ### Ordingal Dimensions
-  B = tf$shape(t_i)[1]
-  col = 3
-  nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
-  theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept
-  h_3 = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
-  
-  ####### DGP Transformations #######
-  X_1 = t_i[,1]$numpy()
-  X_2 = t_i[,2]$numpy()
-  h2_DGP = 5 *X_2 + 2 * X_1
-  plot(h2_DGP[1:2000], h_12[1:2000,2]$numpy())
-  abline(0,1,col='red')
-  
-  h2_DGP_I = 5*X_2
-  h2_M_I = h_I[,2]
-  
-  plot(h2_DGP_I, h2_M_I)
-  abline(0,1,col='red')
-  
-  h_3 #Model
-  
-  ##### DGP 
-  theta_k = c(-2, 0.42, 1.02)
-  n_obs = B$numpy()
-  h_3_DPG = matrix(, nrow=n_obs, ncol=3)
-  for (i in 1:n_obs){
-    h_3_DPG[i,] = theta_k + 0.2 * X_1[i] + f(X_2[i]) #- 0.3 * X_2[i]
-  }
-  
-  plot(h_3_DPG[1:2000,3], h_3[1:2000,3]$numpy())
-  abline(0,1,col='green')
-  
-  #LS
-  plot(-0.2*X_1, h_LS[,3]$numpy())
-  abline(0,1,col='green')
-  
-  #LS
-  plot(f(X_2), h_CS[,3]$numpy())
-  abline(0,1,col='green')
-}
 
 
 

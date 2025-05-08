@@ -61,18 +61,19 @@ plot_ecdf <- function(model, modelname){
          col = c("blue", "red", "blue", "red"),
          lty = c(2,2,1,1),
          lwd = c(1,1,2,2), 
-         cex = 0.8,
-         bty = "n")
+         cex = 0.7,
+         bty = "n",
+         inset = 0.01)
   
 }
 
 
 par(mfrow=c(1,1))
+
 # fit logistic model
 
 fit_Colr <- Colr(Y~sex, data=df)
 plot_ecdf(model = fit_Colr, modelname = "Colr" )
-
 
 # now fit model with Fz = standardnormal
 
@@ -85,11 +86,17 @@ plot_ecdf(model = fit_cox, modelname = "Cox" )
 
 # now fit model with Fz = lehmann -> reverse time hazard
 fit_lehmann <- Lehmann(Y~sex, data=df)
-# plot_ecdf(model = fit_lehmann, modelname = "Lehmann" )  # not sure if flexible h()
+plot_ecdf(model = fit_lehmann, modelname = "Lehmann" )  # not sure if flexible h()
+
+
 
 # plot the 3 next to eachother
-par(mfrow=c(1,4))
+par(mfrow = c(2,2),           # 2x2 grid
+    mar = c(3,3,2,1),          # smaller margins (bottom, left, top, right)
+    oma = c(0,0,2,0),          # outer margins (optional)
+    cex = 0.7                  # shrink everything (text, labels, legends)
+)
 plot_ecdf(model = fit_Colr, modelname = "Colr" )
 plot_ecdf(model = fit_BoxCox, modelname = "BoxCox" )
 plot_ecdf(model = fit_cox, modelname = "Coxph" )
-# plot_ecdf(model = fit_lehmann, modelname = "Lehmann" )
+plot_ecdf(model = fit_lehmann, modelname = "Lehmann" )

@@ -132,9 +132,15 @@ create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_la
     d = input_layer
     if (length(layer_sizes) > 2){ #Hidden Layers
       for (i in 2:(length(layer_sizes) - 1)) {
+        
+        # d = layer_batch_normalization()(d)  # Batch Normalization
         d = LinearMasked(units=layer_sizes[i], mask=t(masks[[i-1]]))(d)
-        #d = layer_activation(activation='relu')(d)
-        d = layer_activation(activation='sigmoid')(d)
+        d = layer_batch_normalization()(d)  # Batch Normalization
+        # d = layer_activation(activation='sigmoid')(d)
+        d = layer_activation(activation='relu')(d)
+        # d = layer_dropout(rate = 0.1)(d)  # Dropout
+
+        
       }
     } #add output layers
     out = LinearMasked(units=layer_sizes[length(layer_sizes)], mask=t(masks[[length(layer_sizes) - 1]]),bias=last_layer_bias)(d)
@@ -181,6 +187,7 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
     masks_CS = create_masks(adjacency =  t(MA == 'cs'), hidden_features_CS)
     h_CS = create_param_net(len_param = 1, input_layer=input_layer, layer_sizes = layer_sizes_CS, masks_CS, last_layer_bias=FALSE)
     #dag_maf_plot(masks_CS, layer_sizes_CS)
+    #dag_maf_plot_new(masks_CS, layer_sizes_CS)
     # model_cs = keras_model(inputs = input_layer, h_CS)
   } else { #No 'cs' term in model --> return zero
     h_CS = create_null_net(input_layer)
@@ -366,6 +373,7 @@ logistic_cdf <- function(x) {
 
 struct_dag_loss = function (t_i, h_params){
   #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
+  #t_i <- dgp_data$df_orig_train
   #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
   k_min <- k_constant(global_min)
   k_max <- k_constant(global_max)
@@ -465,6 +473,73 @@ struct_dag_loss = function (t_i, h_params){
   return (NLL)
 }
 
+
+
+
+struct_dag_loss_ITE_interaction = function (t_i, h_params){
+  #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
+  #t_i <- dgp_data$df_orig_train
+  #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  # from the last dimension of h_params the first entry is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  NLL = 0
+  
+
+  col=5
+  B = tf$shape(t_i)[1]
+  nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+  theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+  
+  
+  h = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+  # putting -Inf and +Inf to the left and right of the cutpoints
+  neg_inf = tf$fill(c(B,1L), -Inf)
+  pos_inf = tf$fill(c(B,1L), +Inf)
+  h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+  logistic_cdf_values = logistic_cdf(h_with_inf)
+  #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+  cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+  # Picking the observed cdf_diff entry
+  class_indices <- tf$cast(t_i[, col] - 1, tf$int32)  # Convert to zero-based index
+  # Create batch indices to pair with class indices
+  batch_indices <- tf$range(tf$shape(class_indices)[1])
+  # Combine batch_indices and class_indices into pairs of indices
+  gather_indices <- tf$stack(list(batch_indices, class_indices), axis=1)
+  cdf_diff_picked <- tf$gather_nd(cdf_diffs, gather_indices)
+  # Gather the corresponding values from cdf_diffs
+  NLL = NLL -tf$reduce_mean(tf$math$log(cdf_diff_picked))
+
+  return (NLL)
+}
 
 
 
@@ -598,3 +673,88 @@ dag_maf_plot <- function(layer_masks, layer_sizes) {
   
   return(network_plot)
 }
+
+
+
+
+# make the plots a bit nicer (works for CS)
+dag_maf_plot_new <- function(layer_masks, layer_sizes) {
+  max_nodes <- max(layer_sizes)
+  node_spacing <- 100
+  layer_spacing <- 200
+  width <- max_nodes * node_spacing
+  
+  # Create a data frame to store node coordinates
+  nodes <- data.frame(x = numeric(0), y = numeric(0), label = character(0))
+  
+  for (i in 1:length(layer_sizes)) {
+    size <- layer_sizes[i]
+    layer_top <- max_nodes / 2 - size / 2
+    
+    for (j in 1:size) {
+      x <- (i - 1) * layer_spacing
+      y <- layer_top * node_spacing + j * node_spacing
+      if (i == 1 || i == length(layer_sizes)) {
+        label <- paste("x_", j, sep = "")
+      } else {
+        label <- ""
+      }
+      nodes <- rbind(nodes, data.frame(x = x, y = y, label = label))
+    }
+  }
+  
+  # Create a data frame to store connection coordinates
+  connections <- data.frame(x_start = numeric(0), y_start = numeric(0),
+                            x_end = numeric(0), y_end = numeric(0))
+  
+  for (i in 1:length(layer_masks)) {
+    mask <- t(layer_masks[[i]])
+    input_size <- nrow(mask)
+    output_size <- ncol(mask)
+    
+    for (j in 1:input_size) {
+      for (k in 1:output_size) {
+        if (mask[j, k]) {
+          start_x <- (i - 1) * layer_spacing
+          start_y <- (max_nodes / 2 - input_size / 2 + j) * node_spacing
+          end_x <- i * layer_spacing
+          end_y <- (max_nodes / 2 - output_size / 2 + k) * node_spacing
+          
+          connections <- rbind(connections, data.frame(x_start = start_x, y_start = start_y,
+                                                       x_end = end_x, y_end = end_y))
+        }
+      }
+    }
+  }
+  
+  # Plot using ggplot2: output plot should be squared and small
+  network_plot <- ggplot() +
+    geom_segment(data = connections,
+                 aes(x = x_start, y = -y_start, xend = x_end, yend = -y_end),
+                 color = 'black', size = 1, arrow = arrow(length = unit(0.2, "cm"))) +
+    # a thick edge aroun the points
+    # geom_point(data = nodes,
+    #            aes(x = x, y = -y), color = 'steelblue', size = 10, alpha = 0.8, shape=21) +
+    # geom_text(data = nodes,
+    #           aes(x = x, y = -y, label = label), vjust = 0.5, size = 3.5) +
+    geom_point(data = nodes,
+               aes(x = x, y = -y),
+               shape = 21,           # Circle with border
+               fill = 'steelblue',   # Node fill color
+               color = 'black',      # Border color
+               stroke = 1,         # Border thickness
+               size = 10, alpha = 0.3) +
+    geom_text(data = nodes,
+              aes(x = x, y = -y, label = label),
+              vjust = 0.5, hjust = 0.5,
+              size = 3.5)+
+    theme_void()+
+    coord_cartesian(xlim = c(min(nodes$x) - 50, max(nodes$x) + 50),
+                    ylim = c(-max(nodes$y) - 50, -min(nodes$y) + 50))
+  
+  
+  return(network_plot)
+}
+
+# dag_maf_plot_new(masks_CS, layer_sizes_CS)
+
