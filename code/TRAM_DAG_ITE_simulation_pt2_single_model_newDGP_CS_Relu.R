@@ -1697,3 +1697,52 @@ ggplot(dat, aes(x = Y_prob, y = Y_prob_tram, color = X1_group)) +
   theme(legend.position = "top")
 
 
+
+
+
+
+
+
+
+
+
+# check distribution of Y against X1 on treat and control (maybe reason for weird shift for treatment group)
+
+
+#train set
+
+treat <- dgp_data$test.compl.data$data.dev %>%
+  filter(Tr == 1) 
+contr <- dgp_data$test.compl.data$data.dev %>%
+  filter(Tr == 0)
+
+
+# fit gam for binary response Y with continuous predictor X1 on treat, 
+
+gam_model_treat <- gam(Y ~ s(X1)+ s(X2), data = treat, family = binomial(link="logit"), gamma=0.4)
+# select only plot for X1
+plot(gam_model_treat, main= "Y~s(X1) treated (train set)", 
+     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
+
+# fit gam for binary response Y with continuous predictor X1 on contr,
+gam_model_contr <- gam(Y ~ s(X1 + s(X2)), data = contr, family = binomial(link="logit"), gamma=0.4)
+plot(gam_model_contr)
+
+
+# same on test set
+
+treat_test <- dgp_data$test.compl.data$data.val %>%
+  filter(Tr == 1)
+contr_test <- dgp_data$test.compl.data$data.val %>%
+  filter(Tr == 0)
+
+# fit gam for binary response Y with continuous predictor X1 on treat,
+gam_model_treat_test <- gam(Y ~ s(X1) + s(X2), data = treat_test, family = binomial(link="logit"), gamma=0.4)
+plot(gam_model_treat_test, main= "Y~s(X1) treated (test set)", 
+     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
+
+# fit gam for binary response Y with continuous predictor X1 on contr,
+gam_model_contr_test <- gam(Y ~ s(X1)+ s(X2), data = contr_test, family = binomial(link="logit"), gamma=0.4)
+plot(gam_model_contr_test)
+
+
