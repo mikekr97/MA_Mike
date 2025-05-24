@@ -155,7 +155,8 @@ dgp <- function(n_obs, doX=c(NA, NA, NA), SEED=123) {
     min = tf$constant(c(q1[1], q2[1], q3[1]), dtype = 'float32'),
     max = tf$constant(c(q1[2], q2[2], q3[2]), dtype = 'float32'),
     type = c('c', 'c', 'o'),
-    A=A))
+    A=A, 
+    theta_k = theta_k))
 } 
 
 train = dgp(20000)
@@ -178,7 +179,20 @@ hist(train$df_R$x2, main = "X2")
 plot(train$df_R$x3, main = "X3")
 
 
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/DGP_Variables.png",
+    res = 150, width = 200, height = 600)
+
+par(mfrow=c(3,1), mar=c(4, 4, 2, 1)) # Removed pty='s'
+
+plot(density(train$df_R$x1), main = "X1", xlab="")
+plot(density(train$df_R$x2), main = "X2", xlab="")
+barplot(table(train$df_R$x3)/sum(table(train$df_R$x3)), main = "X3", ylab = "Probability")
+
+dev.off()
+
 # make 3 nice clean plots of X1, X2 (density lines) and X3 (barplot) without axis and labels etc with ggplot
+
 
 
 ggplot(train$df_R, aes(x = x1)) +
@@ -296,10 +310,14 @@ epochs = length(train_loss)
 # plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)')
 # lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
 
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/Loss_Example.png",
+     res = 150)
+
 plot(1:epochs, train_loss, type='l', main='', ylab='Loss', xlab='Epochs', ylim = c(1, 1.5))
 lines(1:epochs, val_loss, type = 'l', col = 'blue')
 legend('topright', legend=c('training', 'validation'), col=c('black', 'blue'), lty=1:1, cex=0.8, bty='n')
 
+dev.off()
 
 # Last 50
 diff = max(epochs - 100,0)
@@ -359,6 +377,13 @@ legend('bottomright', legend=c('beta_12', 'beta_12 with Colr(x2~x1)', 'beta_23')
 
 ws[nrow(ws),]
 
+
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/Betas.png",
+    res = 150)
+
+par(mfrow=c(1,1), mar=c(4, 4, 2, 1), pty='s')
+
 # Plot with mathematical notation for beta coefficients
 plot(1:epochs, ws[,1], type='l',  #"Coefficients for LS: " * beta[1] * " and " * beta[2]  ,main="Coefficients for LS"
      ylab=expression(beta), xlab = 'Epochs', lwd=1.5)
@@ -376,10 +401,11 @@ legend('bottomright',
                   expression("DGP" ~ beta[13] == 0.2)),
        col = c('black', 'blue', 'black', 'blue'),
        lty = c(1, 1, 4, 4),
-       lwd = c(1.5, 1.5, 1.2, 1.2),
-       cex = 0.8,
+       lwd = c(1.5, 1.5, 1.5, 1.5),
+       cex = 0.7,
        bty = 'n')
 
+dev.off()
 
 ###### Coefficient Plot for Paper #######
 if (FALSE){
@@ -531,6 +557,75 @@ if (TRUE){
   
 }
 
+# png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/sampling_distribution.png", 
+#     width = 700, height = 650, res = 150)
+# p
+# dev.off()
+
+
+
+# make probabilitstic queries:
+
+## Observational samples P(Y | X2 < -1):
+
+# tram dag estimate
+obs_filtered <- s_obs_fitted[s_obs_fitted[,2] < -1,]
+table(obs_filtered[,3]) / nrow(obs_filtered)
+
+# dgp sampling estimate
+doX=c(NA, NA, NA)
+s_obs_dgp = dgp(10000, doX=doX)
+obs_dgp_filtered = s_obs_dgp$df_R[s_obs_dgp$df_R[,2] < -1,]
+table(obs_dgp_filtered[,3]) / nrow(obs_dgp_filtered)
+
+
+
+
+## Interventional samples for P(Y | do(x2 = 1)):
+
+#tram dag estimate
+table(s_do_fitted[,3])/5000
+
+# dgp sampling estimate
+doX=c(NA, 1, NA)
+s_do_dgp = dgp(10000, doX=doX)
+table(s_do_dgp$df_R[,3]) / nrow(s_do_dgp$df_R)
+
+
+
+
+
+#plot of observational and interventional
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/Prob_Estimates.png",
+    res = 150, width = 800, height= 400)
+
+par(mfrow=c(1,2), mar=c(4, 4, 2, 1)) # Removed pty='s'
+
+# Observational plot the tram-dag estimates vs dgp estimates
+plot(table(obs_dgp_filtered[,3])/nrow(obs_dgp_filtered), ylab='Probability',
+     main=expression(paste("P(", X[3], " | ", X[2], " < -1)")),
+     xlab=expression(X[3]), ylim=c(0,0.6), cex.main=0.85)
+points(as.numeric(table(obs_filtered[,3])) / nrow(obs_filtered), col='red', lty=2)
+legend('topright', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.65, bty='n')
+
+
+# Interventional plot the tram-dag estimates vs dgp estimates
+plot(table(s_do_dgp$df_R[,3]) / nrow(s_do_dgp$df_R), ylab='Probability',
+     main=expression(paste("P(", X[3], " | do(", X[2], "=1))")),
+     xlab=expression(X[3]), ylim=c(0,0.6), cex.main=0.85)
+points(as.numeric(table(s_do_fitted[,3])) / nrow(s_do_fitted), col='red', lty=2)
+legend('topright', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.65, bty='n')
+
+dev.off()
+
+
+
+
+
+
+
+
 
 
 
@@ -561,8 +656,18 @@ for (i in 1:length(xs)){
   shift_23[i] = param_model(X)[1,3,2]$numpy() #2-LS Term X2-->X3 (Ms. Whites Notation)
 }
 
+
+
+# png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/LS_CS.png", 
+    # width = 1200, height = 500, res = 150)
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/LS_CS.png",
+    res = 150, width = 900, height = 300)
+
+
+
 # plot the following 3 plots in one row and make the plots squared
-par(mfrow=c(1,3), mar=c(4, 4, 2, 1), pty='s')
+par(mfrow=c(1,3), mar=c(4, 4, 2, 1))
 
 plot(xs, shift_12, main=expression(LS[X[1]]~"on"~X[2]), 
      # sub = 'Effect of x1 on x2',
@@ -590,6 +695,9 @@ plot(xs, cs_23 + ( -cs_23[idx0] + f(0) ),
      # sub = 'Effect of x2 on x3',col='red')
 lines(xs, f(xs))
 legend('topleft', legend=c('DGP', 'TRAM-DAG'), col=c('black', 'red'), lty=1:1, cex=0.6, bty='n')
+
+dev.off()
+
 
 
 par(mfrow=c(1,3))
@@ -642,6 +750,126 @@ h_params[1,1,3:dim(h_params)[3]] # Theta for X1
 # (note that for ordinal only first (#classes-1) thetas are used in the loss,
 # the others can be ignored.)
 
+
+
+
+######### Intercepts (baseline h)
+
+
+#### Checking the transformation ####
+h_params = param_model(train$df_orig)
+r = check_baselinetrafo(h_params)
+Xs = r$Xs
+h_I = r$h_I
+
+par(mfrow=c(1,3))
+
+##### X1
+df = data.frame(train$df_orig$numpy())
+fit.11 = Colr(X1~1,df, order=len_theta)
+temp = model.frame(fit.11)[1:2, -1, drop=FALSE] #WTF!
+plot(fit.11, which = 'baseline only', newdata = temp, lwd=1, col='black', 
+     main='h_I(X_1)', cex.main=0.8)
+lines(Xs[,1], h_I[,1], col='red', lty=3, lwd=4)
+rug(train$df_orig$numpy()[,1], col='black')
+legend('topleft', legend=c('Colr()', 'TRAM-DAG'), col=c('black', 'red'), lty=c(1,3), lwd=c(1,3), cex=0.8, bty='n')
+
+
+##### X2
+df = data.frame(train$df_orig$numpy())
+fit.21 = Colr(X2~X1,df, order=len_theta)
+temp = model.frame(fit.21)[1:2,-1, drop=FALSE] #WTF!
+plot(fit.21, which = 'baseline only', newdata = temp, lwd=2, col='black', 
+     main='h_I(X_2)', cex.main=0.8)
+lines(Xs[,2], h_I[,2], col='red', lty=3, lwd=4)
+rug(train$df_orig$numpy()[,2], col='black')
+legend('topleft', legend=c('Colr()', 'TRAM-DAG'), col=c('black', 'red'), lty=c(1,3), lwd=c(1,3), cex=0.8, bty='n')
+
+
+##### X3
+
+
+theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+theta = to_theta3(theta_tilde)
+# theta[1,3,1:3]
+
+
+
+category <- seq(1,3, by = 1)
+# make a plot with only the categories on x axis and not continuous
+plot(category, train$theta_k + f(0), type='p', col='blue', lwd=2,
+     main='Theta for X3', cex.main=0.8, ylim = c(-2.2, 2.5), xlim=c(0.9, 3.3), xlab = 'X3', ylab = "trafo",)
+points(category, theta[1,3,1:3] + cs_23[idx0], col='red', lty=2, lwd=5)
+
+
+
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/baseline_trafo.png",
+    res = 150, width = 900, height = 300)
+
+
+
+# plot the following 3 plots in one row and make the plots squared
+par(mfrow=c(1,3), mar=c(4, 4, 2, 1))
+
+##### X1
+df <- data.frame(train$df_orig$numpy())
+fit.11 <- Colr(X1 ~ 1, df, order = len_theta)
+temp <- model.frame(fit.11)[1:2, -1, drop = FALSE]
+
+plot(fit.11, which = 'baseline only', newdata = temp, lwd = 1, col = 'black',
+     main = expression(h[I](X[1])), cex.main = 0.9,
+     xlab = expression(X[1]), ylab = "transformation")
+lines(Xs[, 1], h_I[, 1], col = 'red', lty = 3, lwd = 4)
+rug(train$df_orig$numpy()[, 1], col = 'black')
+legend('topleft', legend = c('Colr()', 'TRAM-DAG'), col = c('black', 'red'),
+       lty = c(1, 3), lwd = c(1, 3), cex = 0.8, bty = 'n')
+
+##### X2
+fit.21 <- Colr(X2 ~ X1, df, order = len_theta)
+temp <- model.frame(fit.21)[1:2, -1, drop = FALSE]
+
+plot(fit.21, which = 'baseline only', newdata = temp, lwd = 1, col = 'black',
+     main = expression(h[I](X[2])), cex.main = 0.9,
+     xlab = expression(X[2]), ylab = "transformation")
+lines(Xs[, 2], h_I[, 2], col = 'red', lty = 3, lwd = 4)
+rug(train$df_orig$numpy()[, 2], col = 'black')
+legend('topleft', legend = c('Colr()', 'TRAM-DAG'), col = c('black', 'red'),
+       lty = c(1, 3), lwd = c(1, 3), cex = 0.8, bty = 'n')
+
+##### X3 (categorical)
+theta_tilde <- h_params[, , 3:dim(h_params)[3], drop = FALSE]
+theta <- to_theta3(theta_tilde)
+category <- 1:3
+x_offset <- c(-0.06, -0.06, -0.06)  # slight offset for visibility
+
+plot(category, train$theta_k + f(0), type = 'p', col = 'blue', pch = 16,
+     main = expression(h[I](X[3])), cex.main = 0.9,
+     xlab = expression(X[3]), ylab = "transformation",
+     ylim = c(-2.2, 2.5), xlim = c(0.8, 3.2), xaxt = 'n')
+
+points(category + x_offset, theta[1, 3, 1:3] + cs_23[idx0], col = 'red', pch = 17, cex = 1.5)
+
+axis(1, at = category, labels = category)
+legend("topleft", legend = c("DGP", "TRAM-DAG"),
+       col = c("blue", "red"), pch = c(16, 17), bty = "n", cex = 0.8)
+
+
+dev.off()
+
+
+
+### plot and save the cs
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/CS.png",
+    res = 150, width = 300, height = 400)
+
+layer_sizes_CS <- c(ncol(MA), hidden_features_CS, nrow(MA))
+masks_CS = create_masks(adjacency =  t(MA == 'cs'), hidden_features_CS)
+h_CS = create_param_net(len_param = 1, input_layer=input_layer, layer_sizes = layer_sizes_CS, masks_CS, last_layer_bias=FALSE)
+dag_maf_plot_new(masks_CS, layer_sizes_CS)
+
+dev.off()
 
 
 

@@ -37,17 +37,17 @@ source('code/utils/utils_tfp.R')
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu/run'
-# DIR = 'runs/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_regularized/run'
+# DIR = 'runs/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
 # Copy this file to the directory DIR
 file.copy('/code/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R', file.path(DIR, 'TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R'), overwrite=TRUE)
-# file.copy('/code/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_regularized.R', file.path(DIR, 'TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_regularized.R'), overwrite=TRUE)
+# file.copy('/code/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI.R', file.path(DIR, 'TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI.R'), overwrite=TRUE)
 
 
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
-hidden_features_I = c(3,3,3) 
+hidden_features_I = c(4, 5, 5, 4) # c(3,3,3,3) 
 hidden_features_CS = c(2,5,5,2) # c(4,8,10,8,4)#c(2,5,5,2) #c(4,8,8,4)# c(2,5,5,2)
 
 # if (F32 == 1){
@@ -69,6 +69,15 @@ MA =  matrix(c(
   0,   0,  0, 'ls',
   0,   0,  0,   0), nrow = 4, ncol = 4, byrow = TRUE)
 MODEL_NAME = 'ModelCS'
+# 
+# MA
+
+# MA =  matrix(c(
+#   0,   0,  0, 'ci',
+#   0,   0,  0, 'ci',
+#   0,   0,  0, 'ci',
+#   0,   0,  0,   0), nrow = 4, ncol = 4, byrow = TRUE)
+# MODEL_NAME = 'ModelCS'
 
 MA
 
@@ -446,7 +455,7 @@ data_type = dgp_data$type
 ##### Train on control group ####
 
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
-optimizer = optimizer_adam(learning_rate = 0.001)
+optimizer = optimizer_adam(learning_rate = 0.0005)
 param_model$compile(optimizer, loss=struct_dag_loss)
 
 h_params <- param_model(dgp_data$df_orig_train)
@@ -480,7 +489,7 @@ if (file.exists(fnh5)){
     plot(hist$epoch, hist$history$loss, ylim=c(1.07, 1.2))
   } else { ### Training with diagnostics
     # ws <- data.frame(w12 = numeric())
-    ws <- data.frame(w34 = numeric())
+    # ws <- data.frame(w34 = numeric())
     train_loss <- numeric()
     val_loss <- numeric()
     
@@ -496,16 +505,16 @@ if (file.exists(fnh5)){
       val_loss <- c(val_loss, hist$history$val_loss)
       
       # Extract specific weights
-      w <- param_model$get_layer(name = "beta")$get_weights()[[1]]
+      # w <- param_model$get_layer(name = "beta")$get_weights()[[1]]
       
-      ws <- rbind(ws, data.frame(w34 = w[3,4]))
+      # ws <- rbind(ws, data.frame(w34 = w[3,4]))
     }
     # Save the model
     param_model$save_weights(fnh5)
     save(train_loss, val_loss, train_loss, f, MA, len_theta,
          hidden_features_I,
          hidden_features_CS,
-         ws,
+         # ws,
          #global_min, global_max,
          file = fnRdata)
   }
@@ -835,8 +844,12 @@ data.val.grouped.ATE <- data.val.rs %>%
   group_by(ITE.Group) %>%
   group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup() 
 
+# save plot
+
+
+
 plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, 
-                      log.odds = log.odds, ylb = 0, yub = 5,
+                      log.odds = log.odds, ylb = 0, yub = 3.7,
                       train.data.name = "Train", test.data.name = "Test")
 
 
@@ -1068,15 +1081,61 @@ legend("topright", legend=c("CS", "Quantiles", "DGP Effect"),
 
 
 
+# same plot but for presentation slide
 
 
 
 
+par(mfrow = c(1, 2), mar = c(2, 4, 2, 0.8), mgp = c(1.6, 0.4, 0)) 
+# mgp = c(label pos, tick label pos, line pos)
+
+# Plot 1: Control
+delta_0 = cs_24_x1_1[idx0] - 0
+plot(xs, cs_24_x1_1 - delta_0, main = 'Control',
+     ylab = expression(CS(X[1], T == "Control")),
+     xlab = expression(X[1]), col = 'red')
+lines(xs, -beta_x1 * xs, col = "black")
+legend("topleft", legend = c("CS", "DGP Effect"),
+       col = c("red", "black"), lty = c(1, 1), bty = "n", cex = 0.6)
+
+# Plot 2: Treatment
+delta_0 = cs_24_x1_2[idx0] - 0
+plot(xs, cs_24_x1_2 - delta_0, main = 'Treatment',
+     ylab = expression(CS(X[1], T == "Treatment")),
+     xlab = expression(X[1]), col = 'red')
+lines(xs, -beta_x1_tx * xs, col = "black")
+legend("topright", legend = c("CS", "DGP Effect"),
+       col = c("red", "black"), lty = c(1, 1), bty = "n", cex = 0.6)
 
 
 
 
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))  # Reduced margins
 
+# Extract observed X1 values
+x1_obs <- dgp_data$test.compl.data$data.dev$X1
+
+# Plot 1: Control
+delta_0 <- cs_24_x1_1[idx0] - 0
+plot(xs, cs_24_x1_1 - delta_0, main = 'Control',
+     ylab = expression(CS(X[1], T == "Control")),
+     xlab = "", col = 'red', xaxt = "n", cex.lab = 0.9)
+lines(xs, -beta_x1 * xs, col = "black")
+# axis(side = 1, at = x1_obs, labels = FALSE, tck = -0.015)  # Tick marks only
+mtext(expression(X[1]), side = 1, line = 2.2, cex = 0.9)   # Closer label
+legend("topleft", legend = c("CS", "DGP Effect"),
+       col = c("red", "black"), lty = c(1, 1), bty = "n", cex = 0.6)
+
+# Plot 2: Treatment
+delta_0 <- cs_24_x1_2[idx0] - 0
+plot(xs, cs_24_x1_2 - delta_0, main = 'Treatment',
+     ylab = expression(CS(X[1], T == "Treatment")),
+     xlab = "", col = 'red', xaxt = "n", cex.lab = 0.9)
+lines(xs, -beta_x1_tx * xs, col = "black")
+# axis(side = 1, at = x1_obs, labels = FALSE, tck = -0.015)
+mtext(expression(X[1]), side = 1, line = 2.2, cex = 0.9)
+legend("topright", legend = c("CS", "DGP Effect"),
+       col = c("red", "black"), lty = c(1, 1), bty = "n", cex = 0.6)
 
 
 
@@ -1448,7 +1507,51 @@ ggplot(df_test_recalibrated, aes(x = ITE_true, y = ITE_i_test_recal, color = Tre
   theme_minimal() +
   theme(legend.position = "top")
 
+# save recalibrated plot
+# png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/ITE_recal.png",
+#     width = 800, height = 600, res = 150)
+# ggplot(df_test_recalibrated, aes(x = ITE_true, y = ITE_i_test_recal, color = Treatment)) +
+#   geom_point() +
+#   geom_abline(slope = 1, intercept = 0, color = "red") +
+#   labs(title = "Recalibrated ITE (Test)", x = "True ITE", y = "Estimated ITE") +
+#   theme_minimal() +
+#   theme(legend.position = "top")
+# dev.off()
 
+
+
+# get recalibrated test set values
+ITE_i_train_recal <- predict(fit_gam, newdata = data.frame(pred_probability = data.dev.rs$ITE), type = "response")
+
+
+
+
+
+# make ate plot
+
+breaks <- c(-0.75, -0.4, -0.2, 0.1, 0.5)
+log.odds <- F
+data.dev.grouped.ATE.recal <- data.dev.rs %>% 
+  # add as.numeric(ITE_i_test_recal) to variable ITE
+  mutate(ITE = as.numeric(ITE_i_train_recal)) %>%
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup()
+data.val.grouped.ATE.recal <- data.val.rs %>% 
+  # add as.numeric(ITE_i_test_recal) to variable ITE
+  mutate(ITE = as.numeric(ITE_i_test_recal)) %>%
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Odds(.x, log.odds = log.odds)) %>% ungroup() 
+
+png("C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/intermediate_presentation/img/ATE_ITE_recal.png",
+    width = 800, height = 600, res = 150)
+plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE.recal, val.data = data.val.grouped.ATE.recal, 
+                      log.odds = log.odds, ylb = 0, yub = 3.7,
+                      train.data.name = "Train", test.data.name = "Test")
+dev.off()
 
 
 
@@ -1701,11 +1804,6 @@ ggplot(dat, aes(x = Y_prob, y = Y_prob_tram, color = X1_group)) +
 
 
 
-
-
-
-
-
 # check distribution of Y against X1 on treat and control (maybe reason for weird shift for treatment group)
 
 
@@ -1724,9 +1822,11 @@ gam_model_treat <- gam(Y ~ s(X1)+ s(X2), data = treat, family = binomial(link="l
 plot(gam_model_treat, main= "Y~s(X1) treated (train set)", 
      xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
 
+
 # fit gam for binary response Y with continuous predictor X1 on contr,
-gam_model_contr <- gam(Y ~ s(X1 + s(X2)), data = contr, family = binomial(link="logit"), gamma=0.4)
-plot(gam_model_contr)
+gam_model_contr <- gam(Y ~ s(X1) + s(X2), data = contr, family = binomial(link="logit"), gamma=0.4)
+plot(gam_model_contr, main= "Y~s(X1) control (train set)", 
+     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
 
 
 # same on test set

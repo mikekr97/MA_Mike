@@ -138,7 +138,7 @@ create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_la
         d = layer_batch_normalization()(d)  # Batch Normalization
         # d = layer_activation(activation='sigmoid')(d)
         d = layer_activation(activation='relu')(d)
-        # d = layer_dropout(rate = 0.1)(d)  # Dropout
+        d = layer_dropout(rate = 0.3)(d)  # Dropout
 
         
       }
@@ -541,6 +541,75 @@ struct_dag_loss_ITE_interaction = function (t_i, h_params){
   return (NLL)
 }
 
+
+
+struct_dag_loss_ITE_IST = function (t_i, h_params){
+  #t_i = dat.train.tf # (40000, 3)    # original data x1, x2, x3 for each obs
+  #t_i <- dgp_data$df_orig_train
+  #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
+  # k_min <- k_constant(global_min)
+  # k_max <- k_constant(global_max)
+  data_type <- type
+  
+  
+  # from the last dimension of h_params the first entry is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  NLL = 0
+  
+  
+  col=length(data_type) # outcome index
+  B = tf$shape(t_i)[1]
+  # nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+  nol <- 1 # 1 cut point for binary outcome
+  theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+  
+  
+  h = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+  # putting -Inf and +Inf to the left and right of the cutpoints
+  neg_inf = tf$fill(c(B,1L), -Inf)
+  pos_inf = tf$fill(c(B,1L), +Inf)
+  h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+  logistic_cdf_values = logistic_cdf(h_with_inf)
+  #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+  cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+  # Picking the observed cdf_diff entry
+  class_indices <- tf$cast(t_i[, col] - 1, tf$int32)  # Convert to zero-based index
+  # Create batch indices to pair with class indices
+  batch_indices <- tf$range(tf$shape(class_indices)[1])
+  # Combine batch_indices and class_indices into pairs of indices
+  gather_indices <- tf$stack(list(batch_indices, class_indices), axis=1)
+  cdf_diff_picked <- tf$gather_nd(cdf_diffs, gather_indices)
+  # Gather the corresponding values from cdf_diffs
+  NLL = NLL -tf$reduce_mean(tf$math$log(cdf_diff_picked))
+  
+  return (NLL)
+}
 
 
 
