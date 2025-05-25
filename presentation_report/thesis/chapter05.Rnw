@@ -1,0 +1,11 @@
+% LaTeX file for Chapter 05
+<<'preamble05',include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+    fig.path='figure/ch05_fig', 
+    self.contained=FALSE,
+    cache=TRUE
+) 
+@
+
+\chapter{Conclusions}

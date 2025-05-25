@@ -1,0 +1,14 @@
+\babel@toc {english}{}\relax 
+\vspace *{13.mm}
+\contentsline {chapter}{\bfseries {Preface}}{iii}{chapter*.2}%
+\vspace *{10mm}
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Methods}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Transformation Models}{5}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Deep TRAMs}{6}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Citations}{10}{section.2.3}%
+\contentsline {chapter}{\numberline {3}Results}{11}{chapter.3}%
+\contentsline {chapter}{\numberline {4}Discussion and Outlook}{13}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Conclusions}{15}{chapter.5}%
+\vspace *{10mm}
+\contentsline {chapter}{\bfseries Bibliography}{17}{section*.7}%

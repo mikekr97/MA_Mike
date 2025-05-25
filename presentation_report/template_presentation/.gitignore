@@ -1,0 +1,14 @@
+~*
+*.synctex.gz
+*.aux
+*.bbl
+*.blg
+*.log
+*.nav
+*.out
+*.snm
+*.tex
+*.toc
+*.vrb
+figures/*
+tables/*

@@ -1,0 +1,57 @@
+\RequirePackage{uzhsetup}
+
+\mode<presentation>
+
+\setbeamersize{text margin left=0.4cm,text margin right=0.4cm}
+
+\defbeamertemplate*{frametitle}{uzh}[1][left]{
+  \begin{beamercolorbox}[#1]{frametitle}
+    \usebeamerfont{frametitle}%
+    \vbox{}\vskip0.15cm%
+    \strut\insertframetitle\strut\par%
+    {%
+      \ifx\insertframesubtitle\@empty%
+      \else%
+      {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\strut\insertframesubtitle\strut\par}%
+      \fi
+    }%
+  \end{beamercolorbox}%
+}
+
+\defbeamertemplate{headline}{uzhlogo}{
+  \begin{beamercolorbox}[sep=0.4cm]{headline}
+    \raisebox{-0.43\height}{\includegraphics[width=2.2cm]{img/uzh-logo.pdf}}%
+    \ifx\insertinstitute\@empty%
+    \else%
+      \hskip0.4cm{\color{gray}\vrule}\hskip0.4cm%
+      \begin{minipage}{5cm}%
+        \raggedright
+        \textsb{\insertinstitute}%
+      \end{minipage}%
+    \fi%
+  \end{beamercolorbox}
+}
+
+\def\ps@navigation@titlepage{%
+  \setbeamertemplate{footline}{}
+  \setbeamertemplate{headline}[uzhlogo]
+  \@nameuse{ps@navigation}
+}
+
+\defbeamertemplate*{footline}{uzh}{
+  \vskip0.2cm
+  \begin{beamercolorbox}[sep=0.4cm]{footline}
+    \usebeamerfont{footline}\usebeamercolor[fg]{footline}\textsb{\uzh@uzh}%
+    \ifx\insertinstitute\@empty%
+    \else%
+      \hskip2ex|\hskip2ex\insertinstitute%
+    \fi%
+    \hfill%
+    \insertdate\hskip2ex|\hskip2ex\insertframenumber%
+  \end{beamercolorbox}
+}
+
+\defbeamertemplate*{navigation symbols}{uzh}{}
+
+\mode
+<all>

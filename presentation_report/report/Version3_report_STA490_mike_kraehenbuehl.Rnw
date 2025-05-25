@@ -1,0 +1,2044 @@
+%% Department of Biostatistics Consulting Report Template
+%% Version 4
+
+\documentclass[11pt, a4paper]{article}
+
+
+% UZH style
+% =============================================================================
+\usepackage{sourcesanspro}
+\renewcommand{\familydefault}{\sfdefault}
+
+
+
+% Latex packages and options
+% =============================================================================
+\usepackage{verbatim}
+\usepackage[vmargin=3cm, hmargin=2cm, headheight=14pt]{geometry}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{color}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{lscape}
+\usepackage{natbib}
+\usepackage{xspace}
+\usepackage{booktabs}
+% spacing
+\linespread{1.05} 
+% sans serif caption (added by sina)
+\usepackage[font=sf, labelfont={sf}, margin=1cm]{caption}
+% encodings
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{float} % to place figures at exact position with "H"
+
+
+
+% ==============================================================================
+% Personalized layout: Fill in your name, email, supervisor, etc. below
+\newcommand{\name}{Mike Kr{\"a}henb{\"u}hl}
+\newcommand{\mail}{mikeeric.kraehenbuehl@uzh.ch}
+\newcommand{\versiondate}{\today}
+\newcommand{\client}{Patrick Freund} % umlaute: \"a = ä
+\newcommand{\clinic}{Lynn Farner} % umlaute: \"a = ä, specify precisely, not just USZ 
+\newcommand{\supervisor}{Torsten Hothorn} % umlaute: \"a = ä
+\newcommand{\projecttitle}{\textbf{Tissue Bridges Cut-Off Value in Spinal Cord Injury Patients}}
+\newcommand{\subtitle}{\textbf{STA490: Statistical Practice in Clinical Research} \\[.25cm]
+  {\Large Prof. Ulrike Held} \\[.25cm] 
+   {\large EBPI, Department of Biostatistics}}
+% ==============================================================================
+
+% elements of the header
+\newcommand{\web}{www.biostat.uzh.ch}
+\newcommand{\grp}{Master Program in Biostatistics}
+\newcommand{\inst}{University of Zurich}
+\newcommand{\img}{\includegraphics[height=16mm]{uzh-logo}}
+\newcommand{\of}{of\xspace}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+
+\newcommand{\mytitle}[3]{
+\begin{center}
+\vspace*{-1.7cm}
+
+\begin{minipage}{0.27\textwidth}
+\thispagestyle{empty}
+\begin{flushleft}
+\img
+\end{flushleft}
+\end{minipage}
+\hfill\vline\hfill
+\begin{minipage}{0.60\textwidth}
+\begin{flushleft} 
+   \grp \\
+   \href{http://\web}{\emph{\web}}
+\end{flushleft}
+\end{minipage}
+\end{center}
+
+\vspace*{1cm}
+
+\begin{flushleft}
+\textsf{\LARGE #2} 
+
+\vspace*{0.5cm}
+
+\large{#1}
+
+\medskip
+
+\large{\name \ (\href{mailto::\mail}{\textit{\mail})}}
+
+\medskip
+
+Version \of \versiondate
+\end{flushleft}
+
+\medskip
+}
+
+
+
+% Headers and footers
+\fancypagestyle{standard}{
+\fancyhf{}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyfoot[c]{\thepage}
+\fancyfoot[l]{\textsf{\name}, \href{mailto::\mail}{\textsf{\emph{\mail}}}}
+\fancyfoot[r]{\textsf{\versiondate}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[c]{}
+\fancyhead[l]{\textsf{\grp}}
+\fancyhead[r]{\textsf{\inst}}
+}
+
+% =============================================================================
+% bibliography
+\bibliographystyle{ims}
+
+% =============================================================================
+% If you use RStudio, make sure set the following option:
+% Tools -> Global Options -> Sweave -> Weave Rnw files using: knitr
+<<include = FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path = 'figures/', fig.show='hold',
+               echo = FALSE, 
+               results = 'hide',
+               fig.height = 4.5,
+               fig.align = "center")
+
+@
+% =============================================================================
+
+% =============================================================================
+% my latex commands
+\newcommand{\prog}[1]{\textsf{#1}}
+\newcommand{\pkg}[1]{\texttt{#1}}
+
+\begin{document}
+
+\pagestyle{standard}
+\mytitle{\projecttitle\\[.25cm] Analysis for \client, \clinic \\[.25cm] 
+Supervision by \supervisor}{\subtitle}
+
+\bigskip
+
+
+% ======================== Some Initial settings for R =========================
+<< setup, include = FALSE>>=
+## Import external functions
+## -----------------------------------------------------------------------------
+
+## Packages
+## -----------------------------------------------------------------------------
+library(RColorBrewer) # colors for plots
+library(tableone) # for Table 1 functions
+library(xtable) # formatting tables and generating the tex code
+library(biostatUZH) # EBPI-written package, if not installed, uncomment code below
+#devtools::install\_github(repo = "felix-hof/biostatUZH")
+library(ggplot2) # customizable plots
+library(stringr) # to prettify tables
+library(readxl) # to import data
+library(lattice) # for xyplot
+library(mgcv) # for GAMs
+library(colorspace) # sequential colors
+library(dplyr)
+library(naniar) # for missing data visualization (gg_miss_upset)
+#library(excel.link)
+#library(XLConnect) # to read password protected file
+# library(gtsummary) # for table creation
+### include project-specific packages here as well (e.g., lme4 for linear mixed effects models)
+### if possible do not load libraries in chunks further below or in scripts that you source
+
+################################################
+### only load libraries that you really use!####
+################################################
+
+## Additional settings
+## -----------------------------------------------------------------------------
+cols <- brewer.pal(3, "Set1")
+options(width = 85, digits = 4, show.signif.stars = FALSE)
+@
+
+
+<<readindata>>=
+## -----------------------------------------------------------------------------
+## Import Data
+## -----------------------------------------------------------------------------
+
+# Import primary dataset
+# (it already includes parasagittal tissue bridges)
+source("../data/NISCI_data.R")
+
+
+# Import midsagittal tissue bridges
+tissue_mid <- read_excel("../data/lesion_parameters_LF.xlsx")
+# Subset only first visit
+tissue_mid <- subset(tissue_mid, ExamStage == "NISCI01")
+# add total_bridges from tissue_mid to datc (where tissue_mid(NISCI_ID) == datc(id))
+datc$tissue_mid <- tissue_mid$total_bridges[match(datc$id, tissue_mid$NISCI_ID)]
+
+
+# Import lesion volume
+lesion_volume <- read_excel("../data/Lesion_volume_LF.xlsx")
+# rename Slice Thickness
+names(lesion_volume)[4] <- "Slice_Thickness"
+# Subset only first visit
+lesion_volume <- subset(lesion_volume, scan == 1)
+# According to Lynn Farner (Zoom 31.10.24), if Slice_Thickness is NA, the lesion volume 
+# should also be NA and not 0. Hence, these values are set to NA here:
+lesion_volume$Volume2[is.na(lesion_volume$Slice_Thickness)] <- NA
+# add Volume2 to datc (where lesion_volume(id) == datc(id))
+datc$lesion_volume <- lesion_volume$Volume2[match(datc$id, lesion_volume$id)]
+
+# amount of lesion_volume > 1200 (7 patients)
+# sum(lesion_volume$Volume2 > 1200, na.rm = TRUE)
+
+# amount of visit_id == 2 with lesion_volume > 1200 (joined 6 patients, 
+# one patient was not in the main dataset)
+# sum(datc$lesion_volume > 1200 & datc$visit_id == 2, na.rm = TRUE)
+
+# Set 2 patients to NA where lesion volume not correct in dataset:
+
+# Email by Lynn Farner: "Ich haben die Daten überprüft und es stimmt leider nicht ganz. 
+# BSL-001 und BYH-025 sollten ausgeschlossen werden, das habe ich beim Volumen falsch
+# vermerkt sorry. BYH-002 ist in Ordnung für das Volumen aber nicht für die 
+# parasagittalen Tissue Bridges."
+datc[datc$id =="BSL-001",]$lesion_volume <- NA
+datc[datc$id =="BYH-025",]$lesion_volume <- NA
+
+# store dataset including outliers
+datc_with_outliers <- datc
+
+# remove outliers for lesion volume
+# set lesion_volume to NA where lesion_volume > 1200
+datc$lesion_volume[datc$lesion_volume > 1200] <- NA
+
+
+# subset data for treatment and placebo
+datc_placebo <- subset(datc, trtplot=="Placebo")
+datc_treatment <- subset(datc, trtplot=="NG101")
+
+@
+
+
+<<pw_balgrist_murnau, warning=FALSE, error=FALSE>>=
+
+# password to open Balgrist/Murnau files
+
+pw <- "BGUUKB2021"
+
+@
+
+
+<<data_balgrist_murnau, warning=FALSE, error=FALSE>>=
+
+source("../code/datapreparation_balgrist_murnau.R")
+
+@
+
+
+<<data_collection, echo=FALSE>>=
+
+# mean time and sd for MRI timepoint (days after injury)
+
+MRI_timepoint_mean <- mean(tissue_mid$time, na.rm = TRUE)
+
+MRI_timepoint_sd <- sd(tissue_mid$time, na.rm = TRUE)
+
+@
+
+
+
+<<study_population, echo = FALSE>>=
+
+# to get the baseline values, we analyze the dataset including outliers
+
+# subset only baseline
+visit_2 <- subset(datc_with_outliers, visit_id == 2)
+
+# Number of total patients (126)
+total_patients <- length(unique(visit_2$id))
+
+# total countries
+total_countries <- length(unique(visit_2$country))
+
+# total patients in treatment and placebo
+total_treatment <- sum(visit_2$trtplot == "NG101")
+total_placebo <- sum(visit_2$trtplot == "Placebo")
+
+# age mean and sd
+mean_age <- mean(visit_2$bl_age, na.rm = TRUE)
+sd_age <- sd(visit_2$bl_age, na.rm = TRUE)
+
+# male percentage
+percentage_male <- table(visit_2$bl_sex)[1]/total_patients
+
+# total patients with tissue_mid
+total_tissue_mid <- sum(!is.na(visit_2$tissue_mid))
+
+# table of number of records per patient (0, 1, 2, 3, 4)
+number_UEMS_records <- table(table(datc$id))
+
+# mean medication start
+mean_medistart <- mean(visit_2$medistart, na.rm = TRUE)
+
+@
+
+
+<<quartile_plot, eval=FALSE>>=
+
+# Define quartiles for the selected biomarker, independent of treatment groups and based on visit 2
+quantiles <- quantile(subset(datc, visit_id == 2)[[biomarker]], prob = 1:3 / 4, na.rm = TRUE)
+
+# Categorize the biomarker based on quartiles
+datc[[paste0(biomarker, "_c")]] <- cut(datc[[biomarker]], breaks = c(-Inf, quantiles, Inf), 
+                                       as.ordered = TRUE)
+
+# Plot the raw data of recovery separately per treatment group and quartile of biomarker
+xyplot(
+    uems ~ tm | get(paste0(biomarker, "_c")) + trtplot, data = datc, 
+    group = id, xlim = c(-5, 240), type = "b", between = list(x = 1, y = 1),
+    pch = 20, cex = 0.7, lwd = 3, col = rgb(0.1, 0.1, 0.1, 0.3), 
+    xlab = "Time (days)", ylab = "Upper Extremity Motor Score", 
+    scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom,
+         y = list(alternating = 1), # Show y-axis tick labels only at the left
+         tck = c(1, 0) # Remove top ticks
+       )
+    #,main = paste("UEMS over time by", biomarker_name, "quartiles and treatment group")
+)
+@
+
+
+
+<<biomarker_nodeCplot, eval=FALSE>>=
+
+# Boxplots of the biomarker in each node (treatment groups combined)
+
+boxplot(as.formula(paste(biomarker, " ~ nodeCplot")), data = subset(datc, visit_id == 2), na.rm = TRUE, 
+        ylab = biomarker_name_upper,
+        xlab = "")
+
+@
+
+
+<<baseline_uems_plot, eval=FALSE>>=
+
+# Plot the baseline UEMS against the baseline biomarker value
+
+xyplot(as.formula(paste("uems ~", biomarker, "|  trtplot")), 
+       data = subset(datc, visit_id == 2), 
+       group = id, 
+       type = "b", 
+       pch = 16,
+       cex = 1.2,
+       lwd = 2,
+       col = rgb(.1, .1, .1, .5),
+       xlab = biomarker_name_upper,
+       ylab = "Upper Extremity Motor Score",
+       #main = paste("Baseline", biomarker_name, "vs UEMS"),
+       grid = TRUE,
+			 scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom
+         tck = c(1, 0) # Remove top ticks
+       ),
+			 panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...) # Plot the points
+         panel.lmline(x, y, col = "black", lwd = 1)  # Add a linear regression line
+       }
+       )
+
+@
+
+
+<<fit_gam, eval=FALSE>>=
+
+# fit GAM for each treatment group separately
+
+# Define the formula
+gam_formula <- as.formula(paste("uems ~ s(", biomarker, ") + s(tmstd) + ti(", biomarker, ", tmstd) + 
+                                s(id, bs = 're') + s(id, tmstd, bs = 're')"))
+
+# Fit the GAM
+gam_placebo <- gam(gam_formula,
+                    data = datc_placebo, method = "REML")
+
+gam_treatment <- gam(gam_formula,
+                      data = datc_treatment, method = "REML")
+
+
+@
+
+
+<<summary_table, eval=FALSE, results='asis'>>=
+
+# Combined tables of the GAM fit for both treatment groups
+
+combined_summary <- rbind(summary(gam_placebo)$s.table
+, summary(gam_treatment)$s.table)
+
+@
+
+
+<<plot_gam_placebo, eval=FALSE>>=
+
+# plot the smooth functions fitted by the GAM for the placebo group
+
+par(mfrow = c(1, 3))
+
+
+plot(gam_placebo, scheme = 1, select = 1, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = biomarker_name_upper, ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5)
+
+plot(gam_placebo, scheme = 1, select = 2, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = "Time (standardized)", ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5)
+
+plot(gam_placebo, scheme = 1, select = 3, 
+     seWithMean = TRUE, rug = TRUE, main = "UEMS",
+     xlab = biomarker_name_upper, ylab = "Time (standardized)", ticktype = "detailed", 
+     cex.lab = 1.45, cex.axis = 1.3, cex.main = 1.45, theta = 45,  # Rotate around the z-axis
+     phi = 25)    # Adjust elevation angle (tilt the plot vertically)
+
+
+@
+
+
+<<plot_gam_treatment, eval=FALSE>>=
+
+# plot the smooth functions fitted by the GAM for the treatment group
+
+par(mfrow = c(1, 3))
+
+plot(gam_treatment, scheme = 1, select = 1, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = biomarker_name_upper, ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5)
+
+plot(gam_treatment, scheme = 1, select = 2, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = "Time (standardized)", ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5,)
+
+plot(gam_treatment, scheme = 1, select = 3, 
+     seWithMean = TRUE, rug = TRUE, main = "UEMS",
+     xlab = biomarker_name_upper, ylab = "Time (standardized)", ticktype = "detailed",
+     cex.lab = 1.45, cex.axis = 1.3, 
+     cex.main = 1.45, theta = 45,  # Rotate around the z-axis 
+     phi = 25)    # Adjust elevation angle (tilt the plot vertically)
+
+@
+
+
+
+<<gam_prediction_plot, eval=FALSE, warning=FALSE>>=
+
+# predict recovery trajectories based on different values of the biomarker
+
+models <- list(gam_placebo, gam_treatment)
+
+# Prediction function using biomarker variable
+make_prediction <- function(biomarker_value, model) {
+  # new_data includes time at baseline up to 6 months
+  # (used standardized time = 1.1 just for visualization)
+  new_data <- expand.grid(id = 1, tmstd = seq(0, 1.1, length = 100))
+  # current biomarker value is added to the new data
+  # current "biomarker" is defined before the code chunk
+  new_data[[biomarker]] <- biomarker_value
+  
+  # Make predictions excluding random effects
+  prediction <- data.frame(
+    tmstd = new_data$tmstd, 
+    pred = predict(model, newdata = new_data, exclude = "s(id)")
+  )
+  return(prediction)
+}
+
+# Set up colors for plotting
+colors_plot <- sequential_hcl(length(biomarker_values), palette = "Viridis")
+
+
+legend_key <- list(
+  text = list(labels = paste0(format(biomarker_values, 
+                                     nsmall = ifelse(biomarker == "lesion_volume", 0, 1)))),
+  lines = list(col = colors_plot, lwd = 2),  # Corresponding colors
+  space = "right",
+  columns = 1,
+  title = biomarker_name_legend,
+  cex.title = 0.9, 
+  cex = 0.8  
+)
+
+# Plot the raw recovery data per treatment group and 
+# add the predictions for different values of the biomarker
+xyplot(uems ~ tmstd | trtplot, 
+       data = datc, 
+       group = id, 
+       xlim = c(-0.1, 1.3), 
+       type = "b", 
+       between = list(x = 1, y = 1), 
+       pch = 20, 
+       cex = .7, 
+       lwd = 3, 
+       col = rgb(.1, .1, .1, alpha = 0.05),  # Fade primary data lines
+       xlab = "Time (standardized)", 
+       ylab = "Upper Extremity Motor Score",
+       #main =  paste("Predictions for different", biomarker_name, "values"),
+       key = legend_key,
+       scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom
+         tck = c(1, 0) # Remove top ticks
+       ),
+       # add predictions
+       panel = function(x, y, subscripts, ...) {
+         panel.xyplot(x, y, subscripts = subscripts, ...)
+         # panel_index indicating treatment group (1 = placebo, 2 = NG101)
+         panel_index <- panel.number()
+         
+         # for each biomarker value, make predictions and add to plot
+         for (i in seq_along(biomarker_values)) {
+             biomarker_value <- biomarker_values[i]
+             # Generate predictions for each treatment group and biomarker value
+             preds <- make_prediction(biomarker_value = biomarker_value, model = models[[panel_index]])
+             panel.lines(preds$tmstd, preds$pred, col = colors_plot[i], alpha = 0.6, lwd = 2)
+         }
+    })
+
+
+@
+
+
+<<gam_delta_plot, eval=FALSE, warning=FALSE>>=
+
+# this chunk generates predictions for baseline UEMS and 6-month UEMS for different values
+# of the biomarker and plots the delta-UEMS over the range of the biomarker
+
+# number of predicted delta-UEMS 
+N <- 100
+
+# predictions made along the sequence of min(biomarker_value) to max(biomarker_value) of the biomarker
+prediction_sequence <- seq(from= min(biomarker_values), to= max(biomarker_values), length.out = N)
+
+# Create new data for predictions using biomarker variable dynamically
+#new_data <- expand.grid(id = 1, tmstd = c(0, 1), biomarker_value = biomarker_values)
+
+#new_data <- data.frame(id = rep(1, 2 * length(biomarker_values)), 
+# tmstd = rep(c(0, 1), each = length(biomarker_values)))
+
+# new_data for tmstd=0 and tmstd=1
+new_data <- data.frame(id = rep(1, 2 * N), tmstd = rep(c(0,1), each = N))
+
+# add biomarker value sequence to new data
+new_data[[biomarker]] <- rep(prediction_sequence, 2)
+                       
+
+# Generate predicted UEMS for placebo and treatment groups at tmstd=0 and tmstd=1
+predictions <- data.frame(
+    tmstd = new_data$tmstd,
+    biomarker = new_data[[biomarker]],
+    pred_placebo = predict(gam_placebo, newdata = new_data, exclude = "s(id)"),
+    pred_treatment = predict(gam_treatment, newdata = new_data, exclude = "s(id)")
+)
+
+
+# Calculate the predicted delta change between tmstd = 1 and tmstd = 0 for each biomarker value
+predicted_delta <- data.frame(
+    biomarker_value = prediction_sequence,
+    delta_placebo = predictions[predictions$tmstd == 1,]$pred_placebo 
+    - predictions[predictions$tmstd == 0,]$pred_placebo,
+    delta_treatment = predictions[predictions$tmstd == 1,]$pred_treatment 
+    - predictions[predictions$tmstd == 0,]$pred_treatment
+)
+
+
+# Plot the predicted delta-UEMS for each biomarker value
+plot(predicted_delta$biomarker_value, predicted_delta$delta_placebo, type = "l", 
+     #col = "#69b3a2", lwd = 2, 
+     col = "black", lwd = 2, lty = 1,
+     ylim = c(min(predicted_delta[,2:3])-1, max(predicted_delta[,2:3])+1),
+     xlab = biomarker_name_upper, 
+     ylab = expression("Predicted " * Delta * "-UEMS")
+     #, main = bquote("Predicted " * Delta * "-UEMS for different" ~ .(biomarker_name) ~ "values")
+     )
+
+
+# Add line for the treatment group
+lines(predicted_delta$biomarker_value, predicted_delta$delta_treatment, #col = "#f4a582", lwd = 2,
+      col = "black", lwd = 2, lty = 2)
+
+# Add legend
+legend(legend_location, legend = c("Placebo", "NG101"), lty = c(1, 2), lwd = 2, bty = "n")
+
+
+@
+
+
+<<cut_off_value_abstract, eval=TRUE, warning=FALSE>>=
+
+## code chunk for the turning and crossing point in abstract.
+## Same code also separately executed in the chapter Results: Parasagittal tissue bridges
+
+biomarker <- "SR" 
+biomarker_name <- "parasagittal tissue bridges"
+biomarker_name_upper <- "Parasagittal tissue bridges"
+biomarker_name_legend <- "Parasagittal TB"
+biomarker_values <- seq(0, 5, by = 0.5)
+legend_location <- "topleft"
+
+
+<<fit_gam>>
+
+# number of predicted delta-UEMS 
+N <- 100
+
+prediction_sequence <- seq(from= min(biomarker_values), to= max(biomarker_values), length.out = N)
+
+# new_data for tmstd=0 and tmstd=1
+new_data <- data.frame(id = rep(1, 2 * N), tmstd = rep(c(0,1), each = N))
+
+# add biomarker value sequence to new data
+new_data[[biomarker]] <- rep(prediction_sequence, 2)
+                       
+
+# Generate predicted UEMS for placebo and treatment groups at tmstd=0 and tmstd=1
+predictions <- data.frame(
+    tmstd = new_data$tmstd,
+    biomarker = new_data[[biomarker]],
+    pred_placebo = predict(gam_placebo, newdata = new_data, exclude = "s(id)"),
+    pred_treatment = predict(gam_treatment, newdata = new_data, exclude = "s(id)")
+)
+
+
+# Calculate the predicted delta change between tmstd = 1 and tmstd = 0 for each biomarker value
+predicted_delta <- data.frame(
+    biomarker_value = prediction_sequence,
+    delta_placebo = predictions[predictions$tmstd == 1,]$pred_placebo 
+    - predictions[predictions$tmstd == 0,]$pred_placebo,
+    delta_treatment = predictions[predictions$tmstd == 1,]$pred_treatment 
+    - predictions[predictions$tmstd == 0,]$pred_treatment
+)
+
+# Find the index where treatment group levels off
+diff <- (c(predicted_delta$delta_treatment,0)-c(0, predicted_delta$delta_treatment) )
+
+first_negative_index <- which(diff < 0)[1]
+parasagittal_turnpoint <- predicted_delta$biomarker_value[first_negative_index]
+
+# Find the index of the first negative value
+diff <- (predicted_delta$delta_placebo - predicted_delta$delta_treatment)
+
+first_positive_index <- which(diff > 0)[1]
+
+parasagittal_crossing <- predicted_delta$biomarker_value[first_positive_index]
+
+@
+
+
+
+
+
+% ======================= End of Initial Settings for R =======================
+
+% =============================================================================
+\section{Abstract} \label{sec:abstract}
+% =============================================================================
+
+% A report of statistical results does not always contain an abstract. 
+% You are required to write an abstract here for training purposes.
+
+We investigated the predictive value of preserved tissue bridges for recovery after a cervical 
+spinal cord injury. This analysis was based on the NISCI study, a randomized, placebo-controlled, multicentre, phase 2b clinical trial with 78 patients in the NG101 (intervention) group and 48 patients in the placebo group.
+The relationship of baseline tissue bridges with recovery, measured by upper extremity motor score (UEMS), was modelled with a generalized additive model (GAM) on both treatment groups separately. 
+The analysis showed that the amount of preserved midsagittal tissue bridges had a linear positive relationship with the 6-month recovery ($\Delta$-UEMS) in both treatment groups. The parasagittal tissue bridges showed also a positive relationship with recovery. However, in the treatment group the $\Delta$-UEMS did not further improve for parasagittal tissue bridge values higher than \Sexpr{round(parasagittal_turnpoint, 1)} mm. Receiving the NG101 treatment was beneficial for patients with parasagittal tissue bridge values lower than \Sexpr{round(parasagittal_crossing,1)} mm, whereas for higher parasagittal tissue bridge values, the placebo group showed a better 6-month recovery. Hence, in terms of treatment effect, a cut-off value of \Sexpr{round(parasagittal_crossing,1)} mm in preserved parasagittal tissue bridges could, for example, be used as an inclusion criterion in a follow-up study.
+
+
+% =============================================================================
+\section{Introduction} \label{sec:intro}
+% =============================================================================
+% Write a short description of the background such that the research questions
+% become clear. This requires explanation of the medical background related to the 
+% problem and may also require explanation of the statistical methods to be used 
+% (if the methods are not familiar or are complicated). In this report we use 
+% \cite{holm1979}; use this as an example of how to cite references.
+
+Traumatic spinal cord injury (SCI) is a severe condition resulting for example from falls and road traffic injuries. Bundles of nerves and nerve fibers are damaged and transmission of nerve signals with the brain is suppressed \citep{NINDS2023}. SCI can lead to a loss of motor and/or sensory function below the injury site and decrease quality of life \citep{WHO_SCI}. The prognosis of recovery is crucial for the patient and the treating physician.
+
+
+
+Biomarkers that serve for prognosis are needed. Studies have shown that the amount of preserved tissue bridges around the lesion is an important factor to characterizing and predicting the recovery after a spinal cord injury. Tissue bridges function as preserved neuronal pathways that restore the connection between the brain and the body. It has been observed that the amount of tissue bridges is positively correlated with the recovery (\citet{freund_predictive_17}; \citet{article_tissue_freund_19}) and that certain cut-off values are prognostic for an improved recovery after 3 months and 12 months \citep{freund_prognostic_24}. 
+
+Another biomarker that showed some prognostic power is the lesion area. It can be seen as the counterpart to the tissue bridges since it represents the damaged tissue. The lesion area is negatively correlated with the recovery \citep{freund_predictive_17}.
+
+
+The aim of this analysis is to further investigate the relationship between clinical biomarkers such as preserved midsagittal/parasagittal tissue bridges and lesion volume with the recovery after a spinal cord injury. Depending on the form of this relationship, cut-off values could be determined that help to separate patients into likely and unlikely recovery. Assigning patients to subgroups depending on their predicted outcomes is crucial. It helps improving the planning, individualisation and evaluation of therapies. By segmenting patients in clinical studies into more homegeneous subgroups according to their distinct predicted recovery profile, allows to separately assess the treatment sucess in the respective subgroups. Finally, a cut-off value could also be used as inclusion criterion in a clinical trial.
+
+
+% =============================================================================
+\section{Research Questions} \label{sec:questions}
+% =============================================================================
+
+
+
+\begin{enumerate}
+    \item What is the relationship between biomarkers such as preserved midsagittal/parasagittal tissue bridges or lesion volume after a
+    spinal cord injury and the recovery over time measured by the upper extremity motor score?
+    %\item Does the relationship of tissue bridges with recovery differ between the placebo and NG101 group?
+    \item  Can a cut-off value on the range of the biomarker be determined that helps to 
+    separate patients into poor and good expected recovery?
+    
+    \item Which biomarker (midsagittal tissue bridges, parasagittal tissue bridges or lesion volume) can be used best to determine a cut-off value?
+            
+    %\item Is there a difference between complete and incomplete spinal cord injuries?
+
+
+\end{enumerate}
+
+
+
+% =============================================================================
+\section{Methods} \label{sec:methods}
+% =============================================================================
+
+
+% =============================================================================
+\subsection*{Study Design} \label{subsec:design}
+% =============================================================================
+
+
+\subsubsection*{Type of Study}
+
+This is an exploratory post-hoc analysis based on the NISCI study \citep{weidner2025safety}. Therefore, we will only briefly explain the methods used in the NISCI study, but emphasise those that are relevant to answering the research questions stated in Section~\ref{sec:questions}. The methods of the NISCI study are described in detail in the main study report.
+
+
+
+% =============================================================================
+\subsubsection*{NISCI Study} \label{sec:intro_study}
+% =============================================================================
+
+
+
+The NISCI study was a randomised, placebo-controlled, multicentre, phase 2b, clinical trial where the effect of the treatment with an antibody was investigated. The antibody is called NG101 and it binds to the protein Nogo-A. Nogo-A is a protein that inhibits the growth of nerve fibers. The idea is that by targeting Nogo-A, the nerve fibers can regrow better and the recovery is improved. 
+
+The study was conducted in specialized SCI centres in Germany, Switzerland, Spain and the Czech Republic. Between 2019 and 2022, \Sexpr{total_patients} patients with acute traumatic cervical spinal cord injury (neurological level of injury C1-C8)
+ were recruited and randomized to treatment (NG101) and placebo in a ratio 2:1. 
+ 
+  The primary outcome was the change in upper extremity motor score (UEMS, according to ISNCSCI) in 6 months. The UEMS
+ is a measure that assesses the motor function in multiple muscle groups in the arms and it can take values between 0 and 50 in increments of 1. The score was measured at baseline and after approximately 1, 3 and 6 months. The statistical analysis was mainly 
+ conducted with linear mixed-effects models. 
+ The overall primary outcome was not significant, but some subgroups showed promising results. 
+ 
+ 
+ \subsubsection*{Data collection} \label{subsec:data_collection}
+ % =============================================================================
+% \subsubsection*{Tissue Bridges and Lesion Volume} \label{sec:intro_tissue}
+% =============================================================================
+
+Patients underwent MRI scanning at screening. The protocol included T1-weighted, sagittal T2-weighted, and axial T2-weighted anatomic scans of the cervical spinal cord, centered at lesion level. From the scans, the midsagittal tissue bridges, parasagittal tissue bridges and the lesion volume were determined. The amount of preserved midsagittal tissue bridges (measured in mm) were calculated as the sum of the ventral and dorsal bridges that were visible on the midsagittal MRI slice. Figure \ref{fig:lesion} illustrates the schematic lesion segmentation. Parasagittal tissue bridges were calculated similarly to midsagittal bridges. In this case, however, tissue bridges were also measured in the parasagittal MRI slices. The measurements from all slices where the lesion was visible were added together. To adjust for differences in cord size, this total was divided by the number of slices showing the lesion, giving the average amount of preserved tissue bridges in millimeters. The lesion volume (mm\(^3\)) was also determined by MRI screening.
+
+\begin{figure}
+\centering
+        \includegraphics[width=0.4\textwidth]{img/lesion.png}
+        \caption{Typical T2W midsagittal slice (left) and schematic lesion segmentation (right) with the quantitative MRI measures analyzed (lesion area [LA], lesion length [LL], lesion width [LW], ventral midsagittal tissue bridges [VB], and dorsal midsagittal tissue bridges [DB]) \citep{article_tissue_freund_19}.}
+        \label{fig:lesion}
+\end{figure}
+ 
+
+
+
+% \subsubsection*{Study population}
+% 
+% Describe the composition including inclusion/exclusion criteria
+
+
+
+
+
+% \subsubsection*{Data collection} \label{subsec:data_collection}
+
+% \textbf{Upper Extremity Motor Score}
+% Describe specific issues in data collection, variables names, definitions and range.
+
+
+
+
+The primary outcome UEMS was measured at baseline and 30, 84 and 168 days post baseline. The time variable in the analysis indicates the measurement timepoint of UEMS in days after start of medication. For example, time=2  means that the UEMS was measured 2 days after the patient received the first dose. The UEMS, assessed according to ISNCSCI, ranges from 0 to 50 in increments of 1. A higher UEMS indicates better motor functions. 
+
+
+
+
+\subsubsection*{Balgrist/Murnau}
+
+Additional data from SCI patients including baseline midsagittal tissue bridge values is available from the two centres Balgrist and Murnau. The \Sexpr{length(unique(balgrist_murnau$id))} patients were recruited between 2002-2019 and followed up for up to 12 months (for some even longer). Based on this data, \citet{freund_prognostic_24} showed a positive association between the amount of tissue bridges and the recovery in terms of UEMS in a retrospective study.
+Our results of these additional SCI patients from Balgrist/Murnau will be provided after the results for the NISCI patients in Section \ref{sec:results}.
+
+
+
+% =============================================================================
+\subsection*{Statistical Analysis} \label{subsec:statmethods}
+% =============================================================================
+% Describe the statistical methods you use; the more non-standard they are, the 
+% longer the description should be. Please describe the following:
+\subsubsection*{Data Preparation}
+
+Most data preparation, such as standardization of time, was already done for the NISCI study. The time variable is standardized so that 0 corresponds to the day of medication start and 1 corresponds to 6 month follow-up (168 days after first medication). The primary dataset contained all variables except the midsagittal tissue bridges and the lesion volume. Those measures were provided in two separate excel files. We joined the baseline measures of the biomarkers with the patient id and added them to the primary dataset. 
+
+% (Zoom 31.10.24) According to Lynn Farner, the dataset with the lesion volume contained 0 where the slice thickness was missing. In this case, the volume should not be 0 but NA instead. This was corrected.  
+
+
+For the patients from Balgrist/Murnau, no medication timepoint is available. To make the results as comparable as possible to the NSICI data, the time variable is standardized such that 0 corresponds to the average day of first medication in the NISCI study. Therefore, for the Balgrist/Murnau dataset the standardized time variable is defined as: 
+
+\[
+\text{time}_\text{Balgrist/Murnau} = \frac{\text{(days since injury)} - \text{(NISCI avg. day of first medication)}}{168}
+\]
+
+
+
+
+\subsubsection*{Missing Values}
+
+There are two types of missing values that are relevant in the analysis of the relationship between baseline biomarkers and the recovery. First, some patients were lost to follow-up for various reasons (for example left the country or no longer wanted to continue). Therefore, we do not have all 4 measurements (baseline and 3 follow-up) from all patients. Second, baseline biomarker values are missing for some patients. The reasons for the missing values will be provided in Section~\ref{sec:results}.
+In both cases missing values are not imputed. The primary aim of this exploratory analysis is to investigate the relationship between biomarkers and recovery. No significance testing will be performed. We do not want to introduce additional uncertainty by imputing. We are of the opinion that the lack of strongly related variables with the biomarkers would make imputation of missing values unreliable. The missing biomarker values are therefore handled by excluding the respective patients from the analysis, hence a complete case analysis is performed.
+
+
+\subsubsection*{Descriptive Statistics and Simple Methods}
+
+
+The following analysis is conducted for each biomarker individually. Patients are divided into four subgroups according to the quartile of the biomarker range. Then, the UEMS over time is plotted by treatment group and quartile of the biomarker. This should give a first impression of the recovery profiles conditional on the treatment group and different ranges of the biomarker value. Furthermore, boxplots show the distribution of the biomarker per URP-CTREE node. URP-CTREE (Unbiased Recursive Partitioning regression with Conditional Inference Trees) is an algorithm that uses early neurologic impairment to predict the expected motor recovery. This approach was applied during enrollment and patients were stratified into homogeneous subgroups based on the predicted UEMS at 168 days post baseline. \citet{Evaniew2019} validated this approach in an independent study.
+
+The distributions of the biomarkers against the baseline UEMS are visualized by scatter plots. This should uncover potential surprising baseline distributions in the treatment groups. 
+
+Next, a generalized additive model (GAM), as will be described in the next Section~\ref{sec:gam}, is fitted on both treatmet groups separately. The resulting smooth functions of the predictors are presented, showing how the relationships are modelled. By using different values on the range of the respective biomarker, predictions for the recovery over time are made with the GAM and added to a plot with the raw patient data. Each line in the plot represents a hypothetical patient with a different baseline value for the biomarker. This should give an impression of how the recovery changes over time depending on the value of the biomarker. For each predicted recovery trajectory, the difference between the UEMS at 6-month follow-up and baseline is calculated ($\Delta$-UEMS). This difference is then plotted against the baseline value of the biomarker and should give an idea of how the predicted 6-month recovery changes depending on the value of the biomarker.
+If the relationship between the biomarker value at baseline and the 6-month recovery is linear, the $\Delta$-UEMS should be represented as a straight line. 
+
+The research question of finding a cut-off value depends on the relationship of $\Delta$-UEMS and the biomarker. In terms of prognostic value, only if there was a non-linear relationship where the $\Delta$-UEMS is higher or lower over a certain range of the biomarker, a cut-off value would be meaningful. In terms of predictive value, crossing curves between the treatment groups would indicate that the treatment was superior only for patients falling into a certain range of the biomarker values.
+
+ % If the function is linear, a cut-off value is not meaningful. But if the function suggests, for example, that there is no effect on recovery for tissue bridge values below 2 mm, but for tissue bridge values above 2 mm the recovery increases, then a cut-off value at 2 mm could be determined.
+
+
+
+\subsubsection*{Generalized Additive Model}\label{sec:gam}
+
+
+
+Before we consider whether a cut-off value can be determined, we need to investigate the relationship between the tissue bridges and the recovery. Since we want to make as few assumptions as possible, a model is needed that allows for great flexibility. A generalized additive model (GAM) can capture complex, non-linear relationships between predictors and response. It extends the generalized linear model (GLM) by replacing the linear combination of the predictors $\sum \beta_j X_j$ by the sum of smooth functions of the predictors $\sum f_j(X_j)$ \citep{hastie1986}. 
+
+A simpler model such as a linear mixed-effects model would require to make the assumption that the relationship between each predictor and the response variable is linear. For illustration; assuming we model the problem by a linear mixed-effects model, a single coefficient for the tissue bridges would be estimated. This coefficient would represent the average effect of the biomarker on the recovery. But this is not the aim of this analysis. Instead, we want to investigate whether the relationship of the biomarker and the response (UEMS) changes depending on the value of the biomarker. A GAM models the problem by fitting a smooth function of the biomarker. This smooth function can have any shape.
+
+
+Hence, in this analysis we use a GAM to model the recovery. Equation \ref{eq:gam} shows the formula of the model that is applied. The model consists of an overall intercept, the main effects of baseline biomarker and time, and additionally an interaction effect for biomarker and time. This interaction term is necessary if the shape of recovery over time is different for varying biomarker values. The patient-specific random effects capture correlations between repeated measurements. 
+
+
+
+\begin{equation}
+\text{UEMS}_{ij} = \beta_0 + f_1(\text{biomarker}_{i}) + f_2(\text{time}_{ij}) + f_3(\text{biomarker}_{i}, \text{time}_{ij}) + \alpha_{id} + \beta_{id} \times \text{time}_{ij} + \epsilon_{ij} \label{eq:gam}
+\end{equation}
+
+% Random effects beore : + f_{id}(\text{id}_{i}) + f_{id:tmstd}(\text{id}_{i}, \text{time}_{ij} )
+% Changed: Formel (1) das f_id(id_i) als \alpha_id schreiben (einfach ein random intercept) und dann f_id:tmstd als \beta_id \times tmstd (random slope).
+
+
+\begin{itemize}
+\item $\text{UEMS}_{ij}$ is the upper extremity motor score of patient $i$ at time $j$. It can take values between 0 and 50.
+
+\item $\beta_0$ is the overall intercept.
+
+\item $f_1(\text{biomarker}_{i})$ is the smooth function of the biomarker at baseline. It shows the effect on UEMS depending on the value of the biomarker.
+
+\item $f_2(\text{time}_{ij})$ is the smooth function of time. It shows the effect on the UEMS over time. The time variable is standardized so that time = 0 corresponds to baseline (day of first medication) and time = 1 corresponds to 6-month follow-up (day 168 after first medication).
+
+\item $f_3(\text{biomarker}_{i}, \text{time}_{ij})$ is the interaction term. It shows how the effect of the biomarker on the UEMS changes over time. This interaction is the effect that is not already included in the main effects of biomarker and time.
+
+\item $\alpha_{id} + \beta_{id} \times \text{time}_{ij}$ are the patient-specific random effects. They account for the fact that each patient might have an individual intercept (baseline UEMS value) or trajectory of recovery over time regardless of the value of the predictors used in the model. Without including these random effects, the model would assume that all patients with the same value of the biomarker (e.g. midsagittal tissue bridges) at a given timepoint would have the same baseline UEMS and identical recovery trajectory over time. This would mean that no patient-specific deviations would be allowed and therefore could lead to a biased estimation of the effect on UEMS.
+
+\item \(\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2)\) is the error term.
+
+\end{itemize}
+
+
+
+Restricted maximum likelihood (REML) is used as fitting algorithm due to its resistance to occasional severe over-fitting \citep[p. 267]{book_GAM}. The smooth functions are approximated using penalized regression splines. 
+
+In contrast to random effects in linear mixed-effects models, where explicit parameters are estimated for each individual, the random intercepts and slopes in this GAM are specified as special cases of smooths.
+Same as the other terms, they are approximated using penalized regression splines. Additionally, the patient-specific slopes can be non-linear.
+
+
+To avoid making assumptions about the treatment effect of NG101 in any way on the relationship between the biomarkers and the recovery, the model is fitted separately on the placebo and NG101 group.
+
+\subsubsection*{Implementation}
+
+All analyses were performed in the \prog{R} programming language \citep{R} using base packages and the following analysis-specific packages: \texttt{mgcv} to fit generalized additive models with gam() \citep{mgcv}, \texttt{lattice} to use xyplot() for plotting \citep{lattice}.
+
+
+
+
+
+
+% =============================================================================
+\section{Results} \label{sec:results}
+% =============================================================================
+
+
+
+
+
+
+<<table1_results, results='asis'>>=
+
+
+# table 1
+
+# subset only baseline measures
+visit_2 <- subset(datc_with_outliers, visit_id == 2)
+
+
+## Vector of variables to summarize
+myVars <- c("medistart", "uems","tissue_mid", "SR", "lesion_volume")
+
+# Create a TableOne object with an overall column
+tab_one <- CreateTableOne(vars = myVars, strata = "trt", data = visit_2, 
+                          addOverall = TRUE, test = FALSE)
+
+# Convert TableOne to data frame for LaTeX formatting
+tab_one_df <- print(tab_one, printToggle = FALSE, noSpaces = TRUE)
+
+rownames(tab_one_df) <- c("Patients", "Time from injury to 1st dose (days)", "UEMS", 
+                          "Midsagittal tissue bridges (mm)", "Parasagittal tissue bridges (mm)",
+                          "Lesion volume (mm$^3$)")
+
+colnames(tab_one_df) <- c("Overall", "Placebo", "NG101")
+
+
+tab_one_xt <- xtable(tab_one_df, caption = "Baseline characteristics by treatment group in the 
+NISCI study. 
+                     The days to first medication as well as the baseline measurements of 
+                     the UEMS and the three biomarkers are presented as mean (sd).", 
+                     label = "tab:table_one_results")
+
+# Print xtable
+print(tab_one_xt, include.rownames = TRUE, caption.placement = "top", type = "latex", 
+      sanitize.text.function=function(x){x})
+
+
+
+@
+
+
+
+
+\subsubsection*{NISCI Study and Neuroimaging Substudy}
+
+\Sexpr{total_patients} patients with acute traumatic cervical spinal cord injury (neurological level of injury C1-C8) were included in the NISCI study. \Sexpr{total_treatment} were allocated to the NG101 group and \Sexpr{total_placebo} received the placebo. The patients were recruited in \Sexpr{total_countries} countries. The mean age was \Sexpr{round(mean_age, 1)} years (SD = \Sexpr{round(sd_age, 1)}). The percentage of males was \Sexpr{round(percentage_male*100, 1)}\%.
+
+
+
+
+103 out of \Sexpr{total_patients} patients underwent MRI imaging at screening in an exploratory neuroimaging substudy. All \Sexpr{total_patients} patients would theoretically have been included in the substudy. However, some did not want to participate, were not stable enough, or the MRI machines were out of order. The screening was carried out on average \Sexpr{round(MRI_timepoint_mean, 1)} days (SD = \Sexpr{round(MRI_timepoint_sd, 1)}) after the injury occurred. Some scans were invalid due to metal or motion artifacts and poor image quality. The midsagittal tissue bridges were calculated based on the midsagittal MRI slice and the parasagittal tissue bridges were calculated based on the parasagittal MRI slices. Table \ref{tab:table_one_results} shows the baseline measurements in the treatment groups.
+
+
+<<missing_table, results='hide'>>=
+
+# Check for missingness across the three biomarker variables, then group and summarize
+
+missing_summary <- visit_2 %>%
+  mutate(
+    tissue_mid_missing = is.na(tissue_mid),
+    SR_missing = is.na(SR),
+    lesion_volume_missing = is.na(lesion_volume)
+  ) %>%
+  group_by(
+    tissue_mid_missing,
+    SR_missing,
+    lesion_volume_missing
+  ) %>%
+  summarize(
+    patient_count = n(), 
+    .groups = "drop"
+  )
+
+tab3_xt <- xtable(missing_summary, caption = "Combination of missing values in the three 
+                  biomarkers under investigation.", label = "tab:table_missing")
+
+
+# Print xtable
+print(tab3_xt, caption.placement = "top", type = "latex", include.rownames=FALSE) 
+
+
+@
+
+\begin{figure}[!ht]
+\begin{center}
+<<missing_combinations, fig.height=3, fig.align='center'>>=
+
+# create a plot of the missing value combinations (same as table above)
+
+missing_set <- visit_2[, c("tissue_mid", "SR", "lesion_volume")]
+colnames(missing_set) <- c("Midsagittal", "Parasagittal", "Lesion_volume")
+
+# Generate a missing data heatmap
+gg_miss_upset <- gg_miss_upset(missing_set, 
+                               nsets = 5)
+
+# Display the plot
+gg_miss_upset
+
+@
+\end{center}
+\caption{Visualization of the pattern of missing variables in the NISCI dataset.}
+\label{fig:missing_combinations}
+\end{figure}
+
+
+
+
+Figure \ref{fig:missing_combinations} shows the combinations of missing values of the three biomarkers. It is important to note that only invalid or not recorded values are considered missing values. A biomarker value of 0 is a valid measurement and therefore included in the analysis. For \Sexpr{missing_summary$patient_count[1]} out of 103 patients, all 3 biomarker values were recorded. \Sexpr{sum(missing_summary$patient_count[2:3])} patients have a missing value for the parasagittal tissue bridges, but a value for midsagittal tissue bridges is recorded. Such a case can happen, for example, when the midsagittal MRI slice is valid, but one or multiple parasagittal slices are invalid because of artifacts that are not visible in the midsagittal slice.
+
+
+
+
+
+
+<<check_missing, results='hide'>>=
+
+
+# Select individuals with missing parasagittal but recorded midsagittal tissue bridges
+# show them in a table
+# -> according to Lynn Farner, Patient BHY-002 indeed has a missing value for 
+# parasagittal tissue but a valid lesion volume
+
+missing_SR <- visit_2 %>%
+  filter(is.na(SR) & !is.na(tissue_mid)) %>%
+  select(id, tissue_mid, SR, lesion_volume)
+
+# Replace NA values with "Missing"
+missing_SR[is.na(missing_SR)] <- "Missing"
+
+colnames(missing_SR) <- c("Patient-ID", "Tissue midsagittal", "Tissue parasagittal", "Lesion volume")
+
+tab_SR_missing <- xtable(missing_SR, caption = "8 Patients that have recorded midsagittal tissue bridge 
+                         values but no parasagittal tissue bridges. This should not be possible. 
+                         Check with clinicians.", 
+                         label = "tab:table_SR_missing")
+
+# Print xtable
+print(tab_SR_missing, include.rownames = FALSE, 
+      caption.placement = "top", type = "latex")
+
+
+@
+
+
+
+
+<<UEMS_measurements, results='hide'>>=
+
+# mean time of UEMS measurements in the respective visit_id (in days after first dose)
+mean_time <- datc %>%
+  group_by(visit_id) %>%
+  summarize(mean_time = mean(tm, na.rm = TRUE))
+
+@
+
+
+Out of the \Sexpr{total_patients} patients, \Sexpr{number_UEMS_records[[5]]} patients have all 4 measurements for the UEMS recorded. The other patients either discontinued after the first dose or did not receive the full dosing as per protocol. The upper extremity motor score was first measured on average \Sexpr{round(-mean_time[1,2], 1)}  days before receiving the first dose. Patients received the first dose on average \Sexpr{round(mean_medistart,1)} days after the injury.
+
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<<lesion_outliers, fig.height=3, fig.align='center'>>=
+
+# Boxplots of the biomarkers at baseline
+
+par(mfrow=c(1,3))
+boxplot(visit_2$tissue_mid, xlab = "Midsagittal tissue bridges")
+boxplot(visit_2$SR, xlab = "Parasagittal tissue bridges")
+boxplot(lesion_volume$Volume2, xlab = "Lesion volume")
+
+# amount of patients with lesion volume > 1200 (they are excluded from the analysis)
+patients_lesion_1200 <- sum(datc_with_outliers[datc_with_outliers$visit_id ==2,]$lesion_volume >1200, 
+                            na.rm = TRUE)
+
+@
+\end{center}
+\caption{Boxplots of the midsagittal and parasagittal tissue bridges (mm) and the lesion volume (mm$^3$) at baseline. Concerning the lesion volume, 6 patients are considered outliers and were excluded from the analysis. They are clinically correct observations, but cause problems when fitting the model.}
+\label{fig:lesion_outliers}
+\end{figure}
+
+
+Figure \ref{fig:lesion_outliers} shows the distributions of the biomarkers at baseline. With regard to the lesion volume, \Sexpr{patients_lesion_1200} patients are considered outliers and were excluded from the further analysis. All \Sexpr{patients_lesion_1200} patients were part of the NG101 group. The statistical models would be strongly influenced by these outliers.
+
+
+\subsubsection*{Relationship of Biomarkers with Recovery}
+
+In this section, the results are shown for each biomarker separately (midsagittal tissue bridges, parasagittal tissue bridges, lesion volume). The results are structured in the following way: First, the raw data is presented for each treatment group and corresponding quartile of the biomarker range. Second, boxplots show the distribution of the biomarker value per URP-CTREE node. Third, the baseline distribution of the biomarker values against the UEMS in the treatment groups is shown. Fourth, the relationship of the biomarker with the recovery is analyzed by the smooth functions that have been fitted by the GAM. It is important to note that the main effects for the biomarker and the time have to be interpreted together with the interaction effect of the two variables. Only looking at the main effects individually does not explain the full relationship. Fifth, the fitted models are visualized by adding predictions to the raw data plots. Finally, the differences in the predicted UEMS scores between baseline and 6-month follow-up ($\Delta$-UEMS) are calculated for different values of the biomarker.
+
+
+
+
+% =============================================================================
+\subsection*{Midsagittal Tissue Bridges} \label{subsec:q1_midsagittal}
+% =============================================================================
+
+\begin{figure}[H]
+\begin{center}
+<< quartile_plot_other_biomarker, fig.height = 4>>=
+biomarker <- "tissue_mid" 
+biomarker_name <- "midsagittal tissue bridges"
+biomarker_name_legend <- "Midsagittal TB"
+
+<<quartile_plot>>
+
+@ 
+\end{center}
+\caption{Patient data for each treatment group, categorized into four quartiles based on the overall distribution of midsagittal tissue bridges.}
+\label{fig:quartile_plot_tissue_mid}
+\end{figure}
+
+
+
+\begin{figure}[H]
+\begin{center}
+<< midsagittal_nodeCplot, fig.height=5, fig.align='center'>>=
+
+biomarker <- "tissue_mid" 
+biomarker_name <- "midsagittal tissue bridges"
+biomarker_name_upper <- "Midsagittal tissue bridges"
+<<biomarker_nodeCplot>>
+
+@ 
+\end{center}
+\caption{Boxplots of the midsagittal tissue bridges (in mm) by URP-CTREE node.}
+\label{fig:midsagittal_nodeCplot}
+\end{figure}
+
+
+
+\begin{figure}[H]
+\begin{center}
+<< baseline_uems_plot_tissue_mid, fig.height=3, fig.align='center'>>=
+biomarker <- "tissue_mid" 
+biomarker_name <- "midsagittal tissue bridges"
+biomarker_name_upper <- "Midsagittal tissue bridges"
+
+<<baseline_uems_plot>>
+
+@ 
+\end{center}
+\caption{Scatterplot of the midsagittal tissue bridges (in mm) against the baseline Upper Extremity Motor Score in the two treatment groups.}
+\label{fig:baseline_uems_plot_tissue_mid}
+\end{figure}
+
+
+
+\begin{figure}[H]
+\begin{center}
+<< plot_gam_fit, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+biomarker <- "tissue_mid" 
+biomarker_name <- "midsagittal tissue bridges"
+biomarker_name_upper <- "Midsagittal tissue bridges"
+
+<<fit_gam>>
+
+<<plot_gam_placebo>>
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the placebo group.}
+\label{fig:gam_fit_placebo}
+\end{figure}
+
+
+
+
+
+\begin{figure}[H]
+\begin{center}
+<< plot_gam_fit_NG101, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+<<fit_gam>>
+
+<<plot_gam_treatment>>
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the NG101 group.}
+\label{fig:gam_fit_NG101}
+\end{figure}
+
+
+
+\begin{figure}[H]
+\begin{center}
+<< plot_gam_predictions, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+# List of biomarker values to make predictions for
+biomarker_values <- seq(0, 4, by = 0.5)
+
+<<gam_prediction_plot>>
+
+@ 
+\end{center}
+\caption{Predictions made with different values for midsagittal tissue bridges (in mm). For each treatment group the respective GAM was fitted separately. The only parameter that changes for the different predictions is the amount of midsagittal tissue bridges.}
+\label{fig:gam_predictions}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{center}
+<< plot_gam_delta, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+legend_location <- "topleft"
+<<gam_delta_plot>>
+
+@ 
+\end{center}
+\caption{Differences of the predicted 6-month follow-up UEMS scores and the predicted baseline scores for different values of misagittal tissue bridges (in mm).}
+\label{fig:gam_delta_uems}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+% =============================================================================
+\subsection*{Parasagittal Tissue Bridges} \label{subsec:q1_parasagittal}
+% =============================================================================
+
+\begin{figure}[!ht]
+\begin{center}
+<< quartile_plot_para, fig.height = 4>>=
+biomarker <- "SR" 
+biomarker_name <- "parasagittal tissue bridges"
+biomarker_name_upper <- "Parasagittal tissue bridges"
+biomarker_name_legend <- "Parasagittal TB"
+
+<<quartile_plot>>
+
+@ 
+\end{center}
+\caption{Patient data for each treatment group, categorized into four quartiles based on the overall distribution of parasagittal tissue bridges.}
+\label{fig:quartile_plot_tissue_para}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{center}
+<< parasagittal_nodeCplot, fig.height=5, fig.align='center'>>=
+
+
+<<biomarker_nodeCplot>>
+
+@ 
+\end{center}
+\caption{Boxplots of the parasagittal tissue bridges (in mm) by URP-CTREE node.}
+\label{fig:parasagittal_nodeCplot}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< baseline_uems_plot_tissue_para, fig.height=3, fig.align='center'>>=
+
+<<baseline_uems_plot>>
+
+@ 
+\end{center}
+\caption{Scatterplot of the parasagittal tissue bridges (in mm) against the baseline Upper Extremity Motor Score in the two treatment groups.}
+\label{fig:baseline_uems_plot_tissue_para}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_fit_para, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+
+<<fit_gam>>
+
+<<plot_gam_placebo>>
+
+
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the placebo group.}
+\label{fig:gam_fit_placebo_para}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_fit_NG101_para, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+<<fit_gam>>
+
+<<plot_gam_treatment>>
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the NG101 group.}
+\label{fig:gam_fit_NG101_para}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_predictions_para, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+# List of biomarker values to make predictions for
+biomarker_values <- seq(0, 5, by = 0.5)
+
+<<gam_prediction_plot>>
+
+@ 
+\end{center}
+\caption{Predictions made with different values for parasagittal tissue bridges (in mm). For each treatment group the respective GAM was fitted separately. The only parameter that changes for the different predictions is the amount of parasagittal tissue bridges.}
+\label{fig:gam_predictions_para}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_delta_para, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+legend_location <- "topleft"
+<<gam_delta_plot>>
+
+
+# Find the index where treatment group levels off
+diff <- (c(predicted_delta$delta_treatment,0)-c(0, predicted_delta$delta_treatment) )
+
+first_negative_index <- which(diff < 0)[1]
+parasagittal_turnpoint <- predicted_delta$biomarker_value[first_negative_index]
+
+# Find the index of the first negative value
+diff <- (predicted_delta$delta_placebo - predicted_delta$delta_treatment)
+
+first_positive_index <- which(diff > 0)[1]
+
+parasagittal_crossing <- predicted_delta$biomarker_value[first_positive_index]
+
+@ 
+\end{center}
+\caption{Differences of the predicted 6-month follow-up UEMS scores and the predicted baseline scores for different values of parasagittal tissue bridges (in mm).}
+\label{fig:gam_delta_uems_para}
+\end{figure}
+
+
+
+
+
+\clearpage
+
+
+
+% =============================================================================
+\subsection*{Lesion Volume} \label{subsec:q1_lesion}
+% =============================================================================
+
+
+% Important: 6 patients with lesion volume > 1200 were excluded and set to NA. They are considered as outliers. 
+The \Sexpr{patients_lesion_1200} patients with lesion volume > 1200 were excluded from the analysis as described earlier.
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< quartile_plot_lesion, fig.height = 4>>=
+biomarker <- "lesion_volume" 
+biomarker_name <- "lesion volume"
+biomarker_name_upper <- "Lesion volume"
+biomarker_name_legend <- "Lesion volume"
+
+<<quartile_plot>>
+
+@ 
+\end{center}
+\caption{Patient data for each treatment group, categorized into four quartiles based on the overall distribution of lesion volume.}
+\label{fig:quartile_plot_tissue_lesion}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+<< lesion_nodeCplot, fig.height=5, fig.align='center'>>=
+
+<<biomarker_nodeCplot>>
+
+@ 
+\end{center}
+\caption{Boxplots of the lesion volume (in mm$^3$)  by URP-CTREE node.}
+\label{fig:lesion_nodeCplot}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< baseline_uems_plot_lesion, fig.height=3, fig.align='center'>>=
+
+<<baseline_uems_plot>>
+
+@ 
+\end{center}
+\caption{Scatterplot of the lesion volume (in mm$^3$) against the baseline Upper Extremity Motor Score in the two treatment groups.}
+\label{fig:baseline_uems_plot_lesion}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_fit_lesion, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+
+<<fit_gam>>
+
+<<plot_gam_placebo>>
+
+
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the placebo group.}
+\label{fig:gam_fit_placebo_lesion}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_fit_NG101_lesion, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+<<fit_gam>>
+
+<<plot_gam_treatment>>
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the NG101 group.}
+\label{fig:gam_fit_NG101_lesion}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_predictions_lesion, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+# List of biomarker values to make predictions for
+biomarker_values <- seq(0, 1000, by = 100)
+
+<<gam_prediction_plot>>
+
+@ 
+\end{center}
+\caption{Predictions made with different values for lesion volume (in mm$^3$). For each treatment group the respective GAM was fitted separately. The only parameter that changes for the different predictions is the lesion volume.}
+\label{fig:gam_predictions_lesion}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_delta_lesion, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+legend_location <- "topright"
+<<gam_delta_plot>>
+
+# Find the index of the first negative value
+diff <- (predicted_delta$delta_placebo - predicted_delta$delta_treatment)
+
+first_negative_index <- which(diff < 0)[1]
+
+lesion_volume_crossing <- predicted_delta$biomarker_value[first_negative_index]
+
+@ 
+\end{center}
+\caption{Differences of the predicted 6-month follow-up UEMS scores and the predicted baseline scores for different values of lesion volume (in mm$^3$).}
+\label{fig:gam_delta_uems_lesion}
+\end{figure}
+
+\clearpage
+
+
+
+
+
+
+
+% =============================================================================
+\subsection*{Balgrist/Murnau: Midsagittal tissue bridges} \label{subsec:balgrist_murnau}
+% =============================================================================
+
+Midsagittal tissue bridges were also recorded for patients from  Balgrist/Murnau. On those patients, the same analysis as for the NISCI study is performed. In the NISCI study however, there are two treatment groups and the time variable is standardized such that 0 corresponds to day of first medication (on average \Sexpr{baseline} days after injury) and 1 corresponds to 6-month follow-up. To make the data from Balgrist/Murnau as comparable as possible to the NISCI data, the time variable is defined such that 0 corresponds to \Sexpr{baseline} days after injury and 1 corresponds to 6-month follow-up or \Sexpr{baseline + 168} days after injury (\Sexpr{baseline} + 168). In the NISCI study, each patient had its individual start of medication and therefore a different day after injury as baseline timepoint. Therefore, the results are not exactly comparable to Balgrist/Murnau. Another important point is that the first UEMS measurement for NISCI was taken on average on day \Sexpr{mean_first_UEMS_NISCI} compared to day \Sexpr{round(mean_day_first_measurement[[1]],1)} for Balgrist/Murnau.
+
+\begin{figure}[!ht]
+\begin{center}
+<< quartile_plot_balgrist_murnau, fig.height = 3>>=
+
+## quartile plot for Balgrist/Murnau
+
+biomarker <- "tissue_mid" 
+biomarker_name <- "midsagittal tissue bridges"
+biomarker_name_upper <- "Midsagittal tissue bridges"
+biomarker_name_legend <- "Midsagittal TB"
+
+
+# Define quartiles
+quantiles <- quantile(balgrist_murnau[[biomarker]], prob = 1:3 / 4, na.rm = TRUE)
+
+# Categorize the biomarker based on quartiles
+balgrist_murnau[[paste0(biomarker, "_c")]] <- cut(balgrist_murnau[[biomarker]], 
+                                                  breaks = c(-Inf, quantiles, Inf), as.ordered = TRUE)
+
+
+# Plot the raw data of recovery separately per treatment group and quartile of biomarker
+xyplot(
+    uems ~ tm | get(paste0(biomarker, "_c")), data = balgrist_murnau, 
+    group = id, xlim = c(-25, 380), type = "b", between = list(x = 1, y = 1),
+    layout = c(4, 1),
+    pch = 20, cex = 0.7, lwd = 3, col = rgb(0.1, 0.1, 0.1, 0.3), 
+    xlab = "Time (days)", ylab = "Upper Extremity Motor Score", 
+    scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom,
+         y = list(alternating = 1), # Show y-axis tick labels only at the left
+         tck = c(1, 0) # Remove top ticks
+       )
+)
+@ 
+\end{center}
+\caption{Patient data for Balgrist/Murnau, categorized into four quartiles based on the distribution of midsagittal tissue bridges. Patients were followed up for up to 12 months (or more) compared to the 6 months in the NISCI study. The time variable is defined such that 0 corresponds to day \Sexpr{baseline} after injury (which is equivalent to the average day after injury of first medication in the NISCI study).}
+\label{fig:quartile_plot_tissue_balgrist_murnau}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< baseline_uems_plot_balgrist_murnau, fig.height=3, fig.width = 4.5, fig.align='center'>>=
+
+
+## baseline plot for Balgrist/Murnau
+
+balgrist_murnau$studyPlot <- "Balgrist/Murnau"
+
+balgrist_murnau_baseline <- balgrist_murnau %>%
+  group_by(id) %>%
+  # sort form smallest to largest interval
+  arrange(Interval_injury_UEMS) %>%
+  # get the first measurement for each patient
+  slice(1) %>%
+  # ungroup
+  ungroup()
+
+
+
+xyplot(as.formula(paste("uems ~", biomarker, "|  studyPlot")), 
+       data = balgrist_murnau_baseline, 
+       group = id, 
+       type = "b", 
+       pch = 16,
+       cex = 1.2,
+       lwd = 2,
+       col = rgb(.1, .1, .1, .5),
+       xlab = biomarker_name_upper,
+       ylab = "Upper Extremity Motor Score",
+       grid = TRUE,
+			 scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom
+         tck = c(1, 0) # Remove top ticks
+       ),
+			 panel = function(x, y, ...) {
+         panel.xyplot(x, y, ...) # Plot the points
+         panel.lmline(x, y, col = "black", lwd = 1)  # Add a linear regression line
+       }
+       )
+
+
+
+@ 
+\end{center}
+\caption{Scatterplot of the midsagittal tissue bridges (in mm) against the baseline Upper Extremity Motor Score for the Balgrist/Murnau patients.}
+\label{fig:baseline_uems_plot_balgrist_murnau}
+\end{figure}
+
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_fit_balgrist_murnau, fig.width=12.5, fig.height=4.5, fig.align='center'>>=
+
+
+## fit GAM Balgrist/Murnau
+
+par(mfrow = c(1, 3))
+
+# Define the formula
+gam_formula <- as.formula(paste("uems ~ s(", biomarker, ") + s(tmstd) + ti(", biomarker, ", tmstd) + 
+                                s(id, bs = 're') + s(id, tmstd, bs = 're')"))
+
+# Fit the GAM
+gam_balgrist_murnau <- gam(gam_formula,
+                    data = balgrist_murnau, method = "REML")
+
+
+
+plot(gam_balgrist_murnau, scheme = 1, select = 1, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = biomarker_name_upper, ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5)
+
+plot(gam_balgrist_murnau, scheme = 1, select = 2, 
+     seWithMean = TRUE, rug = TRUE, 
+     xlab = "Time (standardized)", ylab = "Upper Extremity Motor Score", 
+     cex.lab = 1.5, cex.axis = 1.5)
+
+plot(gam_balgrist_murnau, scheme = 1, select = 3, 
+     seWithMean = TRUE, rug = TRUE, main = "UEMS",
+     xlab = biomarker_name_upper, ylab = "Time (standardized)", ticktype = "detailed", 
+     cex.lab = 1.45, cex.axis = 1.3, cex.main = 1.45, theta = 45,  # Rotate around the z-axis
+     phi = 25)    # Adjust elevation angle (tilt the plot vertically)
+
+
+
+@ 
+\end{center}
+\caption{Smooth functions fitted by the GAM for the Balgrist/Murnau patients.}
+\label{fig:plot_gam_fit_balgrist_murnau}
+\end{figure}
+
+
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_predictions_balgrist_murnau, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+## make predictions Balgrist/Murnau
+
+biomarker_values <- seq(0, 7, by = 0.5)
+
+
+# predict recovery trajectories based on different values of the biomarker
+
+models <- list(gam_balgrist_murnau)
+
+
+
+# Prediction function using biomarker variable
+make_prediction <- function(biomarker_value, model) {
+  # new_data includes time at baseline up to 6 months
+  # (used standardized time = 1.1 just for visualization)
+  new_data <- expand.grid(id = 1, tmstd = seq(0, 1.1, length = 100))
+  # curent biomarker value is added to the new data
+  # current "biomarker" is defined before the code chunk
+  new_data[[biomarker]] <- biomarker_value
+  
+  # Make predictions excluding random effects
+  prediction <- data.frame(
+    tmstd = new_data$tmstd, 
+    pred = predict(model, newdata = new_data, exclude = "s(id)")
+  )
+  return(prediction)
+}
+
+# Set up colors for plotting
+colors_plot <- sequential_hcl(length(biomarker_values), palette = "Viridis")
+
+
+legend_key <- list(
+  text = list(labels = paste0(format(biomarker_values, nsmall = 1))), # Add descriptive labels
+  lines = list(col = colors_plot, lwd = 2),  # Corresponding colors and line widths
+  space = "right",  # Place the legend to the right of the plot
+  columns = 1,  # Single column layout for vertical alignment
+  title = "Midsagittal TB",  # Clear and concise title
+  cex.title = 0.9,  # Slightly smaller title for compactness
+  cex = 0.8  # Slightly smaller text for the labels
+)
+
+# Plot the raw recovery data per treatment group and 
+# add the predictions for different values of the biomarker
+xyplot(uems ~ tmstd | studyPlot, 
+       data = balgrist_murnau, 
+       group = id, 
+       xlim = c(-0.1, 1.3), 
+       type = "b", 
+       between = list(x = 1, y = 1), 
+       pch = 20, 
+       cex = .7, 
+       lwd = 3, 
+       col = rgb(.1, .1, .1, alpha = 0.05),  # Fade primary data lines
+       xlab = "Time (standardized)", 
+       ylab = "Upper Extremity Motor Score",
+       #main =  paste("Predictions for different", biomarker_name, "values"),
+       key = legend_key,
+       scales = list(
+         x = list(alternating = 1), # Show x-axis tick labels only at the bottom
+         tck = c(1, 0) # Remove top ticks
+       ),
+       # add predictions
+       panel = function(x, y, subscripts, ...) {
+         panel.xyplot(x, y, subscripts = subscripts, ...)
+         # panel_index: only 1 in this case
+         panel_index <- panel.number()
+         
+         # for each biomarker value, make predictions and add to plot
+         for (i in seq_along(biomarker_values)) {
+             biomarker_value <- biomarker_values[i]
+             # Generate predictions
+             preds <- make_prediction(biomarker_value = biomarker_value, model = models[[panel_index]])
+             panel.lines(preds$tmstd, preds$pred, col = colors_plot[i], alpha = 0.6, lwd = 2)
+         }
+    })
+
+
+@ 
+\end{center}
+\caption{Predictions made by the fitted model for different values of midsagittal tissue bridges (in mm). The only parameter that changes for the different predictions is the amount of midsagittal tissue bridges.}
+\label{fig:plot_gam_predictions_balgrist_murnau}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\begin{center}
+<< plot_gam_delta_balgrist_murnau, warning=FALSE, fig.height=3.8, fig.align='center'>>=
+
+## delta UEMS for NISCI & Balgrist Murnau
+
+legend_location <- "topleft"
+
+
+# Fit GAM for NISCI again
+<<fit_gam>>
+
+
+# this chunk generates predictions for baseline UEMS and 6-month UEMS for different values
+# of the biomarker and plots the delta-UEMS over the range of the biomarker
+
+# number of predicted delta-UEMS 
+N <- 100
+
+# predictions made along the sequence of min(biomarker_value) to max(biomarker_value) of the biomarker
+prediction_sequence <- seq(from= min(biomarker_values), to= max(biomarker_values), length.out = N)
+
+
+
+# new_data for tmstd=0 and tmstd=1
+new_data <- data.frame(id = rep(1, 2 * N), tmstd = rep(c(0,1), each = N))
+
+# add biomarker value sequence to new data
+new_data[[biomarker]] <- rep(prediction_sequence, 2)
+                       
+
+# Generate predicted UEMS for placebo, treatment and Balgrist/Murnau groups at tmstd=0 and tmstd=1
+predictions <- data.frame(
+    tmstd = new_data$tmstd,
+    biomarker = new_data[[biomarker]],
+    pred_placebo = predict(gam_placebo, newdata = new_data, exclude = "s(id)"),
+    pred_treatment = predict(gam_treatment, newdata = new_data, exclude = "s(id)"),
+    pred_balgrist_murnau = predict(gam_balgrist_murnau, newdata = new_data, exclude = "s(id)")
+)
+
+
+# Calculate the predicted delta change between tmstd = 1 and tmstd = 0 for each biomarker value
+predicted_delta <- data.frame(
+    biomarker_value = prediction_sequence,
+    delta_placebo = predictions[predictions$tmstd == 1,]$pred_placebo 
+    - predictions[predictions$tmstd == 0,]$pred_placebo,
+    delta_treatment = predictions[predictions$tmstd == 1,]$pred_treatment 
+    - predictions[predictions$tmstd == 0,]$pred_treatment,
+    delta_balgrist_murnau = predictions[predictions$tmstd == 1,]$pred_balgrist_murnau
+    - predictions[predictions$tmstd == 0,]$pred_balgrist_murnau
+)
+
+# Plot the predicted delta-UEMS for each biomarker value
+# first empty plot to set the limits
+plot(predicted_delta$biomarker_value, predicted_delta$delta_balgrist_murnau, type = "l", 
+     col = "black", lwd = 2, lty = 3,
+     ylim = c(min(predicted_delta[,2:4])-1, max(predicted_delta[,2:4])+1),
+     xlab = biomarker_name_upper, 
+     ylab = expression("Predicted " * Delta * "-UEMS")
+     #, main = bquote("Predicted " * Delta * "-UEMS for different" ~ .(biomarker_name) ~ "values")
+     )
+
+# select only values < 4 for NISCI, because no observations above 4 in placebo
+filtered_data <- predicted_delta[predicted_delta$biomarker_value < 4, ]
+
+
+# Add line for the placebo group for TB values < 4 
+lines(filtered_data$biomarker_value, filtered_data$delta_placebo, col = "black", lwd = 2, lty = 1)
+
+# Add line for the treatment group
+lines(filtered_data$biomarker_value, filtered_data$delta_treatment, col = "black", lwd = 2, lty = 2)
+
+# Add line for balgrist murnau
+lines(predicted_delta$biomarker_value, predicted_delta$delta_balgrist_murnau, col = "black", 
+      lwd = 2, lty = 3)
+
+# Add legend
+legend(legend_location, 
+       legend = c("Placebo", "NG101", "Balgrist/Murnau"), 
+       col = "black", 
+       lwd = 2, 
+       lty = c(1, 2, 3), 
+       bty = "n")
+
+# alternatively with colors: col = c("#69b3a2", "#f4a582", "#8c6bb1"), lwd = 2
+
+
+
+# Find the turningpoint of Balgrist/Murnau
+diff <- (c(predicted_delta$delta_balgrist_murnau,0)-c(0, predicted_delta$delta_balgrist_murnau) )
+
+first_negative_index <- which(diff < 0)[1]
+balgrist_murnau_turnpoint <- predicted_delta$biomarker_value[first_negative_index]
+
+
+@ 
+\end{center}
+\caption{Differences of the predicted 6-month follow-up UEMS scores and the predicted baseline scores for different values of midsagittal tissue bridges (in mm). In the NISCI study, each patient had its individual start of medication (on average day \Sexpr{baseline} after injury) and therefore a different baseline timepoint. For Balgrist/Murnau, day \Sexpr{baseline} was set as baseline timepoint for all patients. Therefore, the results between the studies are not exactly comparable.}
+\label{fig:plot_gam_delta_balgrist_murnau}
+\end{figure}
+
+\clearpage
+
+
+
+% The data description should be followed by results per research question. Make
+% clear which results answer research questions and which results come from 
+% additional analyses. These additional results should be presented after the main 
+% results.
+
+
+
+
+% =============================================================================
+\subsection{Cut-Off Values} \label{sec:cutoff}
+% =============================================================================
+
+The $\Delta$-UEMS for the midsagittal tissue bridges is shown in Figure \ref{fig:gam_delta_uems}. The 6-month recovery linearly increases with the amont of midsagittal tissue bridges in both treatment groups. Therefore, it is not meaningful to define a distinct cut-off value for the midsagittal tissue bridges.
+
+The $\Delta$-UEMS for the parasagittal tissue bridges is shown in Figure \ref{fig:gam_delta_uems_para}. In terms of 6-month recovery, the placebo group shows a similar relationship as for the midsagittal tissue bridges. In the treatment group, the recovery levels off at \Sexpr{round(parasagittal_turnpoint,1)} mm. Furthermore, the lines of the treatment groups cross at \Sexpr{round(parasagittal_crossing,1)} mm. Patients with less than \Sexpr{round(parasagittal_crossing,1)} mm parasagittal tissue bridges seem to benefit from the NG101 treatment, while patients with more preserved parasagittal tissue bridges show a better 6-month recovery under the placebo treatment.
+
+
+The $\Delta$-UEMS for the lesion volume in the placebo group is shown in Figure \ref{fig:gam_delta_uems_lesion}. The curves cross at \Sexpr{round(lesion_volume_crossing)} mm\(^3\). Patients with a lesion volume below \Sexpr{round(lesion_volume_crossing)} mm\(^3\) seem to benefit from the placebo treatment, while patients with a higher lesion volume show a better 6-month recovery under the NG101 treatment.
+
+
+% =============================================================================
+\section{Conclusion} \label{sec:conclusion}
+% =============================================================================
+
+
+
+Our findings regarding the association of the midsagittal tissue bridges with the recovery support the results of previous studies. More preserved midsagittal tissue bridges correspond to an improved recovery as seen in Figure \ref{fig:gam_predictions}. Figure \ref{fig:gam_delta_uems} suggests that the relationship between the amont of midsagittal tissue bridges and the 6-month recovery is linear in both treatment groups. The baseline distribution of the midsagittal tissue bridges against the UEMS in the treatment groups is shown in Figure \ref{fig:baseline_uems_plot_tissue_mid}. It slightly differs among the treatment groups. In the placebo group, smaller tissue bridge values seem to be associated with higher UEMS values, while in the NG101 group, the opposite is the case. The surprising baseline distribution in the placebo group is possibly the reason for the crossing recovery curves in Figure \ref{fig:gam_predictions}.
+
+The baseline distribution of the parasagittal tissue bridges against the UEMS in the treatment groups, as shown in Figure \ref{fig:baseline_uems_plot_tissue_para}, is similar to the midsagittal tissue bridges. Also the recovery profile in terms of the $\Delta$-UEMS in the placebo group is comparable, as can be seen in Figure \ref{fig:gam_delta_uems_para}. However, in the NG101 group the recovery reaches a plateau at \Sexpr{round(parasagittal_turnpoint,1)} mm and then slightly decreases for higher parasagittal tissue bridge values. Receiving the NG101 treatment seemed to be beneficial for patients with parasagittal tissue bridge values lower than \Sexpr{round(parasagittal_crossing,1)} mm, whereas for higher parasagittal tissue bridge values, the placebo group showed a better 6-month recovery.
+In this case, it could be concluded to define a cut-off value at \Sexpr{round(parasagittal_crossing,1)} mm and only include patients with less than this value in a follow up study, since they seem to benefit from the NG101 treatment.
+
+The lesion volume in the placebo group shows a rather surprising baseline distribution as visualized in Figure \ref{fig:baseline_uems_plot_lesion}. Patients with higher lesion volumes seem to have higher baseline UEMS values. This is contradictory to what one would expect. In the NG101 group, this effect is less extreme. Figure \ref{fig:gam_predictions_lesion} shows that independent of the lesion volume, all recovery trajectories converge to the same UEMS level. In the NG101 group, the $\Delta$-UEMS is almost constant over the range of lesion volumes (Figure \ref{fig:gam_delta_uems_lesion}). In the placebo group, the $\Delta$-UEMS decreases with increasing lesion volume. As with the parasagittal tissue bridges, the lines of the predicted $\Delta$-UEMS cross at some point (here \Sexpr{round(lesion_volume_crossing)} mm\(^3\)). This makes intuitively sense, because low parasagittal tissue bridge values are generally associated with a high lesion volume. For high lesion volume, the NG101 group recovered better. This agrees with the observed worse performance under NG101 for higher parasagittal tissue bridge values.
+
+Figure \ref{fig:quartile_plot_tissue_balgrist_murnau} of the Balgrist/Murnau patients already suggest some positive relationship between the amount of midsagittal tissue bridges and an improved recovery. Such a strong relationship was not visible in the NISCI data. However, it has to be kept in mind that the first UEMS measurement for NISCI was taken on average on day \Sexpr{mean_first_UEMS_NISCI} compared to day \Sexpr{round(mean_day_first_measurement[[1]],1)} for Balgrist/Murnau. Figure \ref{fig:plot_gam_fit_balgrist_murnau} shows the smooth functions fitted by the GAM. The main effect of the midsagittal tissue bridges is positive and the uncertainty is lower compared to the NISCI data. Figures \ref{fig:plot_gam_predictions_balgrist_murnau} and\ref{fig:plot_gam_delta_balgrist_murnau} both suggest an improved recovery for higher midsagittal tissue bridge values. However, the $\Delta$-UEMS decreases for midsagittal tissue bridge values above \Sexpr{round(balgrist_murnau_turnpoint,1)} mm. This is probably due to a ceiling effect, because the recovery potential is limited for patients with an already high baseline UEMS. 
+
+% =============================================================================
+% limitations
+
+This analysis is subject to multiple limitations. The estimation of the relationship between biomarker and recovery includes high uncertainty. Especially in the NISCI data, as can be seen in the wide confidence intervals for the estimated smooth functions of the main effect of the biomarkers. Furthermore, the relatively high number of missing values could bias our inference. Patients also had varying medication and measurement timepoints. The sometimes different baseline distributions of the biomarkers against UEMS between the treatment groups make a reliable assessment of the relationships even more difficult. 
+We analyzed different biomarkers that should all represent more or less the same, that is the physical state of the patient or the severity of the injury. However, the results were sometimes different depending on the biomarker (for example the $\Delta$-UEMS for midsagittal vs. parasagittal tissue bridges). In Figure \ref{fig:plot_gam_predictions_balgrist_murnau}, it is visible that many of the Balgrist/Murnau patients have an UEMS of 50 points, which is problematic for the applied model which assumes normally distributed errors. In this case it might be more appropriate to take a more suitable distribution or to apply a transformation model with bounded outcomes. 
+Because of all these limitations, the results should be viewed with caution.
+
+% ============================================================================= 
+% summary
+
+
+To summarize, we gained an impression of the the relationship between the biomarkers and the recovery. Midsagittal and parasagittal tissue bridges, as well as lesion volume, seem to have some prognostic value for the recovery. A cut-off value could be set at \Sexpr{round(parasagittal_crossing,1)} mm for the parasagittal tissue bridges. This value seems to be predictive for the treatment effect. There is no difference in treatment effect visible for varying midsagittal tissue bridges. Therefore, the parasagittal tissue bridges seem to be most suitable to set a cut-off value. A cut-off value in terms of prognostic separation of patients into poor and good expected recovery does not seem to be meaningful, because there is no distinct range of biomarker values that indicates a poor or good recovery.
+
+It is recommended to also stratify patients based on tissue bridges in future studies. This should prevent unfavourable baseline distributions from impacting the estimated treatment effect.
+
+
+
+% =============================================================================
+\section{Generative AI Declaration} \label{sec:gen_ai}
+
+
+During the preparation of this report, I used Github Copilot and ChatGPT in order to be more efficient with coding. After using these tools/services, I reviewed and edited the content as needed and I take full responsibility for the content of the report.
+
+% =============================================================================
+% \section{References} \label{sec:ref}
+% =============================================================================
+\nocite{R}
+
+\bibliography{../literature/bibSTA490}
+
+
+
+\vfill
+
+\footnotesize
+\pagebreak
+% =============================================================================
+\section{Appendix} \label{sec:app}
+% =============================================================================
+<< rdetails, echo = FALSE >>=
+# Base packages:
+s <- sessionInfo()
+s1 <- s$basePkgs[1]
+for (i in 2:length(s$basePkgs)){
+  s1 <- paste(s1, ", ", s$basePkgs[i], sep = "")
+}
+
+# Other Packages:
+pack.info <- installed.packages()
+output.packages <- data.frame(pack.info[names(s$otherPkgs), 
+                                        c("Package", "Version")])
+
+s2 <- paste(names(s$otherPkgs)[1],
+output.packages[names(s$otherPkgs)[1], "Version"])
+k <- length(names(s$otherPkgs))
+if (k > 1) for (i in 2:k) {
+  s2 <- paste(s2, ", ", paste(names(s$otherPkgs)[i], 
+                              output.packages[names(s$otherPkgs)[i],
+                                              "Version"]), sep = "")
+}
+@
+
+\subsection{Computational Details}
+\flushleft{
+This document was generated on \Sexpr{format(Sys.time(), "%B %d, %Y at %H:%M")}. 
+\textsf{R} version and packages used to generate this report:
+}
+<< sessioninfo, results = 'asis' >>=
+toLatex(sessionInfo())
+@
+
+
+\subsection{Code}
+
+
+<< appendix1, eval = FALSE, echo = TRUE>>=
+###############################################################################
+# code for packages, settings
+###############################################################################
+<<setup>>
+@
+
+
+<<appendix2, eval = FALSE, echo = TRUE>>=
+###############################################################################
+# code for preparation: data import and joining
+###############################################################################
+<<readindata>>
+@
+
+
+<<appendix3, code = readLines("../code/datapreparation_balgrist_murnau.R"), echo=TRUE, eval=FALSE>>=
+
+@
+
+<<appendix4, eval = FALSE, echo = TRUE>>=
+###############################################################################
+# code for results: data collection
+###############################################################################
+<<data_collection>>
+<<study_population>>
+<<table1_results>>
+# <<missing_table>>
+<<missing_combinations>>
+<<check_missing>>
+<<UEMS_measurements>>
+<<lesion_outliers>>
+ 
+###############################################################################
+# code for results: relationship of biomarkers with recovery (code-chunk-reuse)
+###############################################################################
+<<quartile_plot>>
+<<biomarker_nodeCplot>>
+<<baseline_uems_plot>>
+<<fit_gam>>
+
+# <<summary_table>>
+
+<<plot_gam_placebo>>
+<<plot_gam_treatment>>
+
+<<gam_prediction_plot>>
+<<gam_delta_plot>>
+
+###############################################################################
+# Parasagittal tissue bridges: find turning and crossing point
+<<plot_gam_delta_para>>
+
+###############################################################################
+# Lesion volume: find crossing point
+<<plot_gam_delta_lesion>>
+
+
+###############################################################################
+# Balgrist/Murnau: Midsagittal tissue bridges
+<<quartile_plot_balgrist_murnau>>
+<<baseline_uems_plot_balgrist_murnau>>
+<<plot_gam_fit_balgrist_murnau>>
+<<plot_gam_predictions_balgrist_murnau>>
+<<plot_gam_delta_balgrist_murnau>>
+
+###############################################################################
+# code for results: relationship of biomarkers with recovery (call of the code chunks)
+###############################################################################
+
+# not explicitly showed here because the prepared code chunks would be displayed each time again.
+
+# midsagittal
+# <<quartile_plot_other_biomarker>>
+# <<baseline_uems_plot_tissue_mid>>
+# <<plot_gam_fit>>
+# <<plot_gam_fit_NG101>>
+# <<plot_gam_predictions>>
+# <<plot_gam_delta>>
+
+# parasagittal
+# <<quartile_plot_para>>
+# <<baseline_uems_plot_tissue_para>>
+# <<plot_gam_fit_para>>
+# <<plot_gam_fit_NG101_para>>
+# <<plot_gam_predictions_para>>
+# <<plot_gam_delta_para>>
+
+# lesion volume
+# <<quartile_plot_lesion>>
+# <<baseline_uems_plot_tissue_lesion>>
+# <<plot_gam_fit_lesion>>
+# <<plot_gam_fit_NG101_lesion>>
+# <<plot_gam_predictions_lesion>>
+# <<plot_gam_delta_lesion>>
+@
+
+
+\end{document}

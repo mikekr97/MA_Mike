@@ -1,0 +1,11 @@
+% LaTeX file for Chapter 03
+<<'preamble03',include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+    fig.path='figure/ch03_fig', 
+    self.contained=FALSE,
+    cache=FALSE
+) 
+@
+
+\chapter{Results}

@@ -1,0 +1,102 @@
+\documentclass[11pt,a4paper,twoside]{book}
+\input{header.sty}   % packages, layout and standard macros
+
+\begin{document}
+\input{title}
+
+\graphicspath{{./figure/}}
+\DeclareGraphicsExtensions{.pdf,.png}
+\setcounter{tocdepth}{1}
+
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{6cm}{\bfseries\Huge
+  $p$-values:\\[5mm] their use, abuse and proper use \\[5mm]
+  illustrated with seven facets 
+  }
+  \vfill
+  \rm
+
+  \LARGE
+  M\"axli Musterli\\[12mm]
+  
+  \normalsize
+  Version \today
+\end{center}
+\newpage
+\thispagestyle{empty}~
+\newpage
+\pagenumbering{roman}
+
+\thispagestyle{plain}\markboth{Contents}{Contents}
+\tableofcontents
+\setkeys{Gin}{width=.8\textwidth}
+
+\chapter*{Preface}
+\addtocontents{toc}{\protect \vspace*{13.mm}}
+\addcontentsline{toc}{chapter}{\bfseries{Preface}}
+\thispagestyle{plain}\markboth{Preface}{Preface}
+
+Howdy!
+
+\bigskip
+
+\begin{flushright}
+  Max Muster\\
+  June 2018
+\end{flushright}
+
+\addtocontents{toc}{\protect \vspace*{10mm}}
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter01}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter02}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter03}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\input{chapter04}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter05}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage
+\phantomsection
+\addtocontents{toc}{\protect \vspace*{10mm}}
+\addcontentsline{toc}{chapter}{\bfseries Bibliography}
+
+
+\bibliographystyle{mywiley} 
+\bibliography{biblio}
+
+\cleardoublepage
+
+\end{document}
+
+
+
+%%% Local Variables:
+%%% ispell-local-dictionary: "en_US"
+%%% End:

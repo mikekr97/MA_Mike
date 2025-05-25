@@ -1,0 +1,74 @@
+% LaTeX file for Chapter 02
+<<'preamble02',include=FALSE>>=
+library(knitr) 
+opts_chunk$set( 
+    fig.path='figure/ch02_fig',    
+    self.contained=FALSE,
+    cache=!FALSE
+) 
+@
+
+\chapter{Data} 
+Maybe it is the methods section. Here however, we give a couple hints.
+Note that you can wisely use \rr{preamble}-chunks. Minimal, is likely: 
+
+\bigskip
+
+\hrule
+<<echo=TRUE>>=
+library(knitr) 
+opts_chunk$set( 
+    fig.path='figure/ch02_fig',    
+    self.contained=FALSE,
+    cache=TRUE
+) 
+@
+\hrule
+
+\bigskip
+
+Defining figure options is very helpful:
+
+ 
+\bigskip
+
+
+\hrule
+<<echo=TRUE,cache=FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path='figure/ch02_fig',
+               echo=TRUE, message=FALSE,
+               fig.width=8, fig.height=2.5,  
+               out.width='\\textwidth-3cm',
+               message=FALSE, fig.align='center',
+               background="gray98", tidy=FALSE, #tidy.opts=list(width.cutoff=60),
+               cache=TRUE
+) 
+options(width=74)
+@ 
+\hrule
+
+\bigskip 
+
+This options are best placed in the main document at the beginning. Otherwise a \verb+cache=FALSE+ as knitr option is necessary to overrule a possible  \verb+cache=TRUE+ flag. 
+
+\bigskip 
+
+Notice how in Figure~\ref{f02:1} everything is properly scaled.   
+
+\begin{figure}
+<<echo=FALSE>>=
+par(mai=c(.8,.8,.1,.1)) 
+set.seed(12)
+plot( runif(30), type='l')
+@   
+  \caption{Test figure to illustrate figure options used by knitr.}
+  \label{f02:1}
+\end{figure}
+
+
+\section{Citations}
+
+Recall the difference between \verb+\citet{}+ (e.g., \citet{Chu:Geor:99}), \verb+\citep{}+ (e.g., \citep{Chu:Geor:99}) and \verb+\citealp{}+ (e.g., \citealp{Chu:Geor:99}).
+For simplicity, we include here all references in the file \verb+biblio.bib+ with the command \verb+\nocite{*}+.\nocite{*}
+

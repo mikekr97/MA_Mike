@@ -1,0 +1,565 @@
+%% Department of Biostatistics Consulting Report Template
+%% Version 4
+
+\documentclass[11pt, a4paper]{article}
+
+
+% UZH style
+% =============================================================================
+\usepackage{sourcesanspro}
+\renewcommand{\familydefault}{\sfdefault}
+
+
+% Latex packages and options
+% =============================================================================
+\usepackage{verbatim}
+\usepackage[vmargin=3cm, hmargin=2cm, headheight=14pt]{geometry}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{color}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{lscape}
+\usepackage{natbib}
+\usepackage{xspace}
+\usepackage{booktabs}
+% spacing
+\linespread{1.05} 
+% sans serif caption (added by sina)
+\usepackage[font=sf, labelfont={sf}, margin=1cm]{caption}
+% encodings
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+
+% ==============================================================================
+% Personalized layout: Fill in your name, email, supervisor, etc. below
+\newcommand{\name}{$<$Your name$>$}
+\newcommand{\mail}{$<$Your email adress$>$}
+\newcommand{\versiondate}{\today}
+\newcommand{\client}{$<$Client Name$>$} % umlaute: \"a = ä
+\newcommand{\clinic}{$<$Clinic Name$>$} % umlaute: \"a = ä, specify precisely, not just USZ 
+\newcommand{\supervisor}{$<$Supervisor Name$>$} % umlaute: \"a = ä
+\newcommand{\projecttitle}{\textbf{$<$Project Title$>$}}
+\newcommand{\subtitle}{\textbf{STA490: Statistical Practice in Clinical Research} \\[.25cm]
+  {\Large Prof. Ulrike Held} \\[.25cm] 
+   {\large EBPI, Department of Biostatistics}}
+% ==============================================================================
+
+% elements of the header
+\newcommand{\web}{www.biostat.uzh.ch}
+\newcommand{\grp}{Master Program in Biostatistics}
+\newcommand{\inst}{University of Zurich}
+\newcommand{\img}{\includegraphics[height=16mm]{uzh-logo}}
+\newcommand{\of}{of\xspace}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+
+\newcommand{\mytitle}[3]{
+\begin{center}
+\vspace*{-1.7cm}
+
+\begin{minipage}{0.27\textwidth}
+\thispagestyle{empty}
+\begin{flushleft}
+\img
+\end{flushleft}
+\end{minipage}
+\hfill\vline\hfill
+\begin{minipage}{0.60\textwidth}
+\begin{flushleft} 
+   \grp \\
+   \href{http://\web}{\emph{\web}}
+\end{flushleft}
+\end{minipage}
+\end{center}
+
+\vspace*{1cm}
+
+\begin{flushleft}
+\textsf{\LARGE #2} 
+
+\vspace*{0.5cm}
+
+\large{#1}
+
+\medskip
+
+\large{\name \ (\href{mailto::\mail}{\textit{\mail})}}
+
+\medskip
+
+Version \of \versiondate
+\end{flushleft}
+
+\medskip
+}
+
+
+
+% Headers and footers
+\fancypagestyle{standard}{
+\fancyhf{}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyfoot[c]{\thepage}
+\fancyfoot[l]{\textsf{\name}, \href{mailto::\mail}{\textsf{\emph{\mail}}}}
+\fancyfoot[r]{\textsf{\versiondate}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[c]{}
+\fancyhead[l]{\textsf{\grp}}
+\fancyhead[r]{\textsf{\inst}}
+}
+
+% =============================================================================
+% bibliography
+\bibliographystyle{ims}
+
+% =============================================================================
+% If you use RStudio, make sure set the following option:
+% Tools -> Global Options -> Sweave -> Weave Rnw files using: knitr
+<<include = FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path = 'figures/', fig.show='hold',
+               echo = FALSE, 
+               results = 'hide',
+               fig.height = 4.5,
+               fig.align = "center")
+@
+% =============================================================================
+
+% =============================================================================
+% my latex commands
+\newcommand{\prog}[1]{\textsf{#1}}
+\newcommand{\pkg}[1]{\texttt{#1}}
+
+\begin{document}
+
+\pagestyle{standard}
+\mytitle{\projecttitle\\[.25cm] Analysis for \client, \clinic \\[.25cm] 
+Supervision by \supervisor}{\subtitle}
+
+\bigskip
+
+
+% ======================== Some Initial settings for R =========================
+<< setup, include = FALSE>>=
+## Import external functions
+## -----------------------------------------------------------------------------
+
+## Packages
+## -----------------------------------------------------------------------------
+library(RColorBrewer) # colors for plots
+library(tableone) # for Table 1 functions
+library(xtable) # formatting tables and generating the tex code
+library(biostatUZH) # EBPI-written package, if not installed, uncomment code below
+#devtools::install\_github(repo = "felix-hof/biostatUZH")
+library(ggplot2) # customizable plots
+library(stringr) # to prettify tables
+### include project-specific packages here as well (e.g., lme4 for linear mixed effects models)
+### if possible do not load libraries in chunks further below or in scripts that you source
+
+################################################
+### only load libraries that you really use!####
+################################################
+
+## Additional settings
+## -----------------------------------------------------------------------------
+cols <- brewer.pal(3, "Set1")
+options(width = 85, digits = 4, show.signif.stars = FALSE)
+@
+
+<<readindata>>=
+## -----------------------------------------------------------------------------
+## Note on paths and R projects:
+## -----------------------------------------------------------------------------
+## The R project file sits in the report folder of your STA490 project and all
+## paths need to be written relative to this folder.
+## The project file is setup in a way that entire Git repository can be accessed
+## even though the report folder is not the root folder of the repository
+## -----------------------------------------------------------------------------
+## Import Data
+## -----------------------------------------------------------------------------
+## IMPORTANT: only use relative paths! 
+## For illustration we use a script file here for loading and preparing the data.
+source("../code/01_datapreparation.R")
+@
+
+% ======================= End of Initial Settings for R =======================
+
+% =============================================================================
+\section{Abstract} \label{sec:abstract}
+% =============================================================================
+A report of statistical results does not always contain an abstract. You are 
+required to write an abstract here for training purposes.
+
+
+% =============================================================================
+\section{Introduction} \label{sec:intro}
+% =============================================================================
+Write a short description of the background such that the research questions
+become clear. This requires explanation of the medical background related to the 
+problem and may also require explanation of the statistical methods to be used 
+(if the methods are not familiar or are complicated). In this report we use 
+\cite{holm1979}; use this as an example of how to cite references.
+
+
+% =============================================================================
+\section{Research Questions} \label{sec:questions}
+% =============================================================================
+State the questions one by one.
+\begin{enumerate}
+    \item What is the median survival time for patients within the study 
+    population?
+    \item Are there differences in survival between patients receiving therapy A 
+    and those receiving therapy B?
+    \item Do certain factors affect the probability of survival while receiving 
+    therapy B?
+\end{enumerate}
+
+
+
+% =============================================================================
+\section{Methods} \label{sec:methods}
+% =============================================================================
+This section should describe how the analysis is conducted, but should not include 
+results (no data!).
+
+
+% =============================================================================
+\subsection*{Study Design} \label{subsec:design}
+% =============================================================================
+Discuss details relevant to the design of the study (if applicable in your case), 
+such as: \subsubsection*{Type of study}
+
+\subsubsection*{Study population}
+Describe the composition including inclusion/exclusion criteria
+
+\subsubsection*{Data collection}
+Describe specific issues in data collection, variables names, definitions and range.
+
+\subsubsection*{Primary and secondary outcomes}
+
+
+% =============================================================================
+\subsection*{Statistical Analysis} \label{subsec:statmethods}
+% =============================================================================
+Describe the statistical methods you use; the more non-standard they are, the 
+longer the description should be. Please describe the following:
+\subsubsection*{Data Preparation}
+
+
+\subsubsection*{Descriptive Statistics and Simple Methods}
+
+
+\subsubsection*{Visualization Methods}
+If you use non-standard plot types, e.g. fan plots, forest plots, etc. briefly
+describe what they show.
+
+\subsubsection*{Imputation Methods}
+
+
+\subsubsection*{Description of advanced statistical methods}
+Give a short and clear summary of what the purpose of the advanced method is and 
+if possible the main principle how it works (e.g. likelihood estimation or shrinkage).
+
+\subsubsection*{Implementation}
+
+All analyses were performed in the \prog{R} programming language \citep{R} using 
+base packages and the following analysis-specific packages: \texttt{lme4} to fit
+linear mixed effects models \citep{lme4} and \texttt{lmtest} to perform diagnostic 
+checks of the resulting models \citep{lmtest}.
+
+Cite packages which are important in your analysis. You can obtain a bibtex
+entry by using \texttt{citation(package = "packagename")} in an \textsf{R}-session.
+
+
+
+% =============================================================================
+\section{Results} \label{sec:results}
+% =============================================================================
+In this section you write about the results of your data analysis. Make sure that 
+all figures and tables have captions that are complete and self-explaining. Start 
+with the basics, such as a ``Table 1'' summarizing the subjects under investigation 
+or a flowchart for participant inclusion. Here, Table \ref{tab:iris} gives a
+short overview of the iris dataset using the function \texttt{CreateTableOne}
+from the package \pkg{tableone}. The package also contains functions specific to
+nominal or continuous variables, but these can usually be automatically detected.
+Notice the statement clarifying IQR in the caption. The \texttt{nonnormal} 
+argument in the \texttt{print} statement allows to display median and IQR instead 
+of mean and standard deviation for continuous variables. 
+
+% Table
+% -----------------------------------------------------------------------------
+
+% one way to insert a table: create it silently, save it, read it into LaTeX with \input
+<<table_iris_descriptive, results = "asis", echo = FALSE>>=
+
+t1vars <- c("Sepal.Length", "Sepal.Width", 
+            "Petal.Length", "Petal.Width",
+            "Sepal.Length.Cat")
+
+notNormVars <- c("Petal.Width")
+
+
+tab.strat <- CreateTableOne(vars = t1vars,
+                       strata = "Species",
+                       data = dat,
+                       includeNA = TRUE, test = FALSE, addOverall=TRUE)
+tab.strat.p <- print(tab.strat, nonnormal = notNormVars, # showAllLevels = TRUE, 
+                   printToggle = FALSE, noSpaces = TRUE, missing=TRUE)
+
+
+## sanitation of rownames and colnames in tableone, by applying a function
+sanitation <- function(my.tableone){
+  # indentation of factor levels (to distinguish them from variable names)
+  rownames(my.tableone) <- str_replace_all(string = rownames(my.tableone), pattern = "   ", 
+                                           replacement = "\\\\quad ") 
+  # handle %-symbol and underscore in LaTeX
+  rownames(my.tableone) <- str_replace_all(string = rownames(my.tableone), pattern = "%",
+                                           replacement = "\\\\%")
+  rownames(my.tableone) <- str_replace_all(string = rownames(my.tableone), pattern = "_",
+                                           replacement = "\\\\_")
+  # replace the NA by Missing in factor levels
+  rownames(my.tableone) <- str_replace_all(string = rownames(my.tableone), pattern = "NA",
+                                           replacement = "Missing") 
+  # add percentage symbol to "Missing" column
+  colnames(my.tableone) <- str_replace_all(string = colnames(my.tableone), pattern = "Missing",
+                                           replacement = "Missing (\\\\%)") 
+  return(my.tableone)
+}
+
+# sanitation of tab.strat.p
+tab.strat.p <- sanitation(tab.strat.p)
+
+# add a column for the "Variable"
+tab.strat.p <- cbind(Variable=rownames(tab.strat.p), tab.strat.p)
+
+hlines <- c(-1, 0, 1, nrow(tab.strat.p))
+
+print(
+  xtable(tab.strat.p, 
+         caption=paste0("Descriptive statistics of iris data (n=", nrow(dat), "). Mean and standard deviation (SD) should be reported for continuous variables with approximate normal distribution, median [first quartile, third quartile] should be reported for skewed continuous or ordinal variables and frequency (\\%) for categorical variables. The column \\emph{Missing (\\%)} shows \\% of missing values."), 
+         label="tab:iris", 
+         align="ll|ccccc"),
+  include.rownames=FALSE, size="\\footnotesize", 
+      sanitize.text.function = identity,
+      #sanitize.colnames.function=bold,
+      hline.after = hlines,
+      caption.placement = "top",
+      floating=TRUE, type="latex",
+      file="tables/table_iris_descriptive.tex")
+@
+
+% insert table here:
+\input{tables/table_iris_descriptive.tex}
+
+Consider that you can also extract data into your text with 
+\textbackslash\texttt{Sexpr}\{\}, e.g., the \texttt{Species} variable contained 
+\Sexpr{unique(table(dat$Species))} records each. In Figure~\ref{fig:pairs} we 
+show a pairs plot of the Iris data.
+
+\begin{figure}[!ht]
+\begin{center}
+<< pairsplot, fig.height = 5, fig.width = 6>>=
+plot(dat, col = as.numeric(factor(dat$Species)) + 1)
+@ 
+\end{center}
+\caption{Pairs plot for iris data.}
+\label{fig:pairs}
+\end{figure}
+
+The data description should be followed by results per research question. Make
+clear which results answer research questions and which results come from 
+additional analyses. These additional results should be presented after the main 
+results.
+
+
+% =============================================================================
+\subsection*{Median Survival for Patients with Disease A} \label{subsec:q1}
+% =============================================================================
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec tincidunt leo. 
+Sed eleifend ex nunc, ut suscipit quam luctus et. Praesent et faucibus ligula,
+eu facilisis dolor. Praesent non nunc ipsum. Curabitur iaculis justo eget eros 
+dignissim, ornare luctus leo fringilla. Nunc vel metus blandit, blandit metus ac,
+fringilla nibh.
+
+% another way to insert a table: create it and directly put it in LaTeX, without saving it
+<< alllm, results = "asis" >>=
+mod.lm <- lm(Sepal.Length ~ Sepal.Width, data = dat) 
+mod.lm1 <- lm(Sepal.Length ~ ., data = dat) 
+     
+     
+## choosing columns
+tableRegression(mod.lm1, stats = c("estimate", "ci.95", "p.value"),
+                col.nam = c("Coefficient", "95\\% confidence interval", "$p$-value"), 
+                caption = "Linear regression model choosing some columns.", 
+                caption.placement = "top",
+                label = "tab:regmod1", booktabs = TRUE)
+     
+## adapt row names
+tableRegression(mod.lm, row.nam = c("Intercept", "Width Sepal"), 
+                stats = c("estimate", "ci.95", "p.value"), 
+                col.nam = c("Coefficient", "95\\%-confidence interval", "$p$-value"), 
+                caption = "Linear regression model with adapted row names.", 
+                caption.placement = "top",
+                label = "tab:regmod2", booktabs = TRUE)
+@ 
+
+
+% =============================================================================
+\subsection*{Effect of Therapy on Survival} \label{subsec:q2}
+% =============================================================================
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec tincidunt leo. 
+Sed eleifend ex nunc, ut suscipit quam luctus et. Praesent et faucibus ligula, 
+eu facilisis dolor. Praesent non nunc ipsum. Curabitur iaculis justo eget eros 
+dignissim, ornare luctus leo fringilla. Nunc vel metus blandit, blandit metus ac,
+fringilla nibh.
+<< xtable, results = "asis" >>=
+## important for tables: set 'results = "asis"' in the knitr chunk options
+
+## single header
+## ----------------------------------------------------------------------------
+mat <- head(dat)
+
+mat.xtab <- xtable(mat, align = "lrccccc",
+                   caption = "First six records of the iris dataset.", label = "tbl:head")
+print(mat.xtab, size = "footnotesize", table.placement = "!ht", 
+      caption.placement = "top", include.rownames = FALSE, 
+      hline = c(-1,0, nrow(mat.xtab)), sanitize.text.function = function(x){x},
+      booktabs = TRUE)
+
+
+## with additional header
+## ----------------------------------------------------------------------------
+mat <- table(dat$Species, dat$Petal.Width < 1.5)
+
+
+addtorow <- list()
+addtorow$pos <- list()
+addtorow$pos[[1]] <- -1
+addtorow$command <- c('\\hline Species & \\multicolumn{2}{c}{Petal.Width $<$ 1.5} \\\\')
+
+mat.xtab <- xtable(mat, align = "r|cc", 
+                   caption = "Contingency table for iris data.", 
+                   caption.placement = "top", label = "tbl:cont")
+print(mat.xtab, size = "footnotesize", table.placement = "!ht", 
+      caption.placement = "top", include.rownames = TRUE,
+      hline = c(0,nrow(mat.xtab)), add.to.row = addtorow, 
+      sanitize.text.function = function(x){x})
+@ 
+
+
+% =============================================================================
+\subsection*{Factors Affecting Survival of Patients Receiving Therapy B} \label{subsec:q3}
+% =============================================================================
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec tincidunt leo. 
+Sed eleifend ex nunc, ut suscipit quam luctus et. Praesent et faucibus ligula, 
+eu facilisis dolor. Praesent non nunc ipsum. Curabitur iaculis justo eget eros 
+dignissim, ornare luctus leo fringilla. Nunc vel metus blandit, blandit metus ac,
+fringilla nibh.
+
+
+% =============================================================================
+\section{Conclusion} \label{sec:conclusion}
+% =============================================================================
+Summarize your conclusions regarding each research question. Each question listed
+in Section~\ref{sec:questions} should be addressed. Hard numbers belong 
+in Section~\ref{sec:results}. Your conclusions should provide interpretations of
+your results in words.
+
+The median survival time found in this study supports the growing literature on
+disease prognosis for patients with Disease A. Our results suggest that Therapy 
+B is just as effective as Therapy A at fighting Disease A, but with less side
+effects. Similar to other studies, we found that Factor Y is an important predictor
+of long-term mortality. We also found Factor Z to be predictive of long-term 
+mortality. This may be due to Reason X. Possible interactions between Factor Z 
+and Therapy B require further research.
+
+Limitations of this study include Q, R, and S.
+
+% =============================================================================
+% \section{References} \label{sec:ref}
+% =============================================================================
+\nocite{R}
+
+\bibliography{../literature/bibSTA490}
+
+
+\vfill
+
+\footnotesize
+\pagebreak
+% =============================================================================
+\section{Appendix} \label{sec:app}
+% =============================================================================
+<< rdetails, echo = FALSE >>=
+# Base packages:
+s <- sessionInfo()
+s1 <- s$basePkgs[1]
+for (i in 2:length(s$basePkgs)){
+  s1 <- paste(s1, ", ", s$basePkgs[i], sep = "")
+}
+
+# Other Packages:
+pack.info <- installed.packages()
+output.packages <- data.frame(pack.info[names(s$otherPkgs), 
+                                        c("Package", "Version")])
+
+s2 <- paste(names(s$otherPkgs)[1],
+output.packages[names(s$otherPkgs)[1], "Version"])
+k <- length(names(s$otherPkgs))
+if (k > 1) for (i in 2:k) {
+  s2 <- paste(s2, ", ", paste(names(s$otherPkgs)[i], 
+                              output.packages[names(s$otherPkgs)[i],
+                                              "Version"]), sep = "")
+}
+@
+
+\subsection{Computational Details}
+\flushleft{
+This document was generated on \Sexpr{format(Sys.time(), "%B %d, %Y at %H:%M")}. 
+\textsf{R} version and packages used to generate this report:
+}
+<< sessioninfo, results = TRUE >>=
+sessionInfo()
+@
+
+
+\subsection{Code}
+Please provide ALL code with which you produced this report by code chunk reuse,
+i.e.\ name all your chunks and display them here by typing \texttt{<<chunkname>>}. 
+You can also display code from external scripts, see the example for data preparation 
+below. Try to format your code such that it fits in the lines. include comments to 
+indicate which section the chunks were used in.
+
+<< appendix1, eval = FALSE, echo = TRUE>>=
+###############################################################################
+# code for packages, settings
+###############################################################################
+<<setup>>
+@
+
+<<appendix2, code = readLines("../code/01_datapreparation.R"), echo=TRUE, eval=FALSE>>=
+@
+
+<<appendix3, eval = FALSE, echo = TRUE>>=
+###############################################################################
+# code for results: descriptive results
+###############################################################################
+<<conttable>>
+<<pairsplot>>
+  
+###############################################################################
+# code for results: first research question
+###############################################################################
+<<alllm>>
+
+###############################################################################
+# code for results: second research question
+###############################################################################
+<<xtable>>
+@
+
+
+\end{document}

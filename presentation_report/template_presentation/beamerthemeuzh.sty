@@ -1,0 +1,15 @@
+\RequirePackage{uzhsetup}
+
+\DeclareOptionBeamer{german}{\let\uzh@language\uzh@de\AtBeginDocument{\selectlanguage{ngerman}}}
+\DeclareOptionBeamer{english}{\let\uzh@language\uzh@en\AtBeginDocument{\selectlanguage{english}}}
+\ProcessOptionsBeamer
+
+\mode<presentation>
+
+\usefonttheme{uzh}
+\usecolortheme{uzh}
+\useinnertheme{uzh}
+\useoutertheme{uzh}
+
+\mode
+<all>

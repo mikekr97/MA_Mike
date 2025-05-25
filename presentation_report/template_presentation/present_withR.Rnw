@@ -1,0 +1,196 @@
+% \documentclass[aspectratio=169,onlytextwidth,english]{beamer}
+\documentclass[onlytextwidth,english]{beamer}
+
+% use official beamer theme from uzh
+\usetheme[english]{uzh} 
+
+%% load relevant packages:
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+%\usepackage[english]{babel}
+\usepackage{pgfpages}           % necessary for the handouts production
+\usepackage{amsmath}            % for nice mathematics
+\usepackage{verbatim}           % for verbatim output
+\usepackage{wasysym}            % symbols (smilies etc.)
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{textcomp}
+\usepackage{graphicx}
+\usepackage{xcolor} % for the color names, see: http://en.wikibooks.org/wiki/LaTeX/Colors#Predefined_
+\usepackage{natbib}             % for bibliography style and citations
+\usepackage{hyperref}
+\hypersetup{%
+    hyperindex=true,
+    colorlinks=true,%
+    urlcolor = {uzh@blue},% in theme uzh
+    citecolor = {uzh@blue},
+    urlcolor = {uzh@berry},
+    pdfstartview=Fit,%
+    pdfpagelayout=SinglePage,%
+    pdfpagemode=UseThumbs
+  }%
+\usepackage{url}
+\DeclareOptionBeamer{compress}{\beamer@compresstrue}
+\ProcessOptionsBeamer
+
+%% define slidetitle color
+\setbeamercolor{title}{fg=uzh@blue}
+\setbeamercolor{frametitle}{fg=uzh@blue}
+
+
+\title{Enter the Title of the presentation here}
+
+%% The following are all optional, simply comment them
+%\subtitle{Subtitle (optional)}
+\institute{Master Program in Biostatistics www.biostat.uzh.ch\\ STA490: Statistical Practice in Clinical Research}  %% optional
+\author{<Student Name>, Supervisor: <Supervisor Name> }
+\date{\today}
+\titlegraphic{img/uzh-lake.jpg}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+<<knitr_settings, include=FALSE,purl=FALSE>>=
+library(knitr)
+opts_chunk$set(
+fig.path='figures/', fig.show='hold', fig.height=3.9)
+@
+
+\begin{document}
+
+\maketitle
+
+%% Start with slides here: put them between `\begin{frame}` and `\end{frame}`
+
+\begin{frame}[plain]{The title of this slide can take up two lines and you can use a plain layout by using the option "plain"}
+
+Standard \LaTeX/knitr rules apply  
+\begin{itemize}
+\item all agree: error messages are cryptic 
+\item there are some strange errors persist, check if \texttt{$\backslash$end\{frame\}} is present
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame} {Itemize} {asdf}
+  Paragraph 1
+
+  Paragraph 2
+
+  \begin{itemize}
+    \item Item 1
+    \item Item 2
+    \begin{itemize}
+      \item Subitem 1
+      \item Subitem 2
+      \begin{itemize}
+        \item Subsubitem 1
+        \item Subsubitem 2
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+
+  Paragraph 3
+\end{frame}
+
+\begin{frame}{Enumerate}
+  Paragraph 1
+
+  Paragraph 2
+
+  \begin{enumerate}
+    \item Item 1
+    \item Item 2
+    \begin{enumerate}
+      \item Subitem 1
+      \item Subitem 2
+      \begin{enumerate}
+        \item Subsubitem 1
+        \item Subsubitem 2
+      \end{enumerate}
+    \end{enumerate}
+  \end{enumerate}
+
+  Paragraph 3
+\end{frame}
+
+\begin{frame}{Font sizes}
+
+Available font sizes: 8, 9, 10, 11, 12, 14, 17 and 20pt. 
+
+Default font size is 11pt. 
+\pause
+
+This presentations uses size 11pt.\\
+
+We recommend to use $\approx$8 lines per slide.
+\end{frame}
+
+\begin{frame}{Math}
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  
+  $$\sum_{i=1}^n i = \frac{n(n+1)}{2}$$
+
+  Nunc nec tincidunt leo. Sed eleifend ex nunc, ut suscipit quam luctus et.
+
+  Paragraph with inline math $\int_0^1 x^2 dx = \frac{1}{3}$ and more text.
+\end{frame}
+
+\begin{frame}{Classical use of Knitr}
+
+<<figure.1, echo=FALSE>>=
+set.seed( 101)
+hist( rnorm( 250))
+@
+
+\end{frame}
+
+
+\begin{frame}{Where to get help}
+
+Short overview of beamer:  
+\url{https://www.sharelatex.com/learn/Beamer}
+
+
+For knitr:
+\url{https://yihui.name/knitr/}
+
+
+\end{frame}
+
+
+
+\begin{frame}{Content and picture}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec tincidunt leo. 
+Sed eleifend ex nunc, ut suscipit quam luctus et. Praesent et faucibus ligula,
+eu facilisis dolor. Praesent non nunc ipsum. 
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \fillimage{\textwidth}{6.5cm}{img/uzh-staircase.jpg}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+
+\begin{frame}[fragile]\frametitle{Bibliography}
+If needed, citations with natbib
+\begin{verbatim}
+ \citet{Held:14}, \citep{Furr:Bach:Du:16}
+\end{verbatim}
+produces \citet{Held:14}, \citep{Furr:Bach:Du:16}.
+
+Coloring links are more difficult\dots
+\end{frame}
+
+
+
+\begin{frame}{References}
+  \small
+  \bibliographystyle{apalike}
+\bibliography{../literature/bibSTA490}
+\end{frame}
+
+
+\end{document}

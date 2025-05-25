@@ -1,0 +1,16 @@
+% LaTeX file for Chapter 01
+<<'preamble01',include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+    fig.path='figure/ch01_fig', 
+    self.contained=FALSE,
+    cache=TRUE
+)
+
+@
+
+
+\chapter{Introduction}
+
+Why, what and how\dots
+

@@ -1,0 +1,12 @@
+% LaTeX file for Chapter 04
+<<'preamble04',include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+    fig.path='figure/ch04_fig', 
+    self.contained=FALSE,
+    cache=FALSE
+) 
+@
+
+\chapter{Discussion and Outlook}
+

@@ -1,0 +1,90 @@
+\begin{thebibliography}{}
+
+\bibitem[Chen {\it et~al.}, 2025]{chen2025}
+Chen, H., Aebersold, H., Puhan, M.~A., and Serra-Burriel, M. (2025).
+\newblock Causal machine learning methods for estimating personalised treatment
+  effects -- insights on validity from two large trials.
+
+\bibitem[Chu and George, 1999]{Chu:Geor:99}
+Chu, E. and George, A. (1999).
+\newblock {\em Inside the FFT Black Box: Serial and Parallel Fast Fourier
+  Transform Algorithms}.
+\newblock CRC Press.
+
+\bibitem[Collett, 2014]{Coll:14}
+Collett, D. (2014).
+\newblock {\em Modelling Survival Data in Medical Research}.
+\newblock Chapman \& Hall/CRC Texts in Statistical Science. Taylor \& Francis,
+  third edition.
+
+\bibitem[Freedman, 1987]{freedman1987}
+Freedman, B. (1987).
+\newblock Equipoise and the ethics of clinical research.
+\newblock {\em The New England journal of medicine}, {\bf317},  141--145.
+
+\bibitem[Hariton and Locascio, 2018]{hariton2018}
+Hariton, E. and Locascio, J.~J. (2018).
+\newblock Randomised controlled trials - the gold standard for effectiveness
+  research.
+\newblock {\em BJOG: An International Journal of Obstetrics \& Gynaecology},
+  {\bf125},  1716 -- 1716.
+
+\bibitem[Hothorn {\it et~al.}, 2014]{hothorn2014}
+Hothorn, T., Kneib, T., and B{\"u}hlmann, P. (2014).
+\newblock Conditional transformation models.
+\newblock {\em Journal of the Royal Statistical Society. Series B (Statistical
+  Methodology)}, {\bf76},  3--27.
+
+\bibitem[Hurrell {\it et~al.}, 2013]{Hurr:etal:13}
+Hurrell, J.~W., Kushnir, Y., Ottersen, G., and Visbeck, M. (2013).
+\newblock {\em An Overview of the {North} {Atlantic} Oscillation},   1--35.
+\newblock American Geophysical Union.
+
+\bibitem[Kratzer and Furrer, 2018]{varrank}
+Kratzer, G. and Furrer, R. (2018).
+\newblock {\em varrank: an {R} package for variable ranking based on mutual
+  information with applications to observed systemic datasets}.
+\newblock R package version 0.3.
+
+\bibitem[Nichols, 2007]{nichols2007}
+Nichols, A. (2007).
+\newblock Causal inference with observational data.
+\newblock {\em The Stata Journal}, {\bf7},  507 -- 541.
+
+\bibitem[Pearl, 2009a]{pearl2009}
+Pearl, J. (2009a).
+\newblock {Causal inference in statistics: An overview}.
+\newblock {\em Statistics Surveys}, {\bf3},  96 -- 146.
+
+\bibitem[Pearl, 2009b]{pearl_book2009}
+Pearl, J. (2009b).
+\newblock {\em Causality: Models, Reasoning and Inference}.
+\newblock Cambridge University Press, USA, 2nd edition.
+
+\bibitem[Porcu {\it et~al.}, 2020]{Porc:Furr:Nych:21}
+Porcu, E., Furrer, R., and Nychka, D. (2020).
+\newblock 30 years of space-time covariance functions.
+\newblock {\em Wiley Interdisciplinary Reviews. Computational Statistics},
+  {\bf13:e1512},  1--24.
+
+\bibitem[Sick and D{\"u}rr, 2025]{sick2025}
+Sick, B. and D{\"u}rr, O. (2025).
+\newblock Interpretable neural causal models with tram-dags.
+\newblock Accepted at the CLeaR 2025 Conference.
+
+\bibitem[Sick {\it et~al.}, 2021]{sick2020}
+Sick, B., Hathorn, T., and D{\"u}rr, O. (2021).
+\newblock Deep transformation models: Tackling complex regression problems with
+  neural network based transformation models.
+\newblock In {\em 2020 25th International Conference on Pattern Recognition
+  (ICPR)},   2476--2481.
+
+\bibitem[Wang and Furrer, 2020]{Wang:Furr:20}
+Wang, C. and Furrer, R. (2020).
+\newblock Monte {Carlo} permutation tests for assessing spatial dependence at
+  different scales.
+\newblock In {La Rocca}, M., Liseo, B., and Salmaso, L., editors, {\em
+  Nonparametric Statistics. ISNPS 2018. Springer Proceedings in Mathematics \&
+  Statistics}, volume 339,   503--511. Springer.
+
+\end{thebibliography}

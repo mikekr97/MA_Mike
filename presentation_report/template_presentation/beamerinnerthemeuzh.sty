@@ -1,0 +1,69 @@
+\RequirePackage{uzhsetup}
+
+\mode<presentation>
+
+\setlength{\parskip}{1.2ex}
+
+\defbeamertemplate*{itemize item}{uzh}{\usebeamerfont*{itemize item}\hbox{---}}
+\defbeamertemplate*{itemize subitem}{uzh}{\usebeamerfont*{itemize subitem}\hbox{---}}
+\defbeamertemplate*{itemize subsubitem}{uzh}{\usebeamerfont*{itemize subsubitem}\hbox{---}}
+
+\newlength{\uzh@tgheight}%
+\defbeamertemplate*{title page}{uzh}{
+  \thispagestyle{navigation@titlepage}%
+  \vbox{}\vskip1cm%
+  \setlength{\uzh@tgheight}{\textheight-0.55cm}%
+  \ifx\inserttitlegraphic\@empty%
+  \else%
+    \fillimage{\textwidth}{\uzh@tgheight}{\inserttitlegraphic}%
+  \fi%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[fill=white,inner xsep=0.4cm,inner ysep=0.3cm,anchor=west,align=left] at (current page.west) {%
+      \usebeamerfont{title}\usebeamercolor[fg]{title}%
+      \begin{varwidth}{0.9\textwidth}%
+        \inserttitle%
+      \end{varwidth}%
+      \ifx\insertsubtitle\@empty%
+      \else%
+        \\[0.5ex]%
+        \usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}%
+        \begin{varwidth}{0.9\textwidth}%
+          \insertsubtitle%
+        \end{varwidth}%
+      \fi%
+      \ifx\insertauthor\@empty%
+      \else%
+        \\%
+        \usebeamerfont{author}\usebeamercolor[fg]{author}%
+        \begin{varwidth}{0.9\textwidth}%
+          \insertauthor%
+        \end{varwidth}%
+      \fi%
+      \ifx\insertdate\@empty%
+      \else%
+        \\[-0.5ex]%
+        \usebeamerfont{date}\usebeamercolor[fg]{date}%
+        \begin{varwidth}{0.9\textwidth}%
+          \insertdate%
+        \end{varwidth}%
+      \fi%
+    };
+  \end{tikzpicture}
+}
+
+\defbeamertemplate*{section page}{uzh}{
+  \thispagestyle{navigation@titlepage}
+  \vbox{}\vskip1.5cm%
+  \centering
+  \usebeamerfont{section title}\insertsection\par
+}
+
+\defbeamertemplate*{subsection page}{uzh}{
+  \thispagestyle{navigation@titlepage}
+  \vbox{}\vskip1.5cm%
+  \centering
+  \usebeamerfont{subsection title}\insertsubsection\par
+}
+
+\mode
+<all>

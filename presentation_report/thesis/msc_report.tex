@@ -1,0 +1,122 @@
+\documentclass[11pt,a4paper,twoside]{book}
+\input{header.sty}   % packages, layout and standard macros
+
+\begin{document}
+\input{title}
+
+\graphicspath{{./figure/}}
+\DeclareGraphicsExtensions{.pdf,.png}
+\setcounter{tocdepth}{1}
+
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{6cm}{\bfseries\Huge
+  Neural Causal Models with TRAM-DAGs:\\[5mm]
+  Applied on real-world data \\[5mm]
+  and used for ITE estimation.
+  }
+
+  \vfill
+  \rm
+
+  \LARGE
+  Mike Kr{\"a}henb{\"u}hl\\[12mm]
+  
+  \normalsize
+  Version \today
+\end{center}
+\newpage
+\thispagestyle{empty}~
+\newpage
+\pagenumbering{roman}
+
+\thispagestyle{plain}\markboth{Contents}{Contents}
+\tableofcontents
+\setkeys{Gin}{width=.8\textwidth}
+
+\chapter*{Preface}
+\addtocontents{toc}{\protect \vspace*{13.mm}}
+\addcontentsline{toc}{chapter}{\bfseries{Preface}}
+\thispagestyle{plain}\markboth{Preface}{Preface}
+
+In the introduction part, my aim is to give a summary of 
+important concepts of causal inference and causal models. Further, 
+I motivate the importance for methods that allow to draw causal 
+conclusions from observational data in contrast to randomized controlled
+trials (RCTs) and that the proposed framework of tram-dags (cite sick duerr)
+ can be used as such a tool. \\ 
+ 
+In the methods section, I give a detailed description of the tram-dag framework 
+and how it works by illustrating it on a simple simulated example. 
+I also show for what kind of causal queries the model can be used for. 
+Although it is not a topic for observations data, I discuss how the model can be 
+used for estimating the individualized treatment effect (ITE).\\ 
+
+In the results section, I will first show results from simulation studies where the 
+ground truth is known. Second, I will show results on a real-world example in the
+setting of climate data. Third, I present the results of the ITE estimation. \\ 
+
+In the final section, I will discuss the results and give a conclusion about the 
+advantages and limitation of this framework and provide an outlook.
+
+\bigskip
+
+\begin{flushright}
+  Mike Kr{\"a}henb{\"u}hl\\
+  July 2025
+\end{flushright}
+
+\addtocontents{toc}{\protect \vspace*{10mm}}
+
+\cleardoublepage
+\pagenumbering{arabic}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter01}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter02}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter03}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\input{chapter04}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter05}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage
+\phantomsection
+\addtocontents{toc}{\protect \vspace*{10mm}}
+\addcontentsline{toc}{chapter}{\bfseries Bibliography}
+
+
+\bibliographystyle{mywiley} 
+\bibliography{biblio}
+
+\cleardoublepage
+
+\end{document}
+
+
+
+%%% Local Variables:
+%%% ispell-local-dictionary: "en_US"
+%%% End:
