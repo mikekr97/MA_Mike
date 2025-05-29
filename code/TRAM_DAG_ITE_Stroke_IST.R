@@ -71,7 +71,8 @@ hidden_features_CS = c(2,5,5,2) # c(4,8,10,8,4)#c(2,5,5,2) #c(4,8,8,4)# c(2,5,5,
 
 
 # MODEL_NAME = 'ModelCI'
-MODEL_NAME = 'ModelCIDropout'
+# MODEL_NAME = 'ModelCIDropout0.3'
+MODEL_NAME = 'ModelCIDropout0.1'
 
 
 
@@ -423,18 +424,57 @@ logis.ITE <- function(data){
   form <- OUTCOME6M ~ ns(AGE, df=3) + ns(RDELAY, df=3) + ns(RSBP, df=3) + SEX + RCT + RVISINF + RATRIAL + RASP3 + RDEF1 + RDEF2 + RDEF3 + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + RCONSC + STYPE + REGION
   fit.dev.tx <- glm(form, data = data$data.dev.tx, family = binomial(link = "logit"))
   fit.dev.ct <- glm(form, data = data$data.dev.ct, family = binomial(link = "logit"))
-  
+
   # Predict ITE on derivation sample
   pred.data.dev <- data$data.dev %>% dplyr::select(-c("RXASP","OUTCOME6M"))
   y.dev.tx <- predict(fit.dev.tx, newdata = pred.data.dev, type = "response")
   y.dev.ct <- predict(fit.dev.ct, newdata = pred.data.dev, type = "response")
   pred.dev <- y.dev.tx - y.dev.ct
-  
+
   # Predict ITE on validation sample
   pred.data.val <- data$data.val %>% dplyr::select(-c("RXASP","OUTCOME6M"))
   y.val.tx <- predict(fit.dev.tx, newdata = pred.data.val, type = "response")
   y.val.ct <- predict(fit.dev.ct, newdata = pred.data.val, type = "response")
   pred.val <- y.val.tx - y.val.ct
+
+
+  # homogeneous model
+  # form <- OUTCOME6M ~ RXASP + ns(AGE, df=3) + ns(RDELAY, df=3) + ns(RSBP, df=3) + SEX + RCT + RVISINF + RATRIAL + RASP3 + RDEF1 + RDEF2 + RDEF3 + RDEF4 + RDEF5 + RDEF6 + RDEF7 + RDEF8 + RCONSC + STYPE + REGION
+  # fit.dev <- glm(form, data = data$data.dev, family = binomial(link = "logit"))
+  # 
+  # #train pred
+  # pred.data.dev.tx <- data$data.dev %>% 
+  #   dplyr::select(-c("OUTCOME6M")) %>% 
+  #   # set RXASP to 1 (treatment) as factor
+  #   mutate(RXASP = "Y") %>%
+  #   mutate(RXASP = as.factor(RXASP))
+  # pred.data.dev.ct <- data$data.dev %>% 
+  #   dplyr::select(-c("OUTCOME6M")) %>% 
+  #   # set RXASP to 1 (treatment) as factor
+  #   mutate(RXASP = "N") %>%
+  #   mutate(RXASP = as.factor(RXASP))
+  # 
+  # y.dev.tx <- predict(fit.dev, newdata = pred.data.dev.tx, type = "response")
+  # y.dev.ct <- predict(fit.dev, newdata = pred.data.dev.ct, type = "response")
+  # pred.dev <- y.dev.tx - y.dev.ct
+  # 
+  # #test pred
+  # pred.data.val.tx <- data$data.val %>% 
+  #   dplyr::select(-c("OUTCOME6M")) %>% 
+  #   # set RXASP to 1 (treatment) as factor
+  #   mutate(RXASP = "Y") %>%
+  #   mutate(RXASP = as.factor(RXASP))
+  # pred.data.val.ct <- data$data.val %>%
+  #   dplyr::select(-c("OUTCOME6M")) %>% 
+  #   # set RXASP to 1 (treatment) as factor
+  #   mutate(RXASP = "N") %>%
+  #   mutate(RXASP = as.factor(RXASP))
+  # y.val.tx <- predict(fit.dev, newdata = pred.data.val.tx, type = "response")
+  # y.val.ct <- predict(fit.dev, newdata = pred.data.val.ct, type = "response")
+  # pred.val <- y.val.tx - y.val.ct
+  # fit.dev.tx <- NULL
+  # fit.dev. <- NULL
+  
   
   # generate data
   data.dev.rs <- data$data.dev %>% 
@@ -654,6 +694,592 @@ plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE, val.data = data.val.group
 
 
 
+#################################################
+# Tuned Random Forest for ITE
+#################################################
+
+
+library(comets)
+library(dplyr)
+
+# extract the tuned_rf function
+comets_tuned_rf <- comets:::tuned_rf
+
+fit.tuned_rf_IST <- function(df, p = N_var-2) {
+  # p <- sum(grepl("^X", colnames(df$data.dev)))
+  # df <- test.compl.data.transformed
+  variable_names <- colnames(df$data.dev)[2:(p+1)] # Exclude RXASP and OUTCOME6M from the variable names
+  # form <- as.formula(paste("OUTCOME6M ~", paste(variable_names, collapse = " + ")))
+  
+  df$data.dev.tx$OUTCOME6M <- as.factor(df$data.dev.tx$OUTCOME6M -1)  # Ensure Y is a factor for classification
+  df$data.dev.ct$OUTCOME6M <- as.factor(df$data.dev.ct$OUTCOME6M -1)  # Ensure Y is a factor for classification
+  
+  # Fit random forest for treatment and control groups
+  fit.dev.tx <- comets_tuned_rf(y=as.matrix(df$data.dev.tx$OUTCOME6M), x=as.matrix(df$data.dev.tx %>% dplyr::select(variable_names)))
+  fit.dev.ct <- comets_tuned_rf(y=as.matrix(df$data.dev.ct$OUTCOME6M), x=as.matrix(df$data.dev.ct %>% dplyr::select(variable_names)))
+  
+  # Feature set of derivation sample
+  X_dev <- as.matrix(df$data.dev %>% dplyr::select(variable_names))
+  
+  # Predict probabilities on derivation sample
+  pred_tx_dev <- predict(fit.dev.tx, data = X_dev)
+  pred_ct_dev <- predict(fit.dev.ct, data = X_dev)
+  
+  # Predict outcome for observed T and X on derivation sample
+  df$data.dev$Y_pred <- pred_tx_dev * df$data.dev$RXASP + pred_ct_dev * (1 - df$data.dev$RXASP)
+  
+  # Predict ITE on derivation sample
+  df$data.dev$Y_pred_tx <- pred_tx_dev
+  df$data.dev$Y_pred_ct <- pred_ct_dev
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct
+  
+  
+  # Feature set of validation sample
+  X_val <- as.matrix(df$data.val %>% dplyr::select(variable_names))
+  
+  # Predict probabilities on derivation sample
+  pred_tx_val <- predict(fit.dev.tx, data = X_val)
+  pred_ct_val <- predict(fit.dev.ct, data = X_val)
+  
+  # Predict outcome for observed T and X on validation sample
+  df$data.val$Y_pred <- pred_tx_val * df$data.val$RXASP + pred_ct_val * (1 - df$data.val$RXASP)
+  
+  # Predict ITE on validation sample
+  df$data.val$Y_pred_tx <- pred_tx_val
+  df$data.val$Y_pred_ct <- pred_ct_val
+  pred.val <- df$data.val$Y_pred_tx - df$data.val$Y_pred_ct
+  
+  
+  
+  
+  # check binary predictions on the train set
+  # train_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.dev.tx, type="response")
+  # train_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.dev.ct, type="response")
+  
+  # mean(df$data.dev.tx$Y == train_y_pred_tx)
+  # mean(df$data.dev.ct$Y == train_y_pred_ct)
+  # # combined accuracy (train)
+  # acc_train <- mean(c(df$data.dev.tx$Y == train_y_pred_tx, df$data.dev.ct$Y == train_y_pred_ct))
+  
+  
+  # check binary predictions on the validation set
+  # val_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.val.tx, type="response")
+  # val_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.val.ct, type="response")
+  # 
+  # mean(df$data.val.tx$Y == val_y_pred_tx)
+  # mean(df$data.val.ct$Y == val_y_pred_ct)
+  # 
+  # combined accuracy (validation)
+  # acc_test <- mean(c(df$data.val.tx$Y == val_y_pred_tx, df$data.val.ct$Y == val_y_pred_ct))
+  
+  
+  
+  
+  # Generate result sets
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  # Print accuracy directly inside the function
+  # cat(paste0("Train Accuracy: ", round(acc_train, 3), 
+  #            ", Test Accuracy: ", round(acc_test, 3), "\n"))
+  # 
+  
+  return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs
+              # , model.dev.tx = fit.dev.tx, model.dev.ct = fit.dev.ct
+              ))
+}
+
+
+
+
+
+
+
+plot_outcome_ITE <- function(data.dev.rs, data.val.rs , x_lim = c(-0.5,0.5)){
+  
+  ### debugging
+  # data.dev.rs <- test.results.tram$data.dev.rs
+  # data.val.rs <- test.results.tram$data.val.rs
+  
+  
+  # transform outcome back to 0, 1 coding
+  data.dev.rs$OUTCOME6M <- data.dev.rs$OUTCOME6M -1
+  data.val.rs$OUTCOME6M <- data.val.rs$OUTCOME6M -1
+  
+  # data.val.rs$ITE
+  # data.val.rs$RXASP
+  
+  # encode RXASP as factor N, Y
+  data.dev.rs$RXASP <- factor(data.dev.rs$RXASP, levels = c(0, 1), labels = c("N", "Y"))
+  data.val.rs$RXASP <- factor(data.val.rs$RXASP, levels = c(0, 1), labels = c("N", "Y"))
+  
+  p1 <- ggplot(data=data.dev.rs, aes(x=ITE, y=OUTCOME6M))+
+    geom_point(aes(color=RXASP))+
+    geom_smooth(aes(color=RXASP, fill=RXASP), method = "glm", method.args = list(family = "binomial"), alpha=0.5)+
+    coord_cartesian(xlim=x_lim, ylim = c(0,1))+
+    ylab("Outcome")+xlab("ITE")+
+    scale_color_manual(values=c("N" = "orange", "Y" = "#36648B"),labels = c("N" = "No", "Y" = "Yes") , name="Treatment") +
+    scale_fill_manual(values = c("N" = "orange", "Y" = "#36648B"),labels = c("N" = "No", "Y" = "Yes"), name="Treatment") +
+    theme_minimal()+
+    theme(
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),    # Removes plot background (outside the plot)
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  p2 <- ggplot(data=data.val.rs, aes(x=ITE, y=OUTCOME6M))+
+    geom_point(aes(color=RXASP))+
+    geom_smooth(aes(color=RXASP, fill=RXASP), method = "glm", method.args = list(family = "binomial"))+
+    coord_cartesian(xlim=x_lim, ylim = c(0,1))+
+    ylab("Outcome")+xlab("ITE")+
+    scale_color_manual(values=c("N" = "orange", "Y" = "#36648B"),labels = c("N" = "No", "Y" = "Yes"), name="Treatment") +
+    scale_fill_manual(values = c("N" = "orange", "Y" = "#36648B"),labels = c("N" = "No", "Y" = "Yes"), name="Treatment") +
+    theme_minimal()+
+    theme(
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),    # Removes plot background (outside the plot)
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  result <- ggarrange(p1, p2,
+                      labels = c("Training Data", "Test Data"),
+                      label.x = 0,
+                      label.y = 1.04,
+                      hjust = 0,
+                      vjust = 1,
+                      ncol = 1, nrow = 2, align = "v",
+                      common.legend = T)
+  
+  return(result)
+}
+
+# plot the results
+tuned_rf.results <- fit.tuned_rf_IST(test.compl.data.transformed)
+
+tuned_rf.results$data.dev.rs$ITE
+tuned_rf.results$data.dev.rs$OUTCOME6M
+tuned_rf.results$data.dev.rs$Y_pred
+
+
+
+plot_outcome_ITE(data.dev.rs = tuned_rf.results$data.dev.rs, data.val.rs = tuned_rf.results$data.val.rs, x_lim = c(-0.5,0.5))
+
+
+
+plot_ITE_density <- function(test.results){
+  result <- ggplot()+
+    geom_density(aes(x = test.results$data.dev.rs$ITE, fill = "ITE.dev", color = "ITE.dev"), alpha = 0.5, linewidth=1) +
+    geom_density(aes(x = test.results$data.val.rs$ITE, fill = "ITE.val", color = "ITE.val"), alpha = 0.5, linewidth=1) +
+    #  geom_vline(aes(xintercept = mean(test.results$data.dev.rs$ITE)), 
+    #             color = "orange", linetype = "dashed") +
+    #  geom_vline(aes(xintercept = mean(test.results$data.val.rs$ITE)), 
+    #             color = "#36648B", linetype = "dashed") +
+    geom_vline(aes(xintercept = 0), color = "black", linetype = "dashed", linewidth=1) +
+    xlab("Individualized Treatment Effect") +
+    ylab("Density") +
+    scale_color_manual(name = "Group", 
+                       labels = c("ITE.dev" = "Training Data", "ITE.val" = "Test Data"), 
+                       values = c("orange", "#36648B")) +
+    scale_fill_manual(name = "Group", 
+                      labels = c("ITE.dev" = "Training Data", "ITE.val" = "Test Data"), 
+                      values = c("orange", "#36648B")) +
+    theme_minimal()+
+    theme(
+      legend.position.inside = c(1, 1),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),    # Removes plot background (outside the plot)
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  return(result)
+}
+
+
+
+plot_ITE_density(tuned_rf.results)
+
+
+
+
+
+calc.ATE.Odds.tram <- function(data, log.odds = T){
+  data <- as.data.frame(data)
+  data$OUTCOME6M <- data$OUTCOME6M - 1 #transform back to 0, 1 coding
+  model <- glm(OUTCOME6M ~ RXASP, data = data, family = binomial(link = "logit"))
+  if (!log.odds){
+    ATE.odds <- exp(coef(model)[2])
+    ATE.lb <- exp(suppressMessages(confint(model)[2,1]))
+    ATE.ub <- exp(suppressMessages(confint(model)[2,2]))
+  } else {
+    ATE.odds <- coef(model)[2]
+    ATE.lb <- suppressMessages(confint(model)[2,1])
+    ATE.ub <- suppressMessages(confint(model)[2,2])
+  }
+  return(data.frame(ATE.odds = ATE.odds, ATE.lb = ATE.lb, ATE.ub = ATE.ub, 
+                    n.total = nrow(data), 
+                    n.tr = sum(data$RXASP == 1), n.ct = sum(data$RXASP == 0)))
+}
+
+
+plot_ATE_ITE_in_group <- function(dev.data = data.dev.rs, val.data = data.val.rs, log.odds = T, ylb=0, yub=2){
+  data <- rbind(dev.data %>% mutate(sample = "derivation"), val.data %>%  mutate(sample = "validation"))
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE.odds)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, 
+              position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, 
+               position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2,
+                  position = position_dodge(width = 0.2))+
+    geom_hline(yintercept = ifelse(log.odds, 0, 1), linetype = "dashed", color = "black") +
+    scale_color_manual(name = "Group",
+                       labels = c("derivation" = "Training Data", "validation" = "Test Data"),
+                       values = c("orange", "#36648B"))+
+    scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+    ylim(ylb,yub)+
+    xlab("ITE Group")+
+    ylab(ifelse(log.odds, "ATE in Log Odds Ratio", "ATE in Odds Ratio"))+
+    theme_minimal()+
+    theme(
+      legend.position.inside = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
+# breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+breaks <- c(-0.3, -0.1, -0.05, 0.025, 0.05, 0.3)
+log.odds <- F
+data.dev.grouped.ATE <- tuned_rf.results$data.dev.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Odds.tram(.x, log.odds = log.odds)) %>% ungroup()
+data.val.grouped.ATE <- tuned_rf.results$data.val.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Odds.tram(.x, log.odds = log.odds)) %>% ungroup() 
+
+plot_ATE_ITE_in_group(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, log.odds = log.odds, ylb = 0, yub = 7.5)
+
+
+
+
+
+#same for risk difference
+
+calc.ATE.Risks.tram <- function(data) {
+  data <- as.data.frame(data)
+  data$OUTCOME6M <- data$OUTCOME6M - 1  # transform to 0/1
+  
+  # Ensure RXASP is a factor
+  # data$RXASP <- factor(data$RXASP, levels = c("N", "Y"))
+  
+  # Calculate proportions
+  p1 <- mean(data$OUTCOME6M[data$RXASP ==  1])  # treated
+  p0 <- mean(data$OUTCOME6M[data$RXASP == 0])  # control
+  
+  # Risk difference
+  ATE.RiskDiff <- p1 - p0
+  
+  # Standard error for RD (Wald)
+  n1 <- sum(data$RXASP == 1)
+  n0 <- sum(data$RXASP == 0)
+  se <- sqrt((p1 * (1 - p1)) / n1 + (p0 * (1 - p0)) / n0)
+  
+  # 95% CI using normal approximation
+  z <- qnorm(0.975)
+  ATE.lb <- ATE.RiskDiff - z * se
+  ATE.ub <- ATE.RiskDiff + z * se
+  
+  return(data.frame(
+    ATE.RiskDiff = ATE.RiskDiff,
+    ATE.lb = ATE.lb,
+    ATE.ub = ATE.ub,
+    n.total = nrow(data),
+    n.tr = n1,
+    n.ct = n0
+  ))
+}
+
+
+
+plot_ATE_ITE_in_group_risks <- function(dev.data = data.dev.rs, val.data = data.val.rs, ylb=0, yub=2){
+  data <- rbind(dev.data %>% mutate(sample = "derivation"), val.data %>%  mutate(sample = "validation"))
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE.RiskDiff)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, 
+              position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, 
+               position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2,
+                  position = position_dodge(width = 0.2))+
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+    scale_color_manual(name = "Group",
+                       labels = c("derivation" = "Training Data", "validation" = "Test Data"),
+                       values = c("orange", "#36648B"))+
+    scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+    ylim(ylb,yub)+
+    xlab("ITE Group")+
+    ylab("ATE in Risk Difference")+
+    theme_minimal()+
+    theme(
+      legend.position.inside = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
+# breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+breaks <- c(-0.3, -0.1, -0.05, 0.025, 0.05, 0.3)
+log.odds <- F
+data.dev.grouped.ATE <- tuned_rf.results$data.dev.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Risks.tram(.x)) %>% ungroup()
+data.val.grouped.ATE <- tuned_rf.results$data.val.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Risks.tram(.x)) %>% ungroup() 
+
+plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, ylb = -0.5, yub = 0.5)
+
+
+
+
+
+### Check calibration on the training set:
+
+
+
+Y_prob_tuned_rf <- tuned_rf.results$data.dev.rs$Y_pred
+
+
+# create train df with prediction and true prob
+
+train_df <- data.frame(
+  Y_prob_tuned_rf = Y_prob_tuned_rf,
+  Y = as.numeric(tuned_rf.results$data.dev.rs$OUTCOME6M-1)
+)
+
+# Recalibrate with GAM
+
+library(dplyr)
+library(mgcv)
+library(binom)
+library(ggplot2)
+
+# Set confidence level and bins
+my_conf <- 0.95
+bins <- 10
+
+# Create equal-frequency bins
+train_df <- train_df %>%
+  mutate(prob_bin = cut(
+    Y_prob_tuned_rf,
+    # breaks = quantile(Y_prob_tram_dag, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
+    breaks = seq(min(Y_prob_tuned_rf), max(Y_prob_tuned_rf), length.out = bins + 1),
+    include.lowest = TRUE
+  ))
+
+# Compute bin summaries
+agg_bin <- train_df %>%
+  group_by(prob_bin) %>%
+  summarise(
+    pred_probability = mean(Y_prob_tuned_rf),
+    obs_proportion = mean(Y),
+    n_pos = sum(Y == 1),
+    n_total = n(),
+    .groups = "drop"
+  )
+
+# Compute confidence intervals for observed proportions
+bin_cis <- mapply(
+  function(x, n) binom.confint(x, n, conf.level = my_conf, methods = "wilson")[, c("lower", "upper")],
+  agg_bin$n_pos, agg_bin$n_total, SIMPLIFY = FALSE
+)
+cis_df <- do.call(rbind, bin_cis)
+agg_bin$lo_CI_obs_prop <- cis_df[, 1]
+agg_bin$up_CI_obs_prop <- cis_df[, 2]
+agg_bin$width_CI <- abs(agg_bin$up_CI_obs_prop - agg_bin$lo_CI_obs_prop)
+
+# Plot predicted against observed including CI
+ggplot(agg_bin, aes(x = pred_probability, y = obs_proportion)) +
+  geom_point(color = "blue", size = 2) +
+  geom_errorbar(aes(ymin = lo_CI_obs_prop, ymax = up_CI_obs_prop), width = 0.03) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = paste("Calibration Plot (Train) (", bins, " bins)", sep = ""),
+    x = "Predicted Probability",
+    y = "Observed Proportion"
+  ) +
+  coord_equal() +
+  theme_minimal()
+
+
+# roc curve
+
+library(pROC)
+
+# Create ROC object
+roc_obj <- roc(train_df$Y, train_df$Y_prob_tuned_rf)
+
+# Plot ROC curve
+plot(roc_obj, col = "#2c7fb8", lwd = 2, main = "ROC Curve - Train Set")
+
+# Optional: Add AUC to the plot
+auc_value <- auc(roc_obj)
+legend("bottomright", legend = paste("AUC =", round(auc_value, 3)), col = "#2c7fb8", lwd = 2)
+
+
+
+
+
+### Check calibration on the test set:
+
+
+Y_prob_tuned_rf <- tuned_rf.results$data.val.rs$Y_pred
+
+
+# create test df with prediction and true prob
+
+test_df <- data.frame(
+  Y_prob_tuned_rf = Y_prob_tuned_rf,
+  Y = as.numeric(tuned_rf.results$data.val.rs$OUTCOME6M-1)
+)
+
+# Recalibrate with GAM
+
+library(dplyr)
+library(mgcv)
+library(binom)
+library(ggplot2)
+
+# Set confidence level and bins
+my_conf <- 0.95
+bins <- 10
+
+# Create equal-frequency bins
+test_df <- test_df %>%
+  mutate(prob_bin = cut(
+    Y_prob_tuned_rf,
+    # breaks = quantile(Y_prob_tram_dag, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
+    breaks = seq(min(Y_prob_tuned_rf), max(Y_prob_tuned_rf), length.out = bins + 1),
+    include.lowest = TRUE
+  ))
+
+# Compute bin summaries
+agg_bin <- test_df %>%
+  group_by(prob_bin) %>%
+  summarise(
+    pred_probability = mean(Y_prob_tuned_rf),
+    obs_proportion = mean(Y),
+    n_pos = sum(Y == 1),
+    n_total = n(),
+    .groups = "drop"
+  )
+
+# Compute confidence intervals for observed proportions
+bin_cis <- mapply(
+  function(x, n) binom.confint(x, n, conf.level = my_conf, methods = "wilson")[, c("lower", "upper")],
+  agg_bin$n_pos, agg_bin$n_total, SIMPLIFY = FALSE
+)
+cis_df <- do.call(rbind, bin_cis)
+agg_bin$lo_CI_obs_prop <- cis_df[, 1]
+agg_bin$up_CI_obs_prop <- cis_df[, 2]
+agg_bin$width_CI <- abs(agg_bin$up_CI_obs_prop - agg_bin$lo_CI_obs_prop)
+
+# Plot predicted against observed including CI
+ggplot(agg_bin, aes(x = pred_probability, y = obs_proportion)) +
+  geom_point(color = "blue", size = 2) +
+  geom_errorbar(aes(ymin = lo_CI_obs_prop, ymax = up_CI_obs_prop), width = 0.03) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = paste("Calibration Plot (Test) (", bins, " bins)", sep = ""),
+    x = "Predicted Probability",
+    y = "Observed Proportion"
+  ) +
+  coord_equal() +
+  theme_minimal()
+
+
+
+# roc curve
+
+library(pROC)
+
+# Create ROC object
+roc_obj <- roc(test_df$Y, test_df$Y_prob_tuned_rf)
+
+# Plot ROC curve
+plot(roc_obj, col = "#2c7fb8", lwd = 2, main = "ROC Curve - Test Set")
+
+# Optional: Add AUC to the plot
+auc_value <- auc(roc_obj)
+legend("bottomright", legend = paste("AUC =", round(auc_value, 3)), col = "#2c7fb8", lwd = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ##### Train on control group ####
 
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
@@ -730,9 +1356,10 @@ plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is
 lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
 
 
-# Last 50
-diff = max(epochs - 100,0)
-plot(diff:epochs, val_loss[diff:epochs], type = 'l', col = 'green', main='Last 50 epochs')
+# Last XX epochs
+last <- 300
+diff = max(epochs - last,0)
+plot(diff:epochs, val_loss[diff:epochs], type = 'l', col = 'green', main=paste0('Last ' ,last  ,' epochs'))
 lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
@@ -998,6 +1625,26 @@ legend("bottomright", legend = paste("AUC =", round(auc_value, 3)), col = "#2c7f
 
 
 
+# do calibration (directly on the train set, which is probably problematic)
+
+# weighted
+# raw_w <- 1 / agg_bin$width_CI
+# agg_bin$weights <- raw_w / sum(raw_w)
+# 
+# library(mgcv)
+# fit_gam <- gam(obs_proportion ~ s(pred_probability), weights = weights, data = agg_bin, gamma = 0.3)
+# # fit_gam <- gam(obs_proportion ~ s(pred_probability), data = agg_bin, gamma = 1) # without weights
+# plot(fit_gam)
+# 
+# b0 <- fit_gam[[1]][1]
+# abline(0-b0,1)
+
+
+
+
+
+
+
 
 ### Check calibration on the test set:
 
@@ -1028,8 +1675,8 @@ bins <- 10
 test_df <- test_df %>%
   mutate(prob_bin = cut(
     Y_prob_tram_dag,
-    breaks = quantile(Y_prob_tram_dag, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
-    # breaks = seq(min(Y_prob_cal), max(Y_prob_cal), length.out = bins + 1),
+    # breaks = quantile(Y_prob_tram_dag, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
+    breaks = seq(min(Y_prob_tram_dag), max(Y_prob_tram_dag), length.out = bins + 1),
     include.lowest = TRUE
   ))
 
@@ -1137,12 +1784,16 @@ tram.ITE <- function(data = test.compl.data.transformed, train = dat.train.tf, t
   # set the values of the first column of test to 1
   test_tx <- tf$concat(list(tf$ones_like(test[, 1, drop = FALSE]), test[, 2:tf$shape(test)[2]]), axis = 1L)
   
+  
+  
   # Calculate potential outcomes
   h_params_ct <- param_model(test_ct)
   y_test_ct <- as.numeric(do_probability(h_params_ct))
+  # y_test_ct <- predict(fit_gam, newdata = data.frame(pred_probability = y_test_ct), type = "response") # if recalibrate
   
   h_params_tx <- param_model(test_tx)
   y_test_tx <- as.numeric(do_probability(h_params_tx))
+  # y_test_tx <- predict(fit_gam, newdata = data.frame(pred_probability = y_test_tx), type = "response") # if recalibrate
   
   # calculate ITE
   ITE_test <- y_test_tx - y_test_ct
@@ -1166,6 +1817,9 @@ tram.ITE <- function(data = test.compl.data.transformed, train = dat.train.tf, t
   
   return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs))
 }
+
+
+
 
 
 
@@ -1352,7 +2006,8 @@ plot_ATE_ITE_in_group <- function(dev.data = data.dev.rs, val.data = data.val.rs
 }
 
 
-breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+# breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+breaks <- c(-0.3, -0.1, -0.05, 0.025, 0.05, 0.3)
 log.odds <- F
 data.dev.grouped.ATE <- test.results.tram$data.dev.rs %>% 
   mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
@@ -1444,7 +2099,8 @@ plot_ATE_ITE_in_group_risks <- function(dev.data = data.dev.rs, val.data = data.
 }
 
 
-breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+# breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+breaks <- c(-0.3, -0.1, -0.05, 0.025, 0.05, 0.3)
 log.odds <- F
 data.dev.grouped.ATE <- test.results.tram$data.dev.rs %>% 
   mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
@@ -1457,7 +2113,7 @@ data.val.grouped.ATE <- test.results.tram$data.val.rs %>%
   group_by(ITE.Group) %>%
   group_modify(~ calc.ATE.Risks.tram(.x)) %>% ungroup() 
 
-plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, ylb = -1, yub = 1)
+plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, ylb = -0.5, yub = 0.5)
 
 
 

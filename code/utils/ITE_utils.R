@@ -148,10 +148,14 @@ calc.ATE.RR <- function(data){
 
 ## ---- Outcome-ITE plot --------
 plot_outcome_ITE <- function(data.dev.rs, data.val.rs , x_lim = c(-0.5,0.5)){
+  
+  x_lim_lower <- min(c(data.dev.rs$ITE, data.val.rs$ITE), na.rm = TRUE)-0.05
+  x_lim_upper <- max(c(data.dev.rs$ITE, data.val.rs$ITE), na.rm = TRUE)+0.05
+  
   p1 <- ggplot(data=data.dev.rs, aes(x=ITE, y=Y))+
     geom_point(aes(color=Treatment))+
     geom_smooth(aes(color=Treatment, fill=Treatment), method = "glm", method.args = list(family = "binomial"), alpha=0.5)+
-    coord_cartesian(xlim=x_lim, ylim = c(0,1))+
+    coord_cartesian(xlim=c(x_lim_lower, x_lim_upper), ylim = c(0,1))+
     ylab("Outcome")+xlab("ITE")+
     scale_color_manual(values=c("N" = "orange", "Y" = "#36648B"), name="Treatment") +
     scale_fill_manual(values = c("N" = "orange", "Y" = "#36648B"), name="Treatment") +
@@ -169,7 +173,7 @@ plot_outcome_ITE <- function(data.dev.rs, data.val.rs , x_lim = c(-0.5,0.5)){
   p2 <- ggplot(data=data.val.rs, aes(x=ITE, y=Y))+
     geom_point(aes(color=Treatment))+
     geom_smooth(aes(color=Treatment, fill=Treatment), method = "glm", method.args = list(family = "binomial"))+
-    coord_cartesian(xlim=x_lim, ylim = c(0,1))+
+    coord_cartesian(xlim=c(x_lim_lower, x_lim_upper), ylim = c(0,1))+
     ylab("Outcome")+xlab("ITE")+
     scale_color_manual(values=c("N" = "orange", "Y" = "#36648B"), name="Treatment") +
     scale_fill_manual(values = c("N" = "orange", "Y" = "#36648B"), name="Treatment") +

@@ -290,8 +290,8 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
                 beta_X = c(-0.5, 0.1),
                 beta_TX = c(0.7),
                 p0 = 0, 
-                confounder=FALSE,
-                drop=FALSE) {
+                confounder=FALSE,  #index of confounder
+                drop=FALSE) {   # eg. drop = c("X1", "X3") these are dropped from the final dataset
   #n_obs = 1e5 n_obs = 10
   set.seed(SEED)
   
@@ -338,7 +338,7 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
   Y <- rbinom(n, size = 1, prob = Y_prob)
   
   # Potential outcome for treated and untreated
-  Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + data[,1] * beta_TX)
+  Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + (as.matrix(data[,c(1:length(beta_TX))]) %*% beta_TX))
   # Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + data %*% beta_TX)
   Y0 <- plogis(beta_0 + data %*% beta_X)
   
@@ -359,6 +359,18 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
     # add Treatment variable Tr=Treatment
     mutate(Treatment = ifelse(Treatment==1,"Y", "N")) %>% 
     mutate(Treatment = factor(Treatment, levels = c("N", "Y")))
+  
+  
+  if (!isFALSE(drop) && length(drop) > 0) {
+    drop <- intersect(drop, colnames(simulated_data))  # Make sure only valid columns are dropped
+    simulated_data <- simulated_data %>% dplyr::select(-all_of(drop))
+    
+    # Identify remaining X columns and rename them sequentially
+    x_cols <- grep("^X", colnames(simulated_data), value = TRUE)
+    new_x_names <- paste0("X", seq_along(x_cols))
+    
+    names(simulated_data)[match(x_cols, names(simulated_data))] <- new_x_names
+  }
   
   
   set.seed(12345)
@@ -465,7 +477,8 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
 
 # functions for fitting model and plotting results
 
-fit.glm <- function(df, p) {
+fit.glm <- function(df) {
+  p <- sum(grepl("^X", colnames(df$data.dev)))
   variable_names <- paste0("X", 1:p)
   form <- as.formula(paste("Y ~", paste(variable_names, collapse = " + ")))
   
@@ -515,12 +528,13 @@ fit.glm <- function(df, p) {
 
 
 library(gridExtra)
+library(ggpubr)
 plot_pred_ite <- function(model.results){
   # train
   p_dev_plot <- ggplot(model.results$data.dev.rs, aes(x = Y_prob, y = Y_pred, color = Treatment)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, color = "red") +
-    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob GLM (Train)") +
+    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob (Train)") +
     theme_minimal() +
     theme(legend.position = "top")
   
@@ -528,7 +542,7 @@ plot_pred_ite <- function(model.results){
   p_val_plot <- ggplot(model.results$data.val.rs, aes(x = Y_prob, y = Y_pred, color = Treatment)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, color = "red") +
-    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob GLM (Test)") +
+    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob (Test)") +
     theme_minimal() +
     theme(legend.position = "top")
   
@@ -537,27 +551,58 @@ plot_pred_ite <- function(model.results){
   ite_dev_plot <- ggplot(model.results$data.dev.rs, aes(x=ITE_true, y=ITE, color=Treatment)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, color = "red") +
-    labs(title = "Training Data", x = "True ITE", y = "Estimated ITE") +
+    labs(title = "ITE (Train)", x = "True ITE", y = "Estimated ITE") +
     theme_minimal() +
     theme(legend.position = "top")
   
   ite_val_plot <- ggplot(model.results$data.val.rs, aes(x=ITE_true, y=ITE, color=Treatment)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, color = "red") +
-    labs(title = "Test Data", x = "True ITE", y = "Estimated ITE") +
+    labs(title = "ITE (Test)", x = "True ITE", y = "Estimated ITE") +
     theme_minimal() +
     theme(legend.position = "top")
   
   
-  grid.arrange(p_dev_plot, p_val_plot,
-               ite_dev_plot, ite_val_plot,
-               nrow = 2)
+  outcome_ITE_plot <- plot_outcome_ITE(data.dev.rs = model.results$data.dev.rs, data.val.rs = model.results$data.val.rs, x_lim = c(-0.9,0.9))
+  
+  
+  # Define layout matrix: 3 columns x 2 rows
+  layout_matrix <- rbind(
+    c(1, 2, 5),
+    c(3, 4, 5)
+  )
+  
+  grid.arrange(
+    p_dev_plot, p_val_plot,
+    ite_dev_plot, ite_val_plot,
+    outcome_ITE_plot,
+    layout_matrix = layout_matrix,
+    widths = c(1, 1, 1.3) 
+  )
+  
 }
 
 
-## new dgp
-
-##### DGP ########
+check_ate <- function(model.results) {
+  dev_ate_est <- mean(model.results$data.dev.rs$ITE)
+  val_ate_est <- mean(model.results$data.val.rs$ITE)
+  
+  dev_ate_obs <- mean(model.results$data.dev.rs[model.results$data.dev.rs$Tr==1,]$Y) - 
+    mean(model.results$data.dev.rs[model.results$data.dev.rs$Tr==0,]$Y)
+  
+  val_ate_obs <- mean(model.results$data.val.rs[model.results$data.val.rs$Tr==1,]$Y) -
+    mean(model.results$data.val.rs[model.results$data.val.rs$Tr==0,]$Y)
+  
+  dev_ate_true <- mean(model.results$data.dev.rs$ITE_true)
+  val_ate_true <- mean(model.results$data.val.rs$ITE_true)
+  
+  return(round(data.frame(
+    ATE_Estimated = c(dev_ate_est, val_ate_est),
+    ATE_Observed = c(dev_ate_obs, val_ate_obs),
+    ATE_True = c(dev_ate_true, val_ate_true),
+    row.names = c("Train (Risk Diff)", "Test (Risk Diff)")
+  ),4))
+}
 
 
 
@@ -573,13 +618,13 @@ dgp_model1 <-dgp_simulation(n_obs=20000, SEED=123,
                 drop=FALSE) # not yet specified
 
 
-glm.results1 <- fit.glm(dgp_model1$test.compl.data, p = 2)
+glm.results1 <- fit.glm(dgp_model1$test.compl.data)
 
 
 # plot the results
 plot_pred_ite(glm.results1)
 
-
+check_ate(glm.results1)
 
 
 #### Model 2: 4 unnecessary variables, no confounder  ####
@@ -594,12 +639,13 @@ dgp_model2 <-dgp_simulation(n_obs=20000, SEED=123,
                             drop=FALSE) # not yet specified
 
 
-glm.results2 <- fit.glm(dgp_model2$test.compl.data, p = 6)
+glm.results2 <- fit.glm(dgp_model2$test.compl.data)
 
 
 # plot the results
 plot_pred_ite(glm.results2)
 
+check_ate(glm.results2)
 
 
 #### Model 3: 4 unnecessary variables, 1 confounder  ####
@@ -613,14 +659,18 @@ dgp_model3 <-dgp_simulation(n_obs=20000, SEED=123,
                             confounder=1, 
                             drop=FALSE) # not yet specified
 
-glm.results3 <- fit.glm(dgp_model3$test.compl.data, p = 6)
+glm.results3 <- fit.glm(dgp_model3$test.compl.data)
 
 
 # plot the results
 plot_pred_ite(glm.results3)
 
+check_ate(glm.results3)
+
 
 #### Model 4: 4 unnecessary variables, 1 confounder, small treatment effect  ####
+
+
 
 dgp_model4 <-dgp_simulation(n_obs=20000, SEED=123,
                             beta_0 = 0.45,
@@ -631,16 +681,271 @@ dgp_model4 <-dgp_simulation(n_obs=20000, SEED=123,
                             confounder=1, 
                             drop=FALSE) # not yet specified
 
-glm.results4 <- fit.glm(dgp_model4$test.compl.data, p = 6)
+glm.results4 <- fit.glm(dgp_model4$test.compl.data)
 
 
 # plot the results
 plot_pred_ite(glm.results4)
 
+check_ate(glm.results4)
 
-### ate vs ite average prüfen
 
 
+#### Model 5: 4 unnecessary variables, no confounder, small treatment effect  ####
+
+dgp_model5 <-dgp_simulation(n_obs=20000, SEED=123,
+                              beta_0 = 0.45,
+                              beta_t = 0.02,        # small main effect
+                              beta_X = c(-0.5, 0.1),
+                              beta_TX = c(-0.01),   # small interaction effect
+                              p0 = 4, 
+                              confounder=FALSE, 
+                              drop=FALSE) # not yet specified
+
+glm.results5 <- fit.glm(dgp_model5$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results5)
+
+check_ate(glm.results5)
+
+
+#### Model 6: 8 predictors, 4 unnecessary variables, no confounder, small treatment effect  ####
+
+dgp_model6 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.01, 0.04, 0.001),   # small interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=FALSE) # not yet specified
+
+glm.results6 <- fit.glm(dgp_model6$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results6)
+
+check_ate(glm.results6)
+
+
+
+
+#### Model 7: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect  ####
+
+dgp_model7 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.5, 0.04, 0.001),   # small interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=FALSE) # not yet specified
+
+glm.results7 <- fit.glm(dgp_model7$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results7)
+
+check_ate(glm.results7)
+
+
+
+
+
+#### Model 8: 8 predictors, 4 unnecessary variables, no confounder, large main effect, small interaction effect  ####
+
+dgp_model8 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.7,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.005, 0.04, 0.001),   # small interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=FALSE) # not yet specified
+
+glm.results8 <- fit.glm(dgp_model8$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results8)
+
+check_ate(glm.results8)
+
+
+#### Model 9: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect
+
+
+dgp_model9 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.5, 0.04, 0.001),   # large interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=FALSE) # not yet specified
+
+glm.results9 <- fit.glm(dgp_model9$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results9)
+
+check_ate(glm.results9)
+
+
+
+#### Model 10: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect but dropped  ####
+
+# looks like real data of IST Trial! -> good on train data, but bad on test data
+
+
+dgp_model10 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.5, 0.04, 0.001),   # large interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=c("X1")) # not yet specified
+
+glm.results10 <- fit.glm(dgp_model10$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results10)
+
+check_ate(glm.results10)
+
+
+
+#### Model 11: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect 
+# dropped X4 which has no interaction effect
+
+# --> seems like if you drop a variable with no treatment interaction effect, it does not matter for ITE estimation
+
+dgp_model11 <-dgp_simulation(n_obs=20000, SEED=123,
+                             beta_0 = 0.45,
+                             beta_t = 0.02,        # small main effect
+                             beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                             beta_TX = c(-0.5, 0.04, 0.001),   # small interaction effect
+                             p0 = 4, 
+                             confounder=FALSE, 
+                             drop=c("X4")) 
+
+glm.results11 <- fit.glm(dgp_model11$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glm.results11)
+
+check_ate(glm.results11)
+
+
+
+
+### MODEL WITH LASSO
+library(glmnet)
+fit.glmnet <- function(df) {
+  # Extract predictor matrix (X) and response (Y)
+  X_vars <- grep("^X", names(df$data.dev), value = TRUE)
+  
+  # Training data for treated and control
+  X_tx <- as.matrix(df$data.dev.tx[, X_vars])
+  Y_tx <- df$data.dev.tx$Y
+  
+  X_ct <- as.matrix(df$data.dev.ct[, X_vars])
+  Y_ct <- df$data.dev.ct$Y
+  
+  # Fit Lasso with cross-validation
+  cv_tx <- cv.glmnet(X_tx, Y_tx, family = "binomial", alpha = 1)
+  cv_ct <- cv.glmnet(X_ct, Y_ct, family = "binomial", alpha = 1)
+  
+  # Final models
+  fit.dev.tx <- glmnet(X_tx, Y_tx, family = "binomial", lambda = cv_tx$lambda.min)
+  fit.dev.ct <- glmnet(X_ct, Y_ct, family = "binomial", lambda = cv_ct$lambda.min)
+  
+  # Prediction on dev data
+  X_dev <- as.matrix(df$data.dev[, X_vars])
+  df$data.dev$Y_pred <- predict(fit.dev.tx, newx = X_dev, type = "response") * df$data.dev$Tr +
+    predict(fit.dev.ct, newx = X_dev, type = "response") * (1 - df$data.dev$Tr)
+  
+  # Prediction on val data
+  X_val <- as.matrix(df$data.val[, X_vars])
+  df$data.val$Y_pred <- predict(fit.dev.tx, newx = X_val, type = "response") * df$data.val$Tr +
+    predict(fit.dev.ct, newx = X_val, type = "response") * (1 - df$data.val$Tr)
+  
+  # ITE prediction on dev
+  df$data.dev$Y_pred_tx <- predict(fit.dev.tx, newx = X_dev, type = "response")
+  df$data.dev$Y_pred_ct <- predict(fit.dev.ct, newx = X_dev, type = "response")
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct
+  
+  # ITE prediction on val
+  df$data.val$Y_pred_tx <- predict(fit.dev.tx, newx = X_val, type = "response")
+  df$data.val$Y_pred_ct <- predict(fit.dev.ct, newx = X_val, type = "response")
+  pred.val <- df$data.val$Y_pred_tx - df$data.val$Y_pred_ct
+  
+  # Generate RS labels
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  return(list(
+    data.dev.rs = data.dev.rs,
+    data.val.rs = data.val.rs,
+    model.dev.tx = fit.dev.tx,
+    model.dev.ct = fit.dev.ct
+  ))
+}
+
+
+#### Model 1: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect
+
+
+dgp_model1 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.5, 0.04, 0.001),   # large interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=FALSE) # not yet specified
+
+glmnet.results1 <- fit.glmnet(dgp_model1$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glmnet.results1)
+
+check_ate(glmnet.results1)
+
+
+#### Model 2: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect
+# drop interaction
+
+dgp_model2 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,
+                            beta_t = 0.02,        # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2),
+                            beta_TX = c(-0.5, 0.04, 0.001),   # large interaction effect
+                            p0 = 4, 
+                            confounder=FALSE, 
+                            drop=c("X1")) # not yet specified
+
+glmnet.results2 <- fit.glmnet(dgp_model2$test.compl.data)
+
+
+# plot the results
+plot_pred_ite(glmnet.results2)
+
+check_ate(glmnet.results2)
 
 
 # 
@@ -859,7 +1164,7 @@ fit.rf <- function(df, p, ntrees = 100) {
 dgp_rf <-dgp_simulation(n_obs=20000, SEED=123,
                             beta_0 = 0.45,
                             beta_t = -0.85,
-                            beta_X = c(-5, 0.8),
+                            beta_X = c(-0.5, 0.8),
                             beta_TX = c(0.7),
                             p0 = 0, 
                             confounder=FALSE, 
@@ -871,7 +1176,7 @@ dgp_rf <-dgp_simulation(n_obs=20000, SEED=123,
 df <- dgp_rf$test.compl.data
 
 df$data.dev$Y <- as.factor(df$data.dev$Y)  # Ensure Y is a factor for classification
-randomForest(Y ~ Tr + X1 + X2, data = df$data.dev, ntree = ntrees)
+
 
 p <- 2 # number of variables
 rf.results <- fit.rf(df, p = p, ntrees = 100)
@@ -879,7 +1184,9 @@ rf.results <- fit.rf(df, p = p, ntrees = 100)
 # plot the results
 plot_pred_ite(rf.results)
 
-
+# glm to compare for same dgp
+res.glm <- fit.glm(df, p = p)
+plot_pred_ite(res.glm)
 
 
 
@@ -921,17 +1228,15 @@ plot_pred_ite(rf.results)
 # Complex Model (Random Forest comets package, tuned)
 #################################################
 
-# dataset including train and validation set (additional sets separated by treatment groups)
-df <- dgp_data$test.compl.data
-str(df)
-p <- 2 # number of variables
+
 library(comets)
 library(dplyr)
-?comets:::tuned_rf
+
 # extract the tuned_rf function
 comets_tuned_rf <- comets:::tuned_rf
 
-fit.tuned_rf <- function(df, p) {
+fit.tuned_rf <- function(df) {
+  p <- sum(grepl("^X", colnames(df$data.dev)))
   variable_names <- paste0("X", 1:p)
   form <- as.formula(paste("Y ~", paste(variable_names, collapse = " + ")))
   
@@ -1018,7 +1323,13 @@ fit.tuned_rf <- function(df, p) {
 }
 
 
-dgp_tuned_rf <-dgp_simulation(n_obs=20000, SEED=123,
+# check 
+
+# plot_pred_ite(fit.tuned_rf(df))
+
+# case 1: # 2 predictors, 1 interaction, large effect
+
+dgp_tuned_rf1 <-dgp_simulation(n_obs=20000, SEED=123,
                         beta_0 = 0.45,
                         beta_t = -0.85,
                         beta_X = c(-0.5, 0.8),
@@ -1027,50 +1338,179 @@ dgp_tuned_rf <-dgp_simulation(n_obs=20000, SEED=123,
                         confounder=FALSE, 
                         drop=FALSE) # not yet specified
 
-df <- dgp_tuned_rf$test.compl.data
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf1$test.compl.data))
 
 
-tuned_rf.results <- fit.tuned_rf(df, p = p)
+# case 2: # 5 predictors, 1 interaction, large effect
+
+dgp_tuned_rf2 <-dgp_simulation(n_obs=20000, SEED=123,
+                              beta_0 = 0.45,
+                              beta_t = -0.85,
+                              beta_X = c(-0.5, 0.8, 0.2, 0.6, -0.4),
+                              beta_TX = c(0.7),
+                              p0 = 0, 
+                              confounder=FALSE, 
+                              drop=FALSE) # not yet specified
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf2$test.compl.data))
+
+
+
+# case 3: # 5 predictors, 2 interactions, large effect
+
+dgp_tuned_rf3 <-dgp_simulation(n_obs=20000, SEED=123,
+                              beta_0 = 0.45,
+                              beta_t = -0.85,
+                              beta_X = c(-0.5, 0.8, 0.2, 0.6, -0.4),
+                              beta_TX = c(0.7, 0.3),
+                              p0 = 0, 
+                              confounder=FALSE, 
+                              drop=FALSE) # not yet specified
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf3$test.compl.data))
+
+
+
+# case 4: # 5 predictors, 4 interactions, large effect
+
+dgp_tuned_rf4 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.85,
+                               beta_X = c(-0.5, 0.8, 0.2, 0.6, -0.4),
+                               beta_TX = c(0.7, 0.3, 0.1, -0.6),
+                               p0 = 0, 
+                               confounder=FALSE, 
+                               drop=FALSE) # not yet specified
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf4$test.compl.data))
+
+
+
+
+# case 5: # 2 predictors, 1 interaction, large effect, 3 unnecessary variables
+
+dgp_tuned_rf5 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.85,
+                               beta_X = c(-0.5, 0.8),
+                               beta_TX = c(0.7),
+                               p0 = 3, 
+                               confounder=FALSE, 
+                               drop=FALSE) # not yet specified
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf5$test.compl.data))
+
+
+
+#case 6: # 2 predictors, 1 interaction, small main effect
+
+
+dgp_tuned_rf6 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.05,
+                               beta_X = c(-0.5, 0.8),
+                               beta_TX = c(0.7),
+                               p0 = 3, 
+                               confounder=FALSE, 
+                               drop=FALSE) # not yet specified
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf6$test.compl.data))
+
+
+
+#case 7: # 2 predictors, 1 interaction, small interaction effect
+
+
+dgp_tuned_rf7 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.85,
+                               beta_X = c(-0.5, 0.8),
+                               beta_TX = c(0.03),
+                               p0 = 3, 
+                               confounder=FALSE, 
+                               drop=FALSE) # not yet specified
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf7$test.compl.data))
+
+
+
+#case 8: # 2 predictors, 1 interaction, small main + interaction effect
+
+
+dgp_tuned_rf8 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.05,
+                               beta_X = c(-0.5, 0.8),
+                               beta_TX = c(0.03),
+                               p0 = 3, 
+                               confounder=FALSE, 
+                               drop=FALSE)
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf8$test.compl.data))
+
+
+
+#case 9: # 7 predictors, 1 interaction, large effect
+
+
+dgp_tuned_rf9 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.85,
+                               beta_X = c(-0.5, 0.8, 0.3, 0.3, -0.7, 0.1, 0.2),
+                               beta_TX = c(0.7),
+                               p0 = 0, 
+                               confounder=FALSE, 
+                               drop=FALSE)
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf9$test.compl.data))
+
+
+
+#case 10: # 7 predictors, 1 interaction, large effect, drop X2, X4 and X5
+
+dgp_tuned_rf10 <-dgp_simulation(n_obs=20000, SEED=123,
+                               beta_0 = 0.45,
+                               beta_t = -0.85,
+                               beta_X = c(-0.5, 0.8, 0.3, 0.3, -0.7, 0.1, 0.2),
+                               beta_TX = c(0.7),
+                               p0 = 0, 
+                               confounder=FALSE, 
+                               drop= c("X2", "X4", "X5"))
+
+# plot the results
+plot_pred_ite(fit.tuned_rf(dgp_tuned_rf10$test.compl.data))
+
+
+
+
+
+#### Model 11: 8 predictors, 4 unnecessary variables, no confounder, small main effect, large interaction effect but dropped  ####
+
+# looks like real data of IST Trial!
+
+dgp_model11 <-dgp_simulation(n_obs=20000, SEED=123,
+                            beta_0 = 0.45,                    # intercept
+                            beta_t = 0.02,                    # small main effect
+                            beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2), # predictor betas X1-X8
+                            beta_TX = c(-0.5, 0.04, 0.001),   # interaction betas X1 large, X2 and X3 small
+                            p0 = 4,                           # 4 unnecessary variables
+                            confounder=FALSE,                 # no confounder
+                            drop=c("X1"))                     # use X1 for DGP but drop from Dataset (unobserved)
+
+tuned_rf.results11 <- fit.tuned_rf(dgp_model11$test.compl.data)
 
 
 # plot the results
-plot_pred_ite(tuned_rf.results)
+plot_pred_ite(tuned_rf.results11)
 
-
-
-
-## plots with Outcome group colored:
-
-# train
-ggplot(rf.results$data.dev.rs, aes(x = Y_prob, y = Y_pred, color = as.factor(Y))) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob GLM (Train)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# test
-ggplot(rf.results$data.val, aes(x = Y_prob, y = Y_pred, color = as.factor(Y))) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob GLM (Test)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+check_ate(tuned_rf.results11)
 
 
 

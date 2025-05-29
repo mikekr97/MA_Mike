@@ -138,7 +138,7 @@ create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_la
         d = layer_batch_normalization()(d)  # Batch Normalization
         # d = layer_activation(activation='sigmoid')(d)
         d = layer_activation(activation='relu')(d)
-        d = layer_dropout(rate = 0.3)(d)  # Dropout
+        d = layer_dropout(rate = 0.1)(d)  # Dropout
 
         
       }
