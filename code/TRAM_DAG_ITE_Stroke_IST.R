@@ -72,7 +72,7 @@ hidden_features_CS = c(2,5,5,2) # c(4,8,10,8,4)#c(2,5,5,2) #c(4,8,8,4)# c(2,5,5,
 
 # MODEL_NAME = 'ModelCI'
 # MODEL_NAME = 'ModelCIDropout0.3'
-MODEL_NAME = 'ModelCIDropout0.1'
+MODEL_NAME = 'ModelCIDropout0.1_standardized'
 
 
 
@@ -247,6 +247,11 @@ IST.dataset.transformed[, "OUTCOME6M"] <- IST.dataset.transformed[, "OUTCOME6M"]
 
 IST.dataset.transformed <- as.data.frame(IST.dataset.transformed)
 
+# scale numerical variables AGE RDELAY RSBP by -mean/sd
+IST.dataset.transformed <- IST.dataset.transformed %>%
+  mutate(AGE = (AGE - mean(AGE, na.rm = TRUE)) / sd(AGE, na.rm = TRUE),
+         RDELAY = (RDELAY - mean(RDELAY, na.rm = TRUE)) / sd(RDELAY, na.rm = TRUE),
+         RSBP = (RSBP - mean(RSBP, na.rm = TRUE)) / sd(RSBP, na.rm = TRUE))
 
 
 # to split transfromed dataset
@@ -1297,58 +1302,151 @@ param_model$get_layer("activation_48")$get_config()
 ##### Training ####
 
 # num_epochs <- 1000
-num_epochs <- 400   ### 200 is the file
-# fnh5 = paste0(fn, '_E', num_epochs, '.h5')
-# fnRdata = paste0(fn, '_E', num_epochs, '.RData')
+num_epochs <- 300   ### 200 is the file
 
-fnh5 = paste0(fn, '_E', num_epochs, 'CS.h5')   # 'CI.h5'
-fnRdata = paste0(fn, '_E', num_epochs, 'CS.RData')   # 'CI.RData'
-if (file.exists(fnh5)){
+
+# Split dat.train.tf into training and validation sets
+set.seed(42)  # for reproducibility
+n <- nrow(dat.train.tf)
+val_idx <- sample(0:(n - 1), size = floor(0.2 * n))  
+train_idx <- setdiff(0:(n - 1), val_idx)
+
+# Convert to Tensor
+val_idx_tf <- tf$constant(val_idx, dtype = tf$int32)
+train_idx_tf <- tf$constant(train_idx, dtype = tf$int32)
+
+# Use tf.gather
+x_val   <- tf$gather(dat.train.tf, val_idx_tf)
+dat.train.tf <- tf$gather(dat.train.tf, train_idx_tf)
+
+fnh5 = paste0(fn, '_E', num_epochs, 'early_stopping_CI.h5')   # 'CI.h5'
+fnRdata = paste0(fn, '_E', num_epochs, 'early_stopping_CI.RData')   # 'CI.RData'
+
+if (file.exists(fnh5)) {
   param_model$load_weights(fnh5)
-  load(fnRdata) #Loading of the workspace causes trouble e.g. param_model is zero
-  # Quick Fix since loading global_min causes problem (no tensors as RDS)
+  load(fnRdata)
   (global_min = min)
   (global_max = min)
 } else {
-  if (FALSE){ ### Full Training w/o diagnostics
-    hist = param_model$fit(x = dat.train.tf, y=dat.train.tf, epochs = 200L,verbose = TRUE)
-    param_model$save_weights(fn)
+  if (FALSE) { ### Full Training w/o diagnostics
+    hist = param_model$fit(x = x_train, y = x_train, epochs = 200L, verbose = TRUE,
+                           validation_data = list(x_val, x_val))
+    param_model$save_weights(fnh5)
     plot(hist$epoch, hist$history$loss)
-    plot(hist$epoch, hist$history$loss, ylim=c(1.07, 1.2))
-  } else { ### Training with diagnostics
-    # ws <- data.frame(w12 = numeric())
-    # ws <- data.frame(w34 = numeric())
+    plot(hist$epoch, hist$history$loss, ylim = c(1.07, 1.2))
+  } else { ### Training with diagnostics and early stopping
+    
+    # Early stopping parameters
+    patience <- 20
+    best_val_loss <- Inf
+    epochs_no_improve <- 0
+    early_stop_epoch <- NULL
+    
+    # Initialize loss history
     train_loss <- numeric()
     val_loss <- numeric()
     
-    # Training loop
     for (e in 1:num_epochs) {
-      print(paste("Epoch", e))
-      hist <- param_model$fit(x = dat.train.tf, y = dat.train.tf, 
-                              epochs = 1L, verbose = TRUE, 
-                              validation_data = list(dat.test.tf, dat.test.tf))
+      cat(sprintf("Epoch %d\n", e))
       
-      # Append losses to history
+      hist <- param_model$fit(
+        x = x_train, y = x_train,
+        epochs = 1L, verbose = TRUE,
+        validation_data = list(x_val, x_val)
+      )
+      
+      # Append current epoch losses
       train_loss <- c(train_loss, hist$history$loss)
       val_loss <- c(val_loss, hist$history$val_loss)
       
-      # Extract specific weights
-      # w <- param_model$get_layer(name = "beta")$get_weights()[[1]]
+      # Early stopping logic
+      current_val_loss <- val_loss[length(val_loss)]
       
-      # ws <- rbind(ws, data.frame(w34 = w[3,4]))
+      if (current_val_loss < best_val_loss - 1e-5) {
+        best_val_loss <- current_val_loss
+        epochs_no_improve <- 0
+        param_model$save_weights("best_model.h5")
+      } else {
+        epochs_no_improve <- epochs_no_improve + 1
+      }
+      
+      if (epochs_no_improve >= patience) {
+        early_stop_epoch <- e
+        cat(sprintf("Early stopping triggered at epoch %d\n", e))
+        break
+      }
     }
-    # Save the model
+    
+    # Load best weights
+    if (!is.null(early_stop_epoch)) {
+      param_model$load_weights("best_model.h5")
+    }
+    
+    # Save final model and training history
     param_model$save_weights(fnh5)
-    save(train_loss, val_loss, train_loss, 
-         # f,
+    save(train_loss, val_loss,
          MA, len_theta,
          hidden_features_I,
          hidden_features_CS,
-         # ws,
-         #global_min, global_max,
          file = fnRdata)
   }
 }
+
+
+
+
+# 
+# fnh5 = paste0(fn, '_E', num_epochs, 'CI.h5')   # 'CI.h5'
+# fnRdata = paste0(fn, '_E', num_epochs, 'CI.RData')   # 'CI.RData'
+# if (file.exists(fnh5)){
+#   param_model$load_weights(fnh5)
+#   load(fnRdata) #Loading of the workspace causes trouble e.g. param_model is zero
+#   # Quick Fix since loading global_min causes problem (no tensors as RDS)
+#   (global_min = min)
+#   (global_max = min)
+# } else {
+#   if (FALSE){ ### Full Training w/o diagnostics
+#     hist = param_model$fit(x = dat.train.tf, y=dat.train.tf, epochs = 200L,verbose = TRUE)
+#     param_model$save_weights(fn)
+#     plot(hist$epoch, hist$history$loss)
+#     plot(hist$epoch, hist$history$loss, ylim=c(1.07, 1.2))
+#   } else { ### Training with diagnostics
+#     # ws <- data.frame(w12 = numeric())
+#     # ws <- data.frame(w34 = numeric())
+#     train_loss <- numeric()
+#     val_loss <- numeric()
+#     
+#     # Training loop
+#     for (e in 1:num_epochs) {
+#       print(paste("Epoch", e))
+#       hist <- param_model$fit(x = dat.train.tf, y = dat.train.tf, 
+#                               epochs = 1L, verbose = TRUE, 
+#                               validation_data = list(dat.test.tf, dat.test.tf))
+#       
+#       # Append losses to history
+#       train_loss <- c(train_loss, hist$history$loss)
+#       val_loss <- c(val_loss, hist$history$val_loss)
+#       
+#       # Extract specific weights
+#       # w <- param_model$get_layer(name = "beta")$get_weights()[[1]]
+#       
+#       # ws <- rbind(ws, data.frame(w34 = w[3,4]))
+#     }
+#     
+#     
+#     # Save the model
+#     param_model$save_weights(fnh5)
+#     save(train_loss, val_loss, train_loss, 
+#          # f,
+#          MA, len_theta,
+#          hidden_features_I,
+#          hidden_features_CS,
+#          # ws,
+#          #global_min, global_max,
+#          file = fnRdata)
+#   }
+# }
+
 
 par(mfrow=c(1,1))
 epochs = length(train_loss)
@@ -1822,7 +1920,6 @@ tram.ITE <- function(data = test.compl.data.transformed, train = dat.train.tf, t
 
 
 
-
 # call function
 test.results.tram <- tram.ITE(data = test.compl.data.transformed, train = dat.train.tf, test = dat.test.tf)
 
@@ -2117,6 +2214,109 @@ plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val
 
 
 
+
+
+
+
+
+# param_model has to be trained first
+tram.ITE.earlystop <- function(data = test.compl.data.transformed, train_idx = train_idx, train = dat.train.tf, test = dat.test.tf){
+  
+  
+  # Train set
+  
+  # Prepare Data
+  # set the values of the first column of train to 0
+  train_ct <- tf$concat(list(tf$zeros_like(train[, 1, drop = FALSE]), train[, 2:tf$shape(train)[2]]), axis = 1L)
+  # set the values of the first column of train to 1
+  train_tx <- tf$concat(list(tf$ones_like(train[, 1, drop = FALSE]), train[, 2:tf$shape(train)[2]]), axis = 1L)
+  
+  # Calculate potential outcomes
+  h_params_ct <- param_model(train_ct)
+  y_train_ct <- as.numeric(do_probability(h_params_ct))
+  
+  h_params_tx <- param_model(train_tx)
+  y_train_tx <- as.numeric(do_probability(h_params_tx))
+  
+  # calculate ITE
+  ITE_train <- y_train_tx - y_train_ct
+  
+  
+  # Test set
+  
+  # Prepare Data
+  # set the values of the first column of test to 0
+  test_ct <- tf$concat(list(tf$zeros_like(test[, 1, drop = FALSE]), test[, 2:tf$shape(test)[2]]), axis = 1L)
+  # set the values of the first column of test to 1
+  test_tx <- tf$concat(list(tf$ones_like(test[, 1, drop = FALSE]), test[, 2:tf$shape(test)[2]]), axis = 1L)
+  
+  
+  
+  # Calculate potential outcomes
+  h_params_ct <- param_model(test_ct)
+  y_test_ct <- as.numeric(do_probability(h_params_ct))
+  # y_test_ct <- predict(fit_gam, newdata = data.frame(pred_probability = y_test_ct), type = "response") # if recalibrate
+  
+  h_params_tx <- param_model(test_tx)
+  y_test_tx <- as.numeric(do_probability(h_params_tx))
+  # y_test_tx <- predict(fit_gam, newdata = data.frame(pred_probability = y_test_tx), type = "response") # if recalibrate
+  
+  # calculate ITE
+  ITE_test <- y_test_tx - y_test_ct
+  
+  
+  
+  # generate data
+  data.dev.rs <- data$data.dev %>% 
+    # only where where train_idx (python format 0 index)
+    filter(row_number() %in% (train_idx+1)) %>%
+    mutate(ITE = ITE_train, 
+           y.tx = y_train_tx, 
+           y.ct = y_train_ct,
+           RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- data$data.val %>% 
+    mutate(ITE = ITE_test,, 
+           y.tx = y_test_tx,
+           y.ct = y_test_ct,
+           RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs))
+}
+
+
+
+# call function with early stopping
+test.results.tram.earlystop <- tram.ITE.earlystop(data = test.compl.data.transformed, train_idx = train_idx, train = dat.train.tf, test = dat.test.tf)
+
+
+plot_ITE_density(test.results.tram.earlystop)
+
+
+
+
+
+
+plot_outcome_ITE(data.dev.rs = test.results.tram.earlystop$data.dev.rs, data.val.rs = test.results.tram.earlystop$data.val.rs, x_lim = c(-0.6,0.6))
+
+
+# breaks <- c(-0.6, -0.2, -0.05, 0.025, 0.05, 0.1, 0.6)
+breaks <- c(-1, -0.05, -0.02, 0, 0.025, 0.05)
+log.odds <- F
+data.dev.grouped.ATE <- test.results.tram.earlystop$data.dev.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>% 
+  group_modify(~ calc.ATE.Risks.tram(.x)) %>% ungroup()
+data.val.grouped.ATE <- test.results.tram.earlystop$data.val.rs %>% 
+  mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+  dplyr::filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Risks.tram(.x)) %>% ungroup() 
+
+plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE, ylb = -0.5, yub = 1.4)
 
 
 

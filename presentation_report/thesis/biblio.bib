@@ -199,3 +199,80 @@ abstract = {Written by one of the preeminent researchers in the field, this book
       primaryClass={cs.LG},
       url={https://arxiv.org/abs/2501.04061}, 
 }
+
+
+
+
+@article{hoogland2021,
+author = {Hoogland, Jeroen and IntHout, Joanna and Belias, Michail and Rovers, Maroeska M. and Riley, Richard D. and E. Harrell Jr, Frank and Moons, Karel G. M. and Debray, Thomas P. A. and Reitsma, Johannes B.},
+title = {A tutorial on individualized treatment effect prediction from randomized trials with a binary endpoint},
+journal = {Statistics in Medicine},
+volume = {40},
+number = {26},
+pages = {5961-5981},
+keywords = {causal inference, personalized medicine, prediction, regression, treatment effect},
+doi = {https://doi.org/10.1002/sim.9154},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.9154},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.9154},
+abstract = {Randomized trials typically estimate average relative treatment effects, but decisions on the benefit of a treatment are possibly better informed by more individualized predictions of the absolute treatment effect. In case of a binary outcome, these predictions of absolute individualized treatment effect require knowledge of the individual's risk without treatment and incorporation of a possibly differential treatment effect (ie, varying with patient characteristics). In this article, we lay out the causal structure of individualized treatment effect in terms of potential outcomes and describe the required assumptions that underlie a causal interpretation of its prediction. Subsequently, we describe regression models and model estimation techniques that can be used to move from average to more individualized treatment effect predictions. We focus mainly on logistic regression-based methods that are both well-known and naturally provide the required probabilistic estimates. We incorporate key components from both causal inference and prediction research to arrive at individualized treatment effect predictions. While the separate components are well known, their successful amalgamation is very much an ongoing field of research. We cut the problem down to its essentials in the setting of a randomized trial, discuss the importance of a clear definition of the estimand of interest, provide insight into the required assumptions, and give guidance with respect to modeling and estimation options. Simulated data illustrate the potential of different modeling options across scenarios that vary both average treatment effect and treatment effect heterogeneity. Two applied examples illustrate individualized treatment effect prediction in randomized trial data.},
+year = {2021}
+}
+
+
+@article{herzog2023,
+author = {Herzog, Lisa and Kook, Lucas and G{\"o}tschi, Andrea and Petermann, Katrin and H{\"a}nsel, Martin and Hamann, Janne and D{\"u}rr, Oliver and Wegener, Susanne and Sick, Beate},
+title = {Deep transformation models for functional outcome prediction after acute ischemic stroke},
+journal = {Biometrical Journal},
+volume = {65},
+number = {6},
+pages = {2100379},
+keywords = {deep learning, distributional regression, ordinal regression, transformation models},
+doi = {https://doi.org/10.1002/bimj.202100379},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/bimj.202100379},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/bimj.202100379},
+abstract = {Abstract In many medical applications, interpretable models with high prediction performance are sought. Often, those models are required to handle semistructured data like tabular and image data. We show how to apply deep transformation models (DTMs) for distributional regression that fulfill these requirements. DTMs allow the data analyst to specify (deep) neural networks for different input modalities making them applicable to various research questions. Like statistical models, DTMs can provide interpretable effect estimates while achieving the state-of-the-art prediction performance of deep neural networks. In addition, the construction of ensembles of DTMs that retain model structure and interpretability allows quantifying epistemic and aleatoric uncertainty. In this study, we compare several DTMs, including baseline-adjusted models, trained on a semistructured data set of 407 stroke patients with the aim to predict ordinal functional outcome three months after stroke. We follow statistical principles of model-building to achieve an adequate trade-off between interpretability and flexibility while assessing the relative importance of the involved data modalities. We evaluate the models for an ordinal and dichotomized version of the outcome as used in clinical practice. We show that both tabular clinical and brain imaging data are useful for functional outcome prediction, whereas models based on tabular data only outperform those based on imaging data only. There is no substantial evidence for improved prediction when combining both data modalities. Overall, we highlight that DTMs provide a powerful, interpretable approach to analyzing semistructured data and that they have the potential to support clinical decision-making.},
+year = {2023}
+}
+
+
+@misc{kingma2015,
+title={Adam: A Method for Stochastic Optimization}, 
+note={Published as a conference paper at the 3rd International Conference for Learning Representations, San Diego, 2015},
+author={Diederik P. Kingma and Jimmy Ba},
+year={2015},
+eprint={1412.6980},
+archivePrefix={arXiv},
+primaryClass={cs.LG},
+url={https://arxiv.org/abs/1412.6980},
+doi={10.48550/arXiv.1412.6980},
+}
+
+@article{hothorn2018,
+author = {Hothorn, Torsten and M{\"o}st, Lisa and B{\"u}hlmann, Peter},
+title = {Most Likely Transformations},
+journal = {Scandinavian Journal of Statistics},
+volume = {45},
+number = {1},
+pages = {110-134},
+keywords = {censoring, conditional distribution function, conditional quantile function, distribution regression, transformation model, truncation},
+doi = {https://doi.org/10.1111/sjos.12291},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/sjos.12291},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/sjos.12291},
+abstract = {Abstract We propose and study properties of maximum likelihood estimators in the class of conditional transformation models. Based on a suitable explicit parameterization of the unconditional or conditional transformation function, we establish a cascade of increasingly complex transformation models that can be estimated, compared and analysed in the maximum likelihood framework. Models for the unconditional or conditional distribution function of any univariate response variable can be set up and estimated in the same theoretical and computational framework simply by choosing an appropriate transformation function and parameterization thereof. The ability to evaluate the distribution function directly allows us to estimate models based on the exact likelihood, especially in the presence of random censoring or truncation. For discrete and continuous responses, we establish the asymptotic normality of the proposed estimators. A reference software implementation of maximum likelihood-based estimation for conditional transformation models that allows the same flexibility as the theory developed here was employed to illustrate the wide range of possible applications.},
+year = {2018}
+}
+
+@article{pearl1995,
+ ISSN = {00063444, 14643510},
+ URL = {http://www.jstor.org/stable/2337329},
+ abstract = {The primary aim of this paper is to show how graphical models can be used as a mathematical language for integrating statistical and subject-matter information. In particular, the paper develops a principled, nonparametric framework for causal inference, in which diagrams are queried to determine if the assumptions available are sufficient for identifying causal effects from nonexperimental data. If so the diagrams can be queried to produce mathematical expressions for causal effects in terms of observed distributions; otherwise, the diagrams can be queried to suggest additional observations or auxiliary experiments from which the desired inferences can be obtained.},
+ author = {Judea Pearl},
+ journal = {Biometrika},
+ number = {4},
+ pages = {669--688},
+ publisher = {[Oxford University Press, Biometrika Trust]},
+ title = {Causal Diagrams for Empirical Research},
+ urldate = {2025-05-31},
+ volume = {82},
+ year = {1995}
+}

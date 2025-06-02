@@ -93,6 +93,10 @@
 \newtheorem{bsp}{Example}[chapter]
 \newtheorem{rem}{Remark}[chapter]
 
+% % for pseudocode
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
 \newcommand*\widebar[1]{%
   \vbox{%
     \hrule height 0.5pt%     % Line above with certain width
@@ -154,10 +158,9 @@
 \newcommand{\T}{{}^{\top}}
 \newcommand\code[1]{{\tt#1}}
 
-
-
+%%% renamed to customalgo because package is used above
 \newcounter{algo}
-\newenvironment{algorithm}{%
+\newenvironment{customalgo}{%
   \begin{list}{
       (\arabic{algo})
     }{
@@ -166,6 +169,18 @@
 }{
   \end{list}
 }
+
+
+% \newcounter{algo}
+% \newenvironment{algorithm}{%
+%   \begin{list}{
+%       (\arabic{algo})
+%     }{
+%       \usecounter{algo}
+%     }%
+% }{
+%   \end{list}
+% }
 
 % some text abbreviation
 \newcommand{\GLS}{\text{GLS}}

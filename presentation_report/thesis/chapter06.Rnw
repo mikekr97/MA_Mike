@@ -1,0 +1,189 @@
+% LaTeX file for Chapter 06
+<<'preamble06',include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+    fig.path='figure/ch06_fig', 
+    self.contained=FALSE,
+    cache=TRUE
+) 
+@
+
+
+
+\chapter{Appendix}
+
+
+
+\section{Negative Log Likelihood}
+
+
+\subsection{Continuous Outcome}
+
+% Emphasized core components
+For a continuous outcome Y the CDF is given by:
+
+\begin{equation}
+F_{Y \mid \mathbf{X} = \mathbf{x}}(y) = F_Z(h(s(y) \mid \mathbf{x}))
+\end{equation}
+
+where in our case \( F_Z \) is the cumulative distribution function of the standard logistic distribution
+
+\begin{equation}
+F_Z(z) = \frac{1}{1 + e^{-z}}, \quad z \in \mathbb{R}
+\end{equation}
+
+and \( h \) is the conditional transformation function that maps the scaled outcome \( s(y) \) to the latent scale Z (log-odds).
+
+The outcome $y$ has to be scaled onto the range $[0, 1]$, because the Bernstein polynomial is bounded:
+
+\begin{equation}
+s(y) = \frac{y - \min(y)}{\max(y) - \min(y)}
+\end{equation}
+
+This scaling also has to be considered when taking the derivative to get the PDF with the change of variables formula:
+
+\begin{equation}
+f_{Y \mid \mathbf{X} = \mathbf{x}}(y) = f_Z(h(s(y) \mid \mathbf{x})) \cdot h'(s(y) \mid \mathbf{x}) \cdot s'(y)
+\end{equation}
+
+Where $f_Z$ is the PDF of the standard logistic distribution:
+
+\begin{equation}
+f_Z(z) = \frac{e^{z}}{(1 + e^{z})^2}, \quad z \in \mathbb{R}
+\end{equation}
+
+Finally, the NLL-contributions are then given by the negative log-densities evaluated at the observations.
+
+\begin{equation}
+\text{NLL} = - \log (f_{Y \mid \mathbf{X} = \mathbf{x}}(y))
+\end{equation}
+
+The full formula is given by
+
+\begin{align}
+\text{NLL} = - \log f_{Y \mid \mathbf{X} = \mathbf{x}}(y)
+&= -h(s(y) \mid \mathbf{x}) - 2 \log(1 + \exp(-h(s(y) \mid \mathbf{x}))) \nonumber \\
+&\quad + \log h'(s(y) \mid \mathbf{x}) - \log(\max(y) - \min(y))
+\end{align}
+
+
+
+
+\subsection{Discrete Outcome}
+
+
+The for a discrete outcome (binary, ordinal, categoric) with categories $y_k$, $k = 1, \ldots, K$, the CDF is given by:
+
+\begin{equation}
+F(Y_k \mid \mathbf{X}) = F_Z(h(y_k \mid \mathbf{x}))
+\end{equation}
+
+The likelihood contributions are then given by
+
+\begin{equation}
+l_i(y_k \mid \mathbf{x}) = f_{Y_k \mid \mathbf{X} = \mathbf{x}}(y_k) =
+    \begin{cases}
+      F_Z(h(y_k \mid \mathbf{x})) & k=1\\
+      F_Z(h(y_k \mid \mathbf{x})) - F_Z(h(y_{k-1} \mid \mathbf{x})) & k=2,\ldots, K-1\\
+      1- F_Z(h(y_{k-1} \mid \mathbf{x})) & k = K
+    \end{cases}
+\end{equation}
+
+
+from which the NLL-contributions are derived
+
+\begin{equation}
+\text{NLL} = - \log (f_{Y_k \mid \mathbf{X} = \mathbf{x}}(y)
+\end{equation}
+
+
+
+\subsection{Encoding of discrete variables}
+
+In the TRAM-DAG a variable $X_i$ can act as a predictor variable for a child node, or as a outcome (child node) that depends on some parent nodes. When $X_i$ is acting as an outcome, the distribution of the variable $X_i$ represented by the transformation function $h$ which estimates a cut-point for each variable. So different form of intercept $h_i$ is used compared to a continuous outcome variable.
+
+If a discrete variable $X_i$ with $K$ categories is used as a predictor variable, it should be dummy encoded. This is done by creating $K-1$ binary variables, where each variable indicates whether the observation belongs to this specific category/level or not. The first category/level is used as the reference and is not explicitly included in the model.
+
+Example: for an ordinal variable $X_i$ with three levels (1, 2 3), we create two binary variables:
+
+\begin{itemize}
+  \item $X_{i,1}$: 1 if $X_i = 2$, 0 otherwise
+  \item $X_{i,2}$: 1 if $X_i = 3$, 0 otherwise
+\end{itemize}
+
+Assume a continuous outcome $Y$ that depends on the ordinal variable $X$ with 3 levels, the CDF for $Y$ is given by: 
+$F(Y \mid X=1) = F_Z(h_I(y) + x_1\beta_1 + x_2\beta_2)$ 
+
+For $X=1$, the reference level, the CDF simplifies to: 
+$F(Y \mid X=1) = F_Z(h_I(y))$
+
+For $X=2$, the CDF becomes: $F(Y \mid X=1) = F_Z(h_I(y) + \beta_1)$
+
+For $X=3$, the CDF becomes: $F(Y \mid X=1) = F_Z(h_I(y) + \beta_2)$
+
+The coefficients $\beta_1$ and $\beta_2$ can be interpreted as the additive shift in the latent scale $h_I(y)$ when moving from the reference level (1) to levels 2 and 3, respectively.
+
+
+\subsubsection{Scaling of continuous variables}
+
+Neural networks work best when the input variables are standardized. A linear, monotonic and invertible transformation of a predictor variable changes the interpretation of the coefficient. Scaling a predictor variable $X$ as $X_{\text{std}} = (X - mean(X)) / sd(X)$ will imply that the coefficient $\tilde{\beta}$ is interpreted as the change in log-odds for a one standard deviation increase in the predictor variable or equivalently, for a one unit increase in the standardized predictor. This is different from the interpretation of the coefficient $\beta$ in the original scale, which represents the change in log-odds for a one unit increase in the predictor variable.
+
+
+
+
+In contrast, the standardization of the outcome variable has no effect on the interpretation (because the scale invariance of the log-odds). Consider, we standardize the outcome \( Y \) as follows:
+
+\[
+Y_{\text{std}} = \frac{Y - \mu_Y}{\sigma_Y}
+\]
+
+This transformation is linear, monotonic, and invertible:
+
+\[
+Y = Y_{\text{std}} \cdot \sigma_Y + \mu_Y
+\]
+
+Therefore, for any threshold \( y \), we have the equivalence:
+
+\[
+P(Y < y \mid X) = P\left(Y_{\text{std}} < \frac{y - \mu_Y}{\sigma_Y} \mid X\right)
+\]
+
+This means that the probability is the identical when evaluating the same quantile in the standardized outcome as in the raw outcome. Furthermore, the interpretation of coefficients in a continuous outcome logistic regression remains unchanged. In particular, the log-odds ratio:
+
+\[
+\log \left( \frac{P(Y < y \mid X + 1)}{1 - P(Y < y \mid X + 1)} \right) -
+\log \left( \frac{P(Y < y \mid X)}{1 - P(Y < y \mid X)} \right)
+\]
+
+is equal to:
+
+\[
+\log \left( \frac{P\left(Y_{\text{std}} < \frac{y - \mu_Y}{\sigma_Y} \mid X + 1\right)}{1 - P\left(Y_{\text{std}} < \frac{y - \mu_Y}{\sigma_Y} \mid X + 1\right)} \right) -
+\log \left( \frac{P\left(Y_{\text{std}} < \frac{y - \mu_Y}{\sigma_Y} \mid X\right)}{1 - P\left(Y_{\text{std}} < \frac{y - \mu_Y}{\sigma_Y} \mid X\right)} \right)
+\]
+
+as long as the same quantile (i.e. probability threshold) is used. Thus, the coefficient \( \beta \) reflects the same change in log-odds for a one-unit increase in the (standardized) predictor, regardless if the outcome is standardized or not. This property is also crucial for the evaluation of the bernstein polynomial, since the outcome has to be scaled on a range between 0 and 1.
+
+
+The general formula of the transformation model is
+
+\[
+P(Y < y \mid X = x) = F_z\left(h(Y) + \beta \cdot X\right)
+\]
+
+but the model is fitted with standardized outcome and predictors
+
+\[
+P(Y_{\text{std}} < y_{\text{std}} \mid X_{\text{std}} = x_{\text{std}}) = F_z\left(\tilde{h}(Y_{\text{std}}) + \tilde{\beta} \cdot X_{\text{std}}\right)
+\]
+
+where $\tilde{h}$ and $\tilde{\beta}$ represent the estimated transformation function and coefficients after standardizing the outcome and predictors.
+
+For example, if we want to know the probability \( P(Y < 20 \mid X = 3) \) with standardized variables, the model is specified as
+
+\[
+P\left(\frac{Y - \mu_Y}{\sigma_Y} < \frac{20 - \mu_Y}{\sigma_Y} \,\middle|\, X_{\text{std}} = \frac{3 - \mu_X}{\sigma_X} \right)
+= F_z\left(\tilde{h}\left(\frac{20 - \mu_Y}{\sigma_Y}\right) + \tilde{\beta} \cdot \frac{3 - \mu_X}{\sigma_X} \right)
+\]
+
