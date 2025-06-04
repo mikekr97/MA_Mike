@@ -5,10 +5,24 @@
 \contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
 \contentsline {chapter}{\numberline {2}Methods}{5}{chapter.2}%
 \contentsline {section}{\numberline {2.1}Transformation Models}{5}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Deep TRAMs}{6}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Citations}{10}{section.2.3}%
-\contentsline {chapter}{\numberline {3}Results}{11}{chapter.3}%
-\contentsline {chapter}{\numberline {4}Discussion and Outlook}{13}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Conclusions}{15}{chapter.5}%
+\contentsline {section}{\numberline {2.2}Deep TRAMs}{7}{section.2.2}%
+\contentsline {section}{\numberline {2.3}TRAM-DAGs}{8}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Sampling from TRAM-DAGs}{10}{subsection.2.3.1}%
+\contentsline {section}{\numberline {2.4}Experiments}{13}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}TRAM-DAG simulation}{13}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}TRAM-DAG real data}{13}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}ITE simulations}{13}{subsection.2.4.3}%
+\contentsline {subsection}{\numberline {2.4.4}ITE real data}{13}{subsection.2.4.4}%
+\contentsline {section}{\numberline {2.5}Software}{13}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Citations}{14}{section.2.6}%
+\contentsline {chapter}{\numberline {3}Results}{15}{chapter.3}%
+\contentsline {chapter}{\numberline {4}Discussion and Outlook}{17}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Conclusions}{19}{chapter.5}%
 \vspace *{10mm}
-\contentsline {chapter}{\bfseries Bibliography}{17}{section*.7}%
+\contentsline {chapter}{\bfseries Bibliography}{21}{section*.9}%
+\contentsline {chapter}{\numberline {6}Appendix}{23}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Negative Log Likelihood}{23}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}Continuous Outcome}{23}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}Discrete Outcome}{24}{subsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.1.3}Encoding of discrete variables}{24}{subsection.6.1.3}%
+\contentsline {subsubsection}{Scaling of continuous variables}{24}{section*.11}%

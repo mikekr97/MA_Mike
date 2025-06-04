@@ -276,3 +276,46 @@ year = {2018}
  volume = {82},
  year = {1995}
 }
+
+
+@article{calster2020,
+author = {Ben Van Calster and Maarten van Smeden and Bavo De Cock and Ewout W Steyerberg},
+title ={Regression shrinkage methods for clinical prediction models do not guarantee improved performance: Simulation study},
+
+journal = {Statistical Methods in Medical Research},
+volume = {29},
+number = {11},
+pages = {3166-3178},
+year = {2020},
+doi = {10.1177/0962280220921415},
+    note ={PMID: 32401702},
+
+URL = { https://doi.org/10.1177/0962280220921415},
+eprint = { 
+        https://doi.org/10.1177/0962280220921415
+}
+,
+    abstract = { When developing risk prediction models on datasets with limited sample size, shrinkage methods are recommended. Earlier studies showed that shrinkage results in better predictive performance on average. This simulation study aimed to investigate the variability of regression shrinkage on predictive performance for a binary outcome. We compared standard maximum likelihood with the following shrinkage methods: uniform shrinkage (likelihood-based and bootstrap-based), penalized maximum likelihood (ridge) methods, LASSO logistic regression, adaptive LASSO, and Firth’s correction. In the simulation study, we varied the number of predictors and their strength, the correlation between predictors, the event rate of the outcome, and the events per variable. In terms of results, we focused on the calibration slope. The slope indicates whether risk predictions are too extreme (slope < 1) or not extreme enough (slope > 1). The results can be summarized into three main findings. First, shrinkage improved calibration slopes on average. Second, the between-sample variability of calibration slopes was often increased relative to maximum likelihood. In contrast to other shrinkage approaches, Firth’s correction had a small shrinkage effect but showed low variability. Third, the correlation between the estimated shrinkage and the optimal shrinkage to remove overfitting was typically negative, with Firth’s correction as the exception. We conclude that, despite improved performance on average, shrinkage often worked poorly in individual datasets, in particular when it was most needed. The results imply that shrinkage methods do not solve problems associated with small sample size or low number of events per variable. }
+}
+
+
+@article{riley2021,
+title = {Penalization and shrinkage methods produced unreliable clinical prediction models especially when sample size was small},
+journal = {Journal of Clinical Epidemiology},
+volume = {132},
+pages = {88-96},
+year = {2021},
+issn = {0895-4356},
+doi = {https://doi.org/10.1016/j.jclinepi.2020.12.005},
+url = {https://www.sciencedirect.com/science/article/pii/S0895435620312099},
+author = {Richard D. Riley and Kym I.E. Snell and Glen P. Martin and Rebecca Whittle and Lucinda Archer and Matthew Sperrin and Gary S. Collins},
+keywords = {Risk prediction models, Penalization, Shrinkage, Overfitting, Sample size},
+abstract = {Objectives
+When developing a clinical prediction model, penalization techniques are recommended to address overfitting, as they shrink predictor effect estimates toward the null and reduce mean-square prediction error in new individuals. However, shrinkage and penalty terms (‘tuning parameters’) are estimated with uncertainty from the development data set. We examined the magnitude of this uncertainty and the subsequent impact on prediction model performance.
+Study Design and Setting
+This study comprises applied examples and a simulation study of the following methods: uniform shrinkage (estimated via a closed-form solution or bootstrapping), ridge regression, the lasso, and elastic net.
+Results
+In a particular model development data set, penalization methods can be unreliable because tuning parameters are estimated with large uncertainty. This is of most concern when development data sets have a small effective sample size and the model's Cox-Snell R2 is low. The problem can lead to considerable miscalibration of model predictions in new individuals.
+Conclusion
+Penalization methods are not a ‘carte blanche’; they do not guarantee a reliable prediction model is developed. They are more unreliable when needed most (i.e., when overfitting may be large). We recommend they are best applied with large effective sample sizes, as identified from recent sample size calculations that aim to minimize the potential for model overfitting and precisely estimate key parameters.}
+}

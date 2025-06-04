@@ -44,47 +44,101 @@
 \@writefile{brf}{\backcite{hothorn2014}{{5}{2}{chapter.2}}}
 \@writefile{brf}{\backcite{sick2020}{{5}{2}{chapter.2}}}
 \@writefile{toc}{\contentsline {section}{\numberline {2.1}Transformation Models}{5}{section.2.1}\protected@file@percent }
+\newlabel{eq:transformation_model}{{2.1}{5}{Transformation Models}{equation.2.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces \textbf  {Left:} Example of a transformation model for a continuous outcome $Y$ with a smooth transformation function. \textbf  {Right:} Example of a transformation model for an ordinal outcome $Y$ with 5 levels. The transformation function consists of cut-points that separate the probabilities for the levels of the outcome. In both cases the latent distribution $Z$ is the standard logistic and the predictors $\mathbf  {x}$ induce a linear (vertical) shift of the transformation function.}}{6}{figure.caption.4}\protected@file@percent }
 \newlabel{fig:tram_cont_ord}{{2.1}{6}{\textbf {Left:} Example of a transformation model for a continuous outcome $Y$ with a smooth transformation function. \textbf {Right:} Example of a transformation model for an ordinal outcome $Y$ with 5 levels. The transformation function consists of cut-points that separate the probabilities for the levels of the outcome. In both cases the latent distribution $Z$ is the standard logistic and the predictors $\mathbf {x}$ induce a linear (vertical) shift of the transformation function}{figure.caption.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.2}Deep TRAMs}{6}{section.2.2}\protected@file@percent }
+\newlabel{eq:nll_tram}{{2.4}{6}{Transformation Models}{equation.2.4}{}}
+\citation{sick2020}
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Deep TRAMs}{7}{section.2.2}\protected@file@percent }
+\newlabel{sec:deep_trams}{{2.2}{7}{Deep TRAMs}{section.2.2}{}}
+\@writefile{brf}{\backcite{sick2020}{{7}{2.2}{section.2.2}}}
+\newlabel{eq:deep_tram}{{2.5}{7}{Deep TRAMs}{equation.2.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces Modular deep transformation model. The transformation function $h(y \mid \mathbf  {x})$ is constructed by the outputs of three neural networks.}}{7}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:deep_tram}{{2.2}{7}{Modular deep transformation model. The transformation function $h(y \mid \mathbf {x})$ is constructed by the outputs of three neural networks}{figure.caption.5}{}}
+\citation{herzog2023}
+\citation{hothorn2018}
+\citation{kingma2015}
+\@writefile{brf}{\backcite{herzog2023}{{8}{2.2}{figure.caption.5}}}
+\@writefile{brf}{\backcite{hothorn2018}{{8}{2.2}{figure.caption.5}}}
+\@writefile{brf}{\backcite{kingma2015}{{8}{2.2}{figure.caption.5}}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}TRAM-DAGs}{8}{section.2.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.3}{\ignorespaces Example of a TRAM-DAG with three variables $X_1$, $X_2$ and $X_3$. The transformation functions are represented by the modular neural networks. The arrows indicate the causal dependencies between the variables.}}{9}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:tram_dag}{{2.3}{9}{Example of a TRAM-DAG with three variables $X_1$, $X_2$ and $X_3$. The transformation functions are represented by the modular neural networks. The arrows indicate the causal dependencies between the variables}{figure.caption.6}{}}
+\newlabel{eq:MA}{{2.6}{9}{TRAM-DAGs}{equation.2.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Sampling from TRAM-DAGs}{10}{subsection.2.3.1}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Generate a samples from the TRAM-DAG}}{10}{algorithm.1}\protected@file@percent }
+\newlabel{alg:sampling}{{1}{10}{Generate a samples from the TRAM-DAG}{algorithm.1}{}}
+\citation{pearl1995}
+\citation{pearl_book2009}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.4}{\ignorespaces One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text  {pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable.}}{11}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:sampling}{{2.4}{11}{One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text {pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable}{figure.caption.7}{}}
+\@writefile{brf}{\backcite{pearl1995}{{11}{2.3.1}{figure.caption.7}}}
+\@writefile{brf}{\backcite{pearl_book2009}{{11}{2.3.1}{figure.caption.7}}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Answer a Single Counterfactual Query}}{11}{algorithm.2}\protected@file@percent }
+\newlabel{alg:single_cf}{{2}{11}{Answer a Single Counterfactual Query}{algorithm.2}{}}
+\citation{riley2021}
+\citation{calster2020}
+\citation{riley2021}
+\@writefile{brf}{\backcite{riley2021}{{12}{2.3.1}{algorithm.2}}}
+\@writefile{brf}{\backcite{calster2020}{{12}{2.3.1}{algorithm.2}}}
+\@writefile{brf}{\backcite{riley2021}{{13}{2.3.1}{algorithm.2}}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}Experiments}{13}{section.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.1}TRAM-DAG simulation}{13}{subsection.2.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.2}TRAM-DAG real data}{13}{subsection.2.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.3}ITE simulations}{13}{subsection.2.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4.4}ITE real data}{13}{subsection.2.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Software}{13}{section.2.5}\protected@file@percent }
 \citation{Chu:Geor:99}
 \citation{Chu:Geor:99}
 \citation{Chu:Geor:99}
 \citation{*}
-\@writefile{lof}{\contentsline {figure}{\numberline {2.3}{\ignorespaces Test figure to illustrate figure options used by knitr.}}{10}{figure.caption.6}\protected@file@percent }
-\newlabel{f02:1}{{2.3}{10}{Test figure to illustrate figure options used by knitr}{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.3}Citations}{10}{section.2.3}\protected@file@percent }
-\@writefile{brf}{\backcite{Chu:Geor:99}{{10}{2.3}{section.2.3}}}
-\@writefile{brf}{\backcite{Chu:Geor:99}{{10}{2.3}{section.2.3}}}
-\@writefile{brf}{\backcite{Chu:Geor:99}{{10}{2.3}{section.2.3}}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results}{11}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces Test figure to illustrate figure options used by knitr.}}{14}{figure.caption.8}\protected@file@percent }
+\newlabel{f02:1}{{2.5}{14}{Test figure to illustrate figure options used by knitr}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Citations}{14}{section.2.6}\protected@file@percent }
+\@writefile{brf}{\backcite{Chu:Geor:99}{{14}{2.6}{section.2.6}}}
+\@writefile{brf}{\backcite{Chu:Geor:99}{{14}{2.6}{section.2.6}}}
+\@writefile{brf}{\backcite{Chu:Geor:99}{{14}{2.6}{section.2.6}}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results}{15}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}Discussion and Outlook}{13}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Discussion and Outlook}{17}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusions}{15}{chapter.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusions}{19}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \bibstyle{mywiley}
 \bibdata{biblio}
-\bibcite{chen2025}{{1}{2025}{{Chen {\it  et~al.}}}{{}}}
-\bibcite{Chu:Geor:99}{{2}{1999}{{Chu and George}}{{}}}
-\bibcite{Coll:14}{{3}{2014}{{Collett}}{{}}}
-\bibcite{freedman1987}{{4}{1987}{{Freedman}}{{}}}
-\bibcite{hariton2018}{{5}{2018}{{Hariton and Locascio}}{{}}}
-\bibcite{hothorn2014}{{6}{2014}{{Hothorn {\it  et~al.}}}{{}}}
-\bibcite{Hurr:etal:13}{{7}{2013}{{Hurrell {\it  et~al.}}}{{}}}
-\bibcite{varrank}{{8}{2018}{{Kratzer and Furrer}}{{}}}
-\bibcite{nichols2007}{{9}{2007}{{Nichols}}{{}}}
-\bibcite{pearl2009}{{10}{2009a}{{Pearl}}{{}}}
-\bibcite{pearl_book2009}{{11}{2009b}{{Pearl}}{{}}}
-\bibcite{Porc:Furr:Nych:21}{{12}{2020}{{Porcu {\it  et~al.}}}{{}}}
-\bibcite{sick2025}{{13}{2025}{{Sick and D{\"u}rr}}{{}}}
-\bibcite{sick2020}{{14}{2021}{{Sick {\it  et~al.}}}{{}}}
-\bibcite{Wang:Furr:20}{{15}{2020}{{Wang and Furrer}}{{}}}
+\bibcite{calster2020}{{1}{2020}{{Calster {\it  et~al.}}}{{}}}
+\bibcite{chen2025}{{2}{2025}{{Chen {\it  et~al.}}}{{}}}
+\bibcite{Chu:Geor:99}{{3}{1999}{{Chu and George}}{{}}}
+\bibcite{Coll:14}{{4}{2014}{{Collett}}{{}}}
+\bibcite{freedman1987}{{5}{1987}{{Freedman}}{{}}}
+\bibcite{hariton2018}{{6}{2018}{{Hariton and Locascio}}{{}}}
+\bibcite{herzog2023}{{7}{2023}{{Herzog {\it  et~al.}}}{{}}}
+\bibcite{hoogland2021}{{8}{2021}{{Hoogland {\it  et~al.}}}{{}}}
+\bibcite{hothorn2014}{{9}{2014}{{Hothorn {\it  et~al.}}}{{}}}
+\bibcite{hothorn2018}{{10}{2018}{{Hothorn {\it  et~al.}}}{{}}}
+\bibcite{Hurr:etal:13}{{11}{2013}{{Hurrell {\it  et~al.}}}{{}}}
+\bibcite{kingma2015}{{12}{2015}{{Kingma and Ba}}{{}}}
+\bibcite{varrank}{{13}{2018}{{Kratzer and Furrer}}{{}}}
+\bibcite{nichols2007}{{14}{2007}{{Nichols}}{{}}}
+\bibcite{pearl1995}{{15}{1995}{{Pearl}}{{}}}
 \@writefile{toc}{\vspace *{10mm}}
-\@writefile{toc}{\contentsline {chapter}{\bfseries  Bibliography}{17}{section*.7}\protected@file@percent }
-\gdef \@abspage@last{26}
+\@writefile{toc}{\contentsline {chapter}{\bfseries  Bibliography}{21}{section*.9}\protected@file@percent }
+\bibcite{pearl2009}{{16}{2009a}{{Pearl}}{{}}}
+\bibcite{pearl_book2009}{{17}{2009b}{{Pearl}}{{}}}
+\bibcite{Porc:Furr:Nych:21}{{18}{2020}{{Porcu {\it  et~al.}}}{{}}}
+\bibcite{riley2021}{{19}{2021}{{Riley {\it  et~al.}}}{{}}}
+\bibcite{sick2025}{{20}{2025}{{Sick and D{\"u}rr}}{{}}}
+\bibcite{sick2020}{{21}{2021}{{Sick {\it  et~al.}}}{{}}}
+\bibcite{Wang:Furr:20}{{22}{2020}{{Wang and Furrer}}{{}}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Appendix}{23}{chapter.6}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Negative Log Likelihood}{23}{section.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.1}Continuous Outcome}{23}{subsection.6.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.2}Discrete Outcome}{24}{subsection.6.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.3}Encoding of discrete variables}{24}{subsection.6.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Scaling of continuous variables}{24}{section*.11}\protected@file@percent }
+\gdef \@abspage@last{34}

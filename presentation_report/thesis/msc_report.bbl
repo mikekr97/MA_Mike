@@ -1,5 +1,11 @@
 \begin{thebibliography}{}
 
+\bibitem[Calster {\it et~al.}, 2020]{calster2020}
+Calster, B.~V., van Smeden, M., Cock, B.~D., and Steyerberg, E.~W. (2020).
+\newblock Regression shrinkage methods for clinical prediction models do not
+  guarantee improved performance: Simulation study.
+\newblock {\em Statistical Methods in Medical Research}, {\bf29},  3166--3178.
+
 \bibitem[Chen {\it et~al.}, 2025]{chen2025}
 Chen, H., Aebersold, H., Puhan, M.~A., and Serra-Burriel, M. (2025).
 \newblock Causal machine learning methods for estimating personalised treatment
@@ -29,16 +35,42 @@ Hariton, E. and Locascio, J.~J. (2018).
 \newblock {\em BJOG: An International Journal of Obstetrics \& Gynaecology},
   {\bf125},  1716 -- 1716.
 
+\bibitem[Herzog {\it et~al.}, 2023]{herzog2023}
+Herzog, L., Kook, L., G{\"o}tschi, A., Petermann, K., H{\"a}nsel, M., Hamann,
+  J., D{\"u}rr, O., Wegener, S., and Sick, B. (2023).
+\newblock Deep transformation models for functional outcome prediction after
+  acute ischemic stroke.
+\newblock {\em Biometrical Journal}, {\bf65},  2100379.
+
+\bibitem[Hoogland {\it et~al.}, 2021]{hoogland2021}
+Hoogland, J., IntHout, J., Belias, M., Rovers, M.~M., Riley, R.~D.,
+  E.~Harrell~Jr, F., Moons, K. G.~M., Debray, T. P.~A., and Reitsma, J.~B.
+  (2021).
+\newblock A tutorial on individualized treatment effect prediction from
+  randomized trials with a binary endpoint.
+\newblock {\em Statistics in Medicine}, {\bf40},  5961--5981.
+
 \bibitem[Hothorn {\it et~al.}, 2014]{hothorn2014}
 Hothorn, T., Kneib, T., and B{\"u}hlmann, P. (2014).
 \newblock Conditional transformation models.
 \newblock {\em Journal of the Royal Statistical Society. Series B (Statistical
   Methodology)}, {\bf76},  3--27.
 
+\bibitem[Hothorn {\it et~al.}, 2018]{hothorn2018}
+Hothorn, T., M{\"o}st, L., and B{\"u}hlmann, P. (2018).
+\newblock Most likely transformations.
+\newblock {\em Scandinavian Journal of Statistics}, {\bf45},  110--134.
+
 \bibitem[Hurrell {\it et~al.}, 2013]{Hurr:etal:13}
 Hurrell, J.~W., Kushnir, Y., Ottersen, G., and Visbeck, M. (2013).
 \newblock {\em An Overview of the {North} {Atlantic} Oscillation},   1--35.
 \newblock American Geophysical Union.
+
+\bibitem[Kingma and Ba, 2015]{kingma2015}
+Kingma, D.~P. and Ba, J. (2015).
+\newblock Adam: A method for stochastic optimization.
+\newblock Published as a conference paper at the 3rd International Conference
+  for Learning Representations, San Diego, 2015.
 
 \bibitem[Kratzer and Furrer, 2018]{varrank}
 Kratzer, G. and Furrer, R. (2018).
@@ -50,6 +82,11 @@ Kratzer, G. and Furrer, R. (2018).
 Nichols, A. (2007).
 \newblock Causal inference with observational data.
 \newblock {\em The Stata Journal}, {\bf7},  507 -- 541.
+
+\bibitem[Pearl, 1995]{pearl1995}
+Pearl, J. (1995).
+\newblock Causal diagrams for empirical research.
+\newblock {\em Biometrika}, {\bf82},  669--688.
 
 \bibitem[Pearl, 2009a]{pearl2009}
 Pearl, J. (2009a).
@@ -66,6 +103,13 @@ Porcu, E., Furrer, R., and Nychka, D. (2020).
 \newblock 30 years of space-time covariance functions.
 \newblock {\em Wiley Interdisciplinary Reviews. Computational Statistics},
   {\bf13:e1512},  1--24.
+
+\bibitem[Riley {\it et~al.}, 2021]{riley2021}
+Riley, R.~D., Snell, K.~I., Martin, G.~P., Whittle, R., Archer, L., Sperrin,
+  M., and Collins, G.~S. (2021).
+\newblock Penalization and shrinkage methods produced unreliable clinical
+  prediction models especially when sample size was small.
+\newblock {\em Journal of Clinical Epidemiology}, {\bf132},  88--96.
 
 \bibitem[Sick and D{\"u}rr, 2025]{sick2025}
 Sick, B. and D{\"u}rr, O. (2025).

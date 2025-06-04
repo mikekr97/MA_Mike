@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (MiKTeX 24.4) (preloaded format=pdflatex 2024.12.23)  24 MAY 2025 11:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (MiKTeX 24.4) (preloaded format=pdflatex 2024.12.23)  4 JUN 2025 11:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -409,14 +409,43 @@ LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 \c@des=\count308
 \c@bsp=\count309
 \c@rem=\count310
-\c@definition=\count311
-\c@example=\count312
-\c@remark=\count313
-\c@theorem=\count314
-\c@algo=\count315
+
+(C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/algorithms\algorithm.st
+y
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating enviro
+nment
+\@float@every@algorithm=\toks34
+\c@algorithm=\count311
+)
+(C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algpseudoc
+ode.sty
+Package: algpseudocode 
+
+(C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algorithmi
+cx.sty
+Package: algorithmicx 2005/04/27 v1.2 Algorithmicx
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+\c@ALG@line=\count312
+\c@ALG@rem=\count313
+\c@ALG@nested=\count314
+\ALG@tlm=\skip72
+\ALG@thistlm=\skip73
+\c@ALG@Lnr=\count315
+\c@ALG@blocknr=\count316
+\c@ALG@storecount=\count317
+\c@ALG@tmpcounter=\count318
+\ALG@tmplength=\skip74
+)
+Document Style - pseudocode environments for use with the `algorithmicx' style
+)
+\c@definition=\count319
+\c@example=\count320
+\c@remark=\count321
+\c@theorem=\count322
+\c@algo=\count323
 (C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/framed\framed.sty
 Package: framed 2011/10/22 v 0.96: framed or shaded text with page breaks
-\OuterFrameSep=\skip72
+\OuterFrameSep=\skip75
 \fb@frw=\dimen168
 \fb@frh=\dimen169
 \FrameRule=\dimen170
@@ -427,7 +456,7 @@ Package: alltt 2024/07/07 v2.0g defines alltt environment
 (C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdf
 tex.def
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count316
+\l__color_backend_stack_int=\count324
 \l__pdf_internal_box=\box59
 ) (msc_report.aux)
 \openout1 = `msc_report.aux'.
@@ -454,17 +483,17 @@ LaTeX Font Info:    ... okay on input line 4.
 (C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
 ii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count317
+\scratchcounter=\count325
 \scratchdimen=\dimen172
 \scratchbox=\box60
-\nofMPsegments=\count318
-\nofMParguments=\count319
-\everyMPshowfont=\toks34
-\MPscratchCnt=\count320
+\nofMPsegments=\count326
+\nofMParguments=\count327
+\everyMPshowfont=\toks35
+\MPscratchCnt=\count328
 \MPscratchDim=\dimen173
-\MPnumerator=\count321
-\makeMPintoPDFobject=\count322
-\everyMPtoPDFconversion=\toks35
+\MPnumerator=\count329
+\makeMPintoPDFobject=\count330
+\everyMPtoPDFconversion=\toks36
 )
 (C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-b
 ase.sty
@@ -543,7 +572,7 @@ Chapter 1.
 [1
 
 ]
-<img/pearl_levels.png, id=121, 977.00859pt x 189.5383pt>
+<img/pearl_levels.png, id=146, 977.00859pt x 189.5383pt>
 File: img/pearl_levels.png Graphic file (type png)
 <use img/pearl_levels.png>
 Package pdftex.def Info: img/pearl_levels.png  used on input line 33.
@@ -561,135 +590,200 @@ Chapter 2.
 
 
 [5]
-<img/tram_cont_ord.png, id=172, 1032.23378pt x 354.53207pt>
+<img/tram_cont_ord.png, id=197, 1032.23378pt x 354.53207pt>
 File: img/tram_cont_ord.png Graphic file (type png)
 <use img/tram_cont_ord.png>
-Package pdftex.def Info: img/tram_cont_ord.png  used on input line 50.
+Package pdftex.def Info: img/tram_cont_ord.png  used on input line 51.
 (pdftex.def)             Requested size: 455.30121pt x 156.37868pt.
 
 
 [6 <./img/tram_cont_ord.png>]
-<img/deep_tram.png, id=182, 912.2383pt x 372.94048pt>
+
+LaTeX Warning: Reference `eq:deep_tram.' on page 7 undefined on input line 73.
+
+<img/deep_tram.png, id=212, 912.2383pt x 372.94048pt>
 File: img/deep_tram.png Graphic file (type png)
 <use img/deep_tram.png>
-Package pdftex.def Info: img/deep_tram.png  used on input line 66.
+Package pdftex.def Info: img/deep_tram.png  used on input line 84.
 (pdftex.def)             Requested size: 409.7683pt x 167.52005pt.
 
 
 [7 <./img/deep_tram.png>]
+<img/tram_dag.png, id=227, 906.10217pt x 458.84631pt>
+File: img/tram_dag.png Graphic file (type png)
+<use img/tram_dag.png>
+Package pdftex.def Info: img/tram_dag.png  used on input line 119.
+(pdftex.def)             Requested size: 409.7683pt x 207.50113pt.
+
+Underfull \vbox (badness 2197) has occurred while \output is active []
+
+
 
 [8]
 
-[9]
+[9 <./img/tram_dag.png>]
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
+put line 193.
+<img/sampling.png, id=249, 1092.9133pt x 302.71585pt>
+File: img/sampling.png Graphic file (type png)
+<use img/sampling.png>
+Package pdftex.def Info: img/sampling.png  used on input line 212.
+(pdftex.def)             Requested size: 409.7683pt x 113.49506pt.
+
+Underfull \vbox (badness 3386) has occurred while \output is active []
+
+
+
+[10]
+
+LaTeX Warning: Reference `alg:counterfactual' on page 11 undefined on input lin
+e 236.
+
+
+
+[11 <./img/sampling.png>]
+Overfull \hbox (20.10072pt too wide) in paragraph at lines 283--286
+[]\T1/cmr/m/n/10.95 Problems with ITE: (in an RCT set-ting) - to es-ti-mate the
+ ITE we must as-sume un-confoundedness.
+ []
+
+
+
+[12]
 LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line 
-208.
+350.
 (C:\Users\kraeh\AppData\Local\Programs\MiKTeX\tex/latex/base\ts1cmtt.fd
 File: ts1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
 )
-Overfull \hbox (25.78902pt too wide) in paragraph at lines 235--235
+Overfull \hbox (25.78902pt too wide) in paragraph at lines 377--377
 []               \T1/cmtt/m/n/10.95 background="gray98", tidy=FALSE, #tidy.opts
 =list(width.cutoff=60),[] 
  []
 
 
-Overfull \hbox (1.87053pt too wide) in paragraph at lines 242--243
+
+[13]
+Overfull \hbox (1.87053pt too wide) in paragraph at lines 384--385
 []\T1/cmr/m/n/10.95 This op-tions are best placed in the main doc-u-ment at the
  be-gin-ning. Oth-er-wise a [][]\T1/cmtt/m/n/10.95 cache=FALSE
  []
 
-<figure/ch02_figunnamed-chunk-3-1.pdf, id=198, 578.16pt x 180.675pt>
+<figure/ch02_figunnamed-chunk-3-1.pdf, id=296, 578.16pt x 180.675pt>
 File: figure/ch02_figunnamed-chunk-3-1.pdf Graphic file (type pdf)
 <use figure/ch02_figunnamed-chunk-3-1.pdf>
 Package pdftex.def Info: figure/ch02_figunnamed-chunk-3-1.pdf  used on input li
-ne 252.
+ne 394.
 (pdftex.def)             Requested size: 369.94295pt x 115.60678pt.
 ) (chapter03.tex
 
-[10 <./figure/ch02_figunnamed-chunk-3-1.pdf>]
+[14 <./figure/ch02_figunnamed-chunk-3-1.pdf>]
 Chapter 3.
 ) (chapter04.tex
 
-[11
+[15
 
 ]
 
-[12
+[16
 
 ]
 Chapter 4.
 ) (chapter05.tex
 
-[13]
+[17]
 
-[14
+[18
 
 ]
 Chapter 5.
 )
 
-[15]
+[19]
 
-[16
+[20
 
 ] (msc_report.bbl (msc_report.brf)
 \tf@brf=\write6
 \openout6 = `msc_report.brf'.
 
-)
 
-[17
+
+[21
+
+]) (chapter06.tex
+
+[22]
+Chapter 6.
+
+
+[23
 
 ]
 
-[18
+[24])
+
+[25]
+
+[26
 
 ] (msc_report.aux)
  ***********
 LaTeX2e <2024-11-01>
 L3 programming layer <2024-11-02>
  ***********
+
+LaTeX Warning: There were undefined references.
+
 Package rerunfilecheck Info: File `msc_report.out' has not changed.
-(rerunfilecheck)             Checksum: DBE4F32A72442F0BC1581182DE6821C4;504.
+(rerunfilecheck)             Checksum: 7FC90277365B4D8B7781559878C77807;787.
 Package rerunfilecheck Info: File `msc_report.brf' has not changed.
-(rerunfilecheck)             Checksum: DCA1AC0F768D52BDE529110BF73E4D0C;728.
+(rerunfilecheck)             Checksum: 6371DB9F7BF9880C76FDF7F6368B3DE3;1183.
  ) 
 Here is how much of TeX's memory you used:
- 14994 strings out of 473682
- 237776 string characters out of 5719215
- 648743 words of memory out of 5000000
- 37761 multiletter control sequences out of 15000+600000
- 581039 words of font info for 85 fonts, out of 8000000 for 9000
+ 15710 strings out of 473682
+ 249480 string characters out of 5719215
+ 660260 words of memory out of 5000000
+ 38413 multiletter control sequences out of 15000+600000
+ 583685 words of font info for 89 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 95i,6n,96p,1291b,404s stack positions out of 10000i,1000n,20000p,200000b,200000s
- <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tctt
-1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi60
-0\ectt1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec
-/dpi600\ecst1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknap
-pen/ec/dpi600\ecbx1440.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour
-/jknappen/ec/dpi600\ecti1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/
-ljfour/jknappen/ec/dpi600\ecbx2074.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fon
-ts/pk/ljfour/jknappen/ec/dpi600\ecsl1095.pk> <C:\Users\kraeh\AppData\Local\MiKT
-eX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1095.pk> <C:\Users\kraeh\AppData\Loca
-l\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk> <C:\Users\kraeh\AppDat
-a\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1728.pk> <C:\Users\kraeh\
-AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx2488.pk> <C:\Users\
-kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecss1000.pk> <C:\
-Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecss1200.pk
-> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecsx1
-440.pk><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfont
-s/cm/cmbx10.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/publi
-c/amsfonts/cm/cmex10.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/ty
-pe1/public/amsfonts/cm/cmmi10.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX
-/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/kraeh/AppData/Local/Program
-s/MiKTeX/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/kraeh/AppData/Loc
-al/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/kraeh/App
-Data/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/kr
-aeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:
-/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8
-.pfb>
-Output written on msc_report.pdf (26 pages, 522890 bytes).
+ 95i,10n,96p,1338b,481s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm
+0800.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi60
+0\tcrm1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec
+/dpi600\tctt1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknap
+pen/ec/dpi600\ecst1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour
+/jknappen/ec/dpi600\ectt1095.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/
+ljfour/jknappen/ec/dpi600\ecrm0900.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fon
+ts/pk/ljfour/jknappen/ec/dpi600\ecbx1200.pk> <C:\Users\kraeh\AppData\Local\MiKT
+eX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1440.pk> <C:\Users\kraeh\AppData\Loca
+l\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti1095.pk> <C:\Users\kraeh\AppDat
+a\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx2074.pk> <C:\Users\kraeh\
+AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecsl1095.pk> <C:\Users\
+kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1095.pk> <C:\
+Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk
+> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1
+728.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600
+\ecbx2488.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/
+dpi600\ecss1000.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/jknapp
+en/ec/dpi600\ecss1200.pk> <C:\Users\kraeh\AppData\Local\MiKTeX\fonts/pk/ljfour/
+jknappen/ec/dpi600\ecsx1440.pk><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fo
+nts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/kraeh/AppData/Local/Programs/
+MiKTeX/fonts/type1/public/amsfonts/cm/cmbx8.pfb><C:/Users/kraeh/AppData/Local/P
+rograms/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/kraeh/AppDat
+a/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/kra
+eh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/U
+sers/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.p
+fb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm
+/cmmib10.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/public/a
+msfonts/cm/cmr10.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts/type1/
+public/amsfonts/cm/cmr6.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTeX/fonts
+/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/kraeh/AppData/Local/Programs/MiKTe
+X/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/kraeh/AppData/Local/Progr
+ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/kraeh/AppData/Loc
+al/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on msc_report.pdf (34 pages, 776737 bytes).
 PDF statistics:
- 843 PDF objects out of 1000 (max. 8388607)
- 61 named destinations out of 1000 (max. 500000)
- 101 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1098 PDF objects out of 1200 (max. 8388607)
+ 107 named destinations out of 1000 (max. 500000)
+ 151 words of extra memory for PDF output out of 10000 (max. 10000000)
 

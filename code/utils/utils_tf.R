@@ -126,7 +126,9 @@ LinearMasked(keras$layers$Layer) %py_class% {
 
 
 
-create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_layer_bias=TRUE) {
+create_param_net <- function(len_param, input_layer, layer_sizes, masks, 
+                             last_layer_bias=TRUE,
+                             dropout = FALSE, batchnorm = FALSE, activation = "relu") {
   outs = list()
   for (r in 1:len_param){
     d = input_layer
@@ -135,12 +137,15 @@ create_param_net <- function(len_param, input_layer, layer_sizes, masks, last_la
         
         # d = layer_batch_normalization()(d)  # Batch Normalization
         d = LinearMasked(units=layer_sizes[i], mask=t(masks[[i-1]]))(d)
-        d = layer_batch_normalization()(d)  # Batch Normalization
+        if (batchnorm) {
+          d = layer_batch_normalization()(d)  # Batch Normalization
+        }
         # d = layer_activation(activation='sigmoid')(d)
-        d = layer_activation(activation='relu')(d)
-        d = layer_dropout(rate = 0.1)(d)  # Dropout
+        d = layer_activation(activation=activation)(d)
+        if (dropout){
+          d = layer_dropout(rate = 0.1)(d)  # Dropout
+        }
 
-        
       }
     } #add output layers
     out = LinearMasked(units=layer_sizes[length(layer_sizes)], mask=t(masks[[length(layer_sizes) - 1]]),bias=last_layer_bias)(d)
@@ -162,7 +167,9 @@ create_null_net <- function(input_layer) {
   return(output_layer)
 }
 
-create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidden_features_CS = c(2,2)){
+create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, 
+                              hidden_features_CS = c(2,2),
+                              ...){
   
   # number of variable as input shape
   input_layer <- layer_input(shape = list(ncol(MA)))
@@ -171,13 +178,19 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
   if ('ci' %in% MA == TRUE) { # At least one 'ci' in model
     layer_sizes_I <- c(ncol(MA), hidden_features_I, nrow(MA))
     masks_I = create_masks(adjacency =  t(MA == 'ci'), hidden_features_I)
-    h_I = create_param_net(len_param = len_theta, input_layer=input_layer, layer_sizes = layer_sizes_I, masks_I, last_layer_bias=TRUE)
+    h_I = create_param_net(len_param = len_theta, input_layer=input_layer, 
+                           layer_sizes = layer_sizes_I, masks_I, 
+                           last_layer_bias=TRUE,
+                           dropout = FALSE, batchnorm = FALSE, activation = "relu")
     #dag_maf_plot(masks_I, layer_sizes_I)
     #model_ci = keras_model(inputs = input_layer, h_I)
   } else { # Adding simple intercepts
     layer_sizes_I = c(ncol(MA), nrow(MA))
     masks_I = list(matrix(FALSE, nrow=nrow(MA), ncol=ncol(MA)))
-    h_I = create_param_net(len_param = len_theta, input_layer=input_layer, layer_sizes = layer_sizes_I, masks_I, last_layer_bias=TRUE)
+    h_I = create_param_net(len_param = len_theta, input_layer=input_layer, 
+                           layer_sizes = layer_sizes_I, masks_I, 
+                           last_layer_bias=TRUE,
+                           dropout = FALSE, batchnorm = FALSE, activation = "relu")
     #dag_maf_plot(masks_I, layer_sizes_I)
   }
   
@@ -185,7 +198,10 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30, hidd
   if ('cs' %in% MA == TRUE) { # At least one 'cs' in model
     layer_sizes_CS <- c(ncol(MA), hidden_features_CS, nrow(MA))
     masks_CS = create_masks(adjacency =  t(MA == 'cs'), hidden_features_CS)
-    h_CS = create_param_net(len_param = 1, input_layer=input_layer, layer_sizes = layer_sizes_CS, masks_CS, last_layer_bias=FALSE)
+    h_CS = create_param_net(len_param = 1, input_layer=input_layer, 
+                            layer_sizes = layer_sizes_CS, masks_CS, 
+                            last_layer_bias=FALSE,
+                            dropout = FALSE, batchnorm = FALSE, activation = "relu")
     #dag_maf_plot(masks_CS, layer_sizes_CS)
     #dag_maf_plot_new(masks_CS, layer_sizes_CS)
     # model_cs = keras_model(inputs = input_layer, h_CS)
@@ -392,7 +408,7 @@ struct_dag_loss = function (t_i, h_params){
   #CS
   h_CS = tf$squeeze(h_cs, axis=-1L)
   theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
-  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
+  #Thetas for intercept -> to_theta3 to make them increasing
   theta = to_theta3(theta_tilde)
   
   if (!exists('data_type')){ #Defaulting to all continuous 
@@ -608,6 +624,129 @@ struct_dag_loss_ITE_IST = function (t_i, h_params){
   # Gather the corresponding values from cdf_diffs
   NLL = NLL -tf$reduce_mean(tf$math$log(cdf_diff_picked))
   
+  return (NLL)
+}
+
+
+
+struct_dag_loss_ITE_observational = function (t_i, h_params){
+  #t_i = train$df_orig # (40000, 3)    # original data x1, x2, x3 for each obs
+  #t_i <- dgp_data$df_orig_train
+  #h_params = h_params                 # NN outputs (CS, LS, theta') for each obs
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  # from the last dimension of h_params the first entry is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  NLL = 0
+  ### Continiuous dimensions
+  #### At least one continuous dimension exits
+  if (length(cont_dims) != 0){
+    
+    # inputs in h_dag_extra:
+    # data=(40000, 3), 
+    # theta=(40000, 3, 20), k_min=(3), k_max=(3))
+    
+    # creates the value of the Bernstein at each observation
+    # and current parameters: output shape=(40000, 3)
+    # h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims])
+    h_I = h_dag_extra(tf$gather(t_i, as.integer(cont_dims-1L), axis = 1L), 
+                      tf$gather(theta, as.integer(cont_dims-1L), axis = 1L)[,,1:len_theta,drop=FALSE],
+                      tf$gather(k_min, as.integer(cont_dims-1L)),
+                      tf$gather(k_max, as.integer(cont_dims-1L)))
+    
+    
+    # adding the intercepts and shifts: results in shape=(40000, 3)
+    # basically the estimated value of the latent variable
+    h = h_I + tf$gather(h_LS, as.integer(cont_dims-1L), axis = 1L) + 
+      tf$gather(h_CS, as.integer(cont_dims-1L), axis = 1L)
+    
+    #Compute terms for change of variable formula
+    
+    # log of standard logistic density at h
+    log_latent_density = -h - 2 * tf$math$softplus(-h) #log of logistic density at h
+    
+    ## h' dh/dtarget is 0 for all shift terms
+    # log_hdash = tf$math$log(tf$math$abs(
+    #   h_dag_dash_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]))
+    # ) - 
+    #   tf$math$log(k_max[cont_dims] - k_min[cont_dims])  #Chain rule! See Hathorn page 12 
+    # 
+    log_hdash = tf$math$log(tf$math$abs(
+      h_dag_dash_extra(tf$gather(t_i, as.integer(cont_dims-1L), axis = 1L), 
+                       tf$gather(theta, as.integer(cont_dims-1L), axis = 1L)[,,1:len_theta,drop=FALSE], 
+                       tf$gather(k_min, as.integer(cont_dims-1L)),
+                       tf$gather(k_max, as.integer(cont_dims-1L))))
+    ) - 
+      tf$math$log(tf$gather(k_max, as.integer(cont_dims-1L)) - tf$gather(k_min, as.integer(cont_dims-1L)))  #Chain rule! See Hathorn page 12 
+    
+    
+    
+    NLL = NLL - tf$reduce_mean(log_latent_density + log_hdash)
+  }
+  
+  ### Ordinal dimensions
+  if (length(cont_ord) != 0){
+    B = tf$shape(t_i)[1]
+    for (col in cont_ord){
+      # col=4
+      # nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+      nol = tf$cast(k_max[col], tf$int32) # Number of cut-points in respective dimension (binary encoded)
+      
+      theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+      
+      
+      h = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+      # putting -Inf and +Inf to the left and right of the cutpoints
+      neg_inf = tf$fill(c(B,1L), -Inf)
+      pos_inf = tf$fill(c(B,1L), +Inf)
+      h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+      logistic_cdf_values = logistic_cdf(h_with_inf)
+      #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+      cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+      # Picking the observed cdf_diff entry
+      # class_indices <- tf$cast(t_i[, col] - 1, tf$int32)  # Convert to zero-based index
+      class_indices <- tf$cast(t_i[, col], tf$int32)  # already binary encoded 0,1
+      # Create batch indices to pair with class indices
+      batch_indices <- tf$range(tf$shape(class_indices)[1])
+      # Combine batch_indices and class_indices into pairs of indices
+      gather_indices <- tf$stack(list(batch_indices, class_indices), axis=1)
+      cdf_diff_picked <- tf$gather_nd(cdf_diffs, gather_indices)
+      # Gather the corresponding values from cdf_diffs
+      NLL = NLL -tf$reduce_mean(tf$math$log(cdf_diff_picked))
+    }
+  }
+  
+  ### DEBUG 
+  #if (sum(is.infinite(log_lik$numpy())) > 0){
+  #  print("Hall")
+  #}
   return (NLL)
 }
 
