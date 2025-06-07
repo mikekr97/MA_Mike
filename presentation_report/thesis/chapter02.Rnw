@@ -301,7 +301,7 @@ Problems with ITE: (in an RCT setting)
 
 - maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
 
-
+- also talk about propensity score Rubin(2007) to basically estimate an RCT...and overcome the problem of confounding. but this might work for ATE but not really for ITE, direct modelling of the outcome is necessary % https://pmc.ncbi.nlm.nih.gov/articles/PMC5920646/
 
 
 \textbf{Models for ITE Estimation}
@@ -315,6 +315,9 @@ Logistic regression, penalized logistic regression (shrinkage, lasso
 Shrinkage methods should provide better predictive perfomance on average (cite articles). \citet{calster2020} analyzed different regression shrinkage methods with a binary outcome in a simulation study. They concluded, although the calibration slope improved on average, shrinkage often worked poorly on individual datasets. With small sample size and low number of events per variable the performance of most of these methods were highly variable and should be used with caution in such settings. \citet{riley2021} obtained to similar results in their simulation study. Problems occur, because tuning parameters are often estimated with large uncertainty on the training data and fail to generalize. In both studies the autors pointed out that these penalization methods are more unreliable when needed most, that is when the risk of overfitting may be large.
 
 In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
+
+
+Explain tuning of random forest, with depth number of trees and mtry (ranger?)
 
 \section{Experiments}
 

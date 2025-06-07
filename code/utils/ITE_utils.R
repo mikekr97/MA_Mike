@@ -424,3 +424,682 @@ struct_dag_loss_ITE = function (t_i, h_params, binary_treatment = TRUE){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### ------- MA Mike funcitons for ITE_observatinoal_simulation.R -------------
+
+
+
+calculate_ITE_median <- function(data){
+  # data <- train
+  
+  # from the observed patient characteristics determine the latent value
+  
+  
+  # NN outputs (CS, LS, theta') at the observed values (T=0)
+  h_params_obs <- param_model(data$dat.tf)
+  
+  # combine outputs to the transformation function
+  h_obs <- construct_h(t_i = data$dat.tf, h_params = h_params_obs)
+  
+  # this is the cut point for the Treatment (X4), it is not used because we will intervene on this variable
+  # h_obs$h_ord_vars
+  
+  # these are the latent values for the continuous variables (X1, X2, X3, X5, X6, X7 (outcome, not used))
+  # h_obs$h_cont_vars
+  
+  ### Note that we only use the latent values for the observed patient characteristics
+  ### (X1, X2, X3, X5, X6) , where X5 and X6 depended on the treatment received (here T=0), 
+  ### the received treatment was considered when h was constructed with construct_h
+  ### because I assume that the patients were not yet treated, all is constructed with T=0
+  
+  ### in ITE estimation, the outcome is not known already, we only use the patient characteristics
+  
+  
+  # potential outcome for T=0 (not treated)
+  
+  # h_obs$h_cont_vars
+  
+  ######## ITE as difference of median of Potential Outcomes
+  
+  # estimate the variables under Control and Treatment (last variable Y is the median of P(Y|X, T=0) and P(Y|X, T=1))
+  outcome_ct <- do_dag_struct_ITE_obs_sim(param_model, train$A, h_obs$h_combined, 
+                                          doX = c(NA, NA, NA, 0, NA, NA, NA), 
+                                          num_samples=dim(h_obs$h_cont_vars)[1])
+  y_obsZ_ct <- as.numeric(outcome_ct[, 7])
+  
+  outcome_tx <- do_dag_struct_ITE_obs_sim(param_model, train$A, h_obs$h_combined, 
+                                          doX = c(NA, NA, NA, 1, NA, NA, NA), 
+                                          num_samples=dim(h_obs$h_cont_vars)[1])
+  y_obsZ_tx <- as.numeric(outcome_tx[, 7])
+  
+  ITE_obsZ_pred <- y_obsZ_tx - y_obsZ_ct
+  # plot(ITE_obsZ_pred, data$simulated_full_data$ITE_true)
+  
+  
+  ######## ITE as difference of Potential Outcomes at observed latent values
+  # yields same ITE as with median when transformation function for Y in DGP is linear
+  
+  # i = 7  # target node Y (X7)
+  # 
+  # # generate samples for target node under T=0 and T=1 with the observed latent value for Y
+  # ts_ct = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed = h_obs$h_combined,
+                                                    # doX = c(NA, NA, NA, 0, NA, NA, NA), i, parents=outcome_ct)
+  # ts_tx = sample_from_target_MAF_struct_ITE_obs_sim(param_model,  latent_observed = h_obs,
+  #                                                   doX = c(NA, NA, NA, 1, NA, NA, NA), i, parents=outcome_tx)
+  # 
+  # ITE_obsZ_pred <- as.numeric(ts_tx) - as.numeric(ts_ct)
+  
+  # plot(as.numeric(ts_ct), as.numeric(outcome_ct[, 7]))
+  
+  i = 7  # target node Y (X7)
+  
+  # set column 7 of h_obs to 0 (median of latent distribution) 
+  
+  # Step 1: Convert tensor to R matrix
+  h_mat <- as.matrix(h_obs$h_combined)
+  
+  # Step 2: Set last column to 0
+  h_mat[, ncol(h_mat)] <- 0
+  
+  # Step 3: Convert back to TensorFlow tensor
+  h_obs_y_median <- tf$convert_to_tensor(h_mat, dtype = tf$float32)
+  
+  
+  # generate samples for target node under T=0 and T=1 with the median latent value for Y
+  outcome_ct_median = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed = h_obs_y_median, 
+                                                    doX = c(NA, NA, NA, 0, NA, NA, NA), node=i, parents=outcome_ct)
+  outcome_tx_median = sample_from_target_MAF_struct_ITE_obs_sim(param_model,  latent_observed = h_obs_y_median,
+                                                    doX = c(NA, NA, NA, 1, NA, NA, NA), node=i, parents=outcome_tx)
+  
+  ITE_median_pred <- as.numeric(outcome_tx_median) - as.numeric(outcome_ct_median)
+  
+  # plot(ITE_median_pred, ITE_obsZ_pred)
+  
+  data$simulated_full_data <- data$simulated_full_data %>%
+    dplyr::mutate(ITE_median_pred = ITE_median_pred,
+                  ITE_obsZ_pred = ITE_obsZ_pred)
+  
+  return(list(
+    outcome_ct = outcome_ct,             # variables at obsZ under Control (T=0)
+    outcome_tx = outcome_tx,             # variables at obsZ under Treatment (T=1)
+    outcome_ct_median = outcome_ct_median, # only Y at obsZ under Control (T=0) with median latent value
+    outcome_tx_median = outcome_tx_median, # only Y at obsZ under Treatment (T=1) with median latent value
+    ITE_median_pred = ITE_median_pred,
+    ITE_obsZ_pred = ITE_obsZ_pred,
+    data = data,
+    latent_obs = h_obs$h_combined # latent value observed (for Treatment (X4) this is just the cut-point)
+    
+  ))
+  
+  
+}
+
+
+
+
+
+
+construct_h <- function (t_i, h_params){
+  
+  #t_i <- data$dat.tf   # original data x1, x2, x3 for each obs
+  #h_params = h_params_obs    # NN outputs (CS, LS, theta') for each obs
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  # from the last dimension of h_params the first entry is h_cs1
+  # the second to |X|+1 are the LS
+  # the 2+|X|+1 to the end is H_I
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  ### Continiuous dimensions
+  #### At least one continuous dimension exits
+  if (length(cont_dims) != 0){
+    
+    # inputs in h_dag_extra:
+    # data=(40000, 3), 
+    # theta=(40000, 3, 20), k_min=(3), k_max=(3))
+    
+    # creates the value of the Bernstein at each observation
+    # and current parameters: output shape=(40000, 3)
+    # h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims])
+    h_I = h_dag_extra(tf$gather(t_i, as.integer(cont_dims-1L), axis = 1L), 
+                      tf$gather(theta, as.integer(cont_dims-1L), axis = 1L)[,,1:len_theta,drop=FALSE],
+                      tf$gather(k_min, as.integer(cont_dims-1L)),
+                      tf$gather(k_max, as.integer(cont_dims-1L)))
+    
+    
+    # adding the intercepts and shifts: results in shape=(40000, 3)
+    # basically the estimated value of the latent variable
+    h_cont_vars = h_I + tf$gather(h_LS, as.integer(cont_dims-1L), axis = 1L) + 
+      tf$gather(h_CS, as.integer(cont_dims-1L), axis = 1L)
+    
+    
+  }
+  
+  ### Ordinal dimensions
+  if (length(cont_ord) != 0){
+    B = tf$shape(t_i)[1]
+    for (col in cont_ord){
+      # col=4
+      # nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
+      nol = tf$cast(k_max[col], tf$int32) # Number of cut-points in respective dimension (binary encoded)
+      
+      theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+      
+      
+      h_ord_vars = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+    }
+  }
+  
+  
+  
+  # combine continuous and ordinal variables to tensor according to data_type = c( "c" "c" "c" "o" "c" "c" "c")
+  
+  # Split the continuous tensor before and after the ordinal variable
+  h_cont_before = h_cont_vars[, 1:3]  # columns 0, 1, 2
+  h_cont_after = h_cont_vars[, 4:6]   # columns 3, 4, 5
+  
+  # Concatenate in the order: c c c o c c c
+  h_combined <- tf$concat(list(h_cont_before, h_ord_vars, h_cont_after), axis = 1L)
+  
+  
+  ### DEBUG 
+  #if (sum(is.infinite(log_lik$numpy())) > 0){
+  #  print("Hall")
+  #}
+  return (list(
+    h_cont_vars = h_cont_vars, 
+    h_ord_vars = h_ord_vars,
+    h_combined = h_combined))
+}
+
+
+
+
+
+
+
+
+
+do_dag_struct_ITE_obs_sim = function(param_model, MA, latent_observed, doX = c(NA, NA, NA, 0, NA, NA, NA), num_samples=1042){
+  num_samples = as.integer(num_samples)
+  # MA <- train$A
+  
+  # observed latent variables
+  # latent_observed <- h_obs$h_combined
+  
+  N = length(doX) #NUmber of nodes
+  
+  #### Checking the input #####
+  stopifnot(is_upper_triangular(MA)) #MA needs to be upper triangular
+  stopifnot(param_model$input$shape[2L] == N) #Same number of variables
+  stopifnot(nrow(MA) == N)           #Same number of variables
+  stopifnot(sum(is.na(doX)) >= N-1) #Currently only one Variable with do(might also work with more but not tested)
+  
+  
+  # if doX contains 0 at index 4 then, get the samples for T=0
+  # if (doX[4] == 0) {
+  #   latent_observed
+  #   sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed, i, s)
+  # }
+  
+  
+  # Looping over the variables assuming causal ordering
+  #Sampling (or replacing with do) of the current variable x
+  xl = list() 
+  s = tf$ones(c(num_samples, N))
+  for (i in 1:N){
+    # i = 7
+    ts = NA
+    parents = which(MA[,i] != "0")
+    if (length(parents) == 0) { #Root node?
+      ones = tf$ones(shape=c(num_samples,1L),dtype=tf$float32)
+      if(is.na(doX[i])){ #No do ==> replace with samples (conditioned on 1)
+        ts = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed, doX, i, s)
+      } else{
+        ts = doX[i] * ones #replace with do
+      }
+    } else { #No root node ==> the parents are present 
+      if(is.na(doX[i])){ #No do ==> replace with samples (conditioned on 1)
+        ts = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed, doX, i, s)
+        if (is.na(doX[4])){
+          cat("Attention: Treatment (X4) is NA, but has to be specified for ITE")
+        }
+      } else{ #Replace with do
+        ones = tf$ones(shape=c(num_samples,1L),dtype=tf$float32)
+        ts = doX[i] * ones #replace with do
+        
+      }
+    }
+    #We want to add the samples to the ith column i.e. s[,i,drop=FALSE] = ts 
+    mask <- tf$one_hot(indices = as.integer(i - 1L), depth = tf$shape(s)[2], on_value = 1.0, off_value = 0.0, dtype = tf$float32)
+    # Adjust 'ts' to have the same second dimension as 's'
+    ts_expanded <- tf$broadcast_to(ts, tf$shape(s))
+    # Subtract the i-th column from 's' and add the new values
+    s <- s - mask + ts_expanded * mask
+  }
+  return(s)
+}
+
+
+
+
+
+sample_from_target_MAF_struct_ITE_obs_sim = function(param_model, latent_observed, doX, node, parents){
+  DEBUG_NO_EXTRA = FALSE
+  # parents = s
+  # node = 7
+  
+  
+  # if no parents, then h_params is model output for x1=1, x2=1, x3=1
+  h_params = param_model(parents)
+  
+  # Extracting the CS & LS for each Sample and Variable
+  h_cs <- h_params[,,1, drop = FALSE]
+  h_ls <- h_params[,,2, drop = FALSE]
+  
+  # Extracting the theta' parameters and convert to (increasing) theta
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  theta = to_theta3(theta_tilde)
+  h_LS = tf$squeeze(h_ls, axis=-1L)
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  k_min <- k_constant(global_min)
+  k_max <- k_constant(global_max)
+  
+  if(node %in% which(data_type == 'o')) {
+    B = tf$shape(h_cs)[1]
+    nol = tf$cast(k_max[node], tf$int32) # 1 cut-point (binary encoded)
+    # theta_ord = theta[,node,1:nol,drop=TRUE] # Intercept
+    # h = theta_ord + h_LS[,node, drop=FALSE] + h_CS[,node, drop=FALSE]
+    
+    # neg_inf = tf$fill(c(B,1L), -Inf)
+    # pos_inf = tf$fill(c(B,1L), +Inf)
+    # h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+    # logistic_cdf_values = logistic_cdf(h_with_inf)
+    # #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+    # cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+    # samples <- tf$random$categorical(logits = tf$math$log(cdf_diffs), num_samples = 1L)
+    
+    # set Treatment to 0 if doX[4] is 0
+    if (doX[4] == 0) {
+      # generate tensor of dim shape=(B, 1) with all values at 0
+      samples <- tf$zeros(shape = c(B, 1L), dtype = tf$float32)
+      
+    } else if (doX[4] == 1) { # doX[4] == 1 means Treatment = 1
+      # generate tensor of dim shape=(B, 1) with all values at 1
+      samples <- tf$ones(shape = c(B, 1L), dtype = tf$float32)
+      
+    } else {
+      stop("doX[4] must be 0, 1")
+    }
+    return(samples)
+    # Picking the observed cdf_diff entry
+  } else {
+    #h_0_old =  tf$expand_dims(h_dag(L_START, theta), axis=-1L)
+    #h_1 = tf$expand_dims(h_dag(R_START, theta), axis=-1L)
+    
+    # h_dag returns the intercept h (single value) at 0 and 1
+    h_0 =  h_LS + h_CS + h_dag(L_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(L_START, theta), axis=-1L)
+    h_1 =  h_LS + h_CS + h_dag(R_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(R_START, theta), axis=-1L)
+    # if (DEBUG_NO_EXTRA){
+    #   s = sample_logistics_within_bounds(h_0$numpy(), h_1$numpy())
+    #   latent_sample = tf$constant(s)
+    #   stop("Not IMplemented") #latent_sample = latent_dist$sample(theta_tilde$shape[1])
+    # } else { #The normal case allowing extrapolations
+    #   latent_sample = sample_standard_logistic(parents$shape)
+    # }
+    #ddd = target_sample$numpy() #hist(ddd[,1],100)
+    
+    #t_i = tf$ones_like(h_LS) *0.5
+    #h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS)
+    #h_dag_extra(t_i, theta)
+    # h_dag_extra_struc(target_sample, theta, shift, k_min, k_max) - latent_sample
+    
+    # We want to know for which t_i, h(t_i) is equal to the latent_sample
+    # h(t_i) = rlogis()
+    
+    # for this we define function f(t_i) that is zero when the observation t_i fulfills the condition:
+    # f(t_i) = h(t_i) - rlogis() == 0
+    
+    # for all explanatory variables, use the observed latent sample,
+    # else (for the outcome Y) use the latent value 0 (median)
+    
+    
+    # if(node !=length(doX)){
+    #   latent_sample = latent_observed[, node, drop=FALSE]
+    # } else {
+    #   latent_sample = tf$zeros(shape = c(B, 1L), dtype = tf$float32) # median of logistic distribution
+    # }
+    
+
+    latent_sample = latent_observed    #[, node, drop=FALSE]
+
+    
+    
+    
+    
+    object_fkt = function(t_i){
+      return(h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS, k_min, k_max) - latent_sample)
+    }
+    #object_fkt(t_i)
+    #shape = tf$shape(parents)[1]
+    #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -1E5*tf$ones(c(shape,1L)), high = 1E5*tf$ones(c(shape,1L)))$estimated_root
+    #TODO better checking
+    
+    # find the root of f(t_i) = h(t_i) - rlogis() == 0, those samples are the target samples
+    target_sample = tfp$math$find_root_chandrupatla(object_fkt)$estimated_root
+    #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -10000., high = 10000.)$estimated_root
+    #wtfness = object_fkt(target_sample)$numpy()
+    #summary(wtfness)
+    
+    
+  
+
+    # Manuly calculating the inverse for the extrapolated samples
+    ## smaller than h_0
+    l = latent_sample#tf$expand_dims(latent_sample, -1L)
+
+    # check if the latent sample would be below h_0 (needs extrapolation)
+    mask <- tf$math$less_equal(l, h_0)
+    #cat(paste0('~~~ sample_from_target  Fraction of extrapolated samples < 0 : %f \n', tf$reduce_mean(tf$cast(mask, tf$float32))))
+    #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
+    slope0 <- h_dag_dash(L_START, theta)#tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L)
+
+    target_sample = tf$where(mask,
+                             ((l-h_0)/slope0)*(k_max - k_min) + k_min
+                             ,target_sample)
+
+    ## larger than h_1
+    mask <- tf$math$greater_equal(l, h_1)
+    #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
+    slope1<- h_dag_dash(R_START, theta)
+
+    target_sample = tf$where(mask,
+                             (((l-h_1)/slope1) + 1.0)*(k_max - k_min) + k_min,
+                             target_sample)
+    cat(paste0('sample_from_target Fraction of extrapolated samples > 1 : %f \n', tf$reduce_mean(tf$cast(mask, tf$float32))))
+    return(target_sample[,node, drop=FALSE])
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 
+# 
+# 
+# sample_potential_outcomes = function(param_model, latent_obs, doX = c(NA, NA, NA, 0, NA, NA, NA), num_samples=1042){
+#   
+#   num_samples = dim(h_obs$h_cont_vars)[1]
+#   N = dim(MA)[2] #Number of variables
+#   #Sampling (or replacing with do) of the current variable x
+#   xl = list() 
+#   s = tf$ones(c(num_samples, N))
+#   
+#   s = tf$ones(c(num_samples))
+#   sample_potential_outcomes_MAF(param_model, h_obs, i, s)
+#   
+#   for (i in 1:N){
+#     # i = 1
+#     ts = NA
+#     parents = which(MA[,i] != "0")
+#     if (length(parents) == 0) { #Root node?
+#       ones = tf$ones(shape=c(num_samples,1L),dtype=tf$float32)
+#       if(is.na(doX[i])){ #No do ==> replace with samples (conditioned on 1)
+#         ts = sample_potential_outcomes_MAF(param_model, h_obs, i, s)
+#       } else{
+#         ts = doX[i] * ones #replace with do
+#       }
+#     } else { #No root node ==> the parents are present 
+#       if(is.na(doX[i])){ #No do ==> replace with samples (conditioned on 1)
+#         ts = sample_from_target_MAF_struct_ITE_observational(param_model, i, s)
+#       } else{ #Replace with do
+#         ones = tf$ones(shape=c(num_samples,1L),dtype=tf$float32) 
+#         ts = doX[i] * ones #replace with do
+#       }
+#     }
+#     #We want to add the samples to the ith column i.e. s[,i,drop=FALSE] = ts 
+#     mask <- tf$one_hot(indices = as.integer(i - 1L), depth = tf$shape(s)[2], on_value = 1.0, off_value = 0.0, dtype = tf$float32)
+#     # Adjust 'ts' to have the same second dimension as 's'
+#     ts_expanded <- tf$broadcast_to(ts, tf$shape(s))
+#     # Subtract the i-th column from 's' and add the new values
+#     s <- s - mask + ts_expanded * mask
+#   }
+#   return(s)
+# }
+# 
+# 
+
+# 
+# sample_potential_outcomes_MAF = function(param_model, node, h_obs, parents){
+#   DEBUG_NO_EXTRA = FALSE
+#   
+#   # h_params <- h_params_obs
+#   # parents = s
+#   # node = 1
+#   
+#   # # if no parents, then h_params is model output for x1=1, x2=1, x3=1
+#   # h_params = param_model(parents)
+#   # 
+#   # # Extracting the CS & LS for each Sample and Variable
+#   # h_cs <- h_params[,,1, drop = FALSE]
+#   # h_ls <- h_params[,,2, drop = FALSE]
+#   # 
+#   # # Extracting the theta' parameters and convert to (increasing) theta
+#   # theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+#   # theta = to_theta3(theta_tilde)
+#   # h_LS = tf$squeeze(h_ls, axis=-1L)
+#   # h_CS = tf$squeeze(h_cs, axis=-1L)
+#   
+#   # observed latent values for T=0
+#   # h_obs$h_combined
+#   
+#   
+#   k_min <- k_constant(global_min)
+#   k_max <- k_constant(global_max)
+#   
+#   if(node %in% which(data_type == 'o')) {
+#     B = tf$shape(h_cs)[1]
+#     nol = tf$cast(k_max[node], tf$int32) # 1 cut-point (binary encoded)
+#     theta_ord = theta[,node,1:nol,drop=TRUE] # Intercept
+#     h = theta_ord + h_LS[,node, drop=FALSE] + h_CS[,node, drop=FALSE]
+#     neg_inf = tf$fill(c(B,1L), -Inf)
+#     pos_inf = tf$fill(c(B,1L), +Inf)
+#     h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
+#     logistic_cdf_values = logistic_cdf(h_with_inf)
+#     #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
+#     cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
+#     samples <- tf$random$categorical(logits = tf$math$log(cdf_diffs), num_samples = 1L)
+#     samples = tf$cast(samples * 1.0 + 1, dtype='float32')
+#     return(samples)
+#     # Picking the observed cdf_diff entry
+#   } else {
+#     #h_0_old =  tf$expand_dims(h_dag(L_START, theta), axis=-1L)
+#     #h_1 = tf$expand_dims(h_dag(R_START, theta), axis=-1L)
+#     
+#     # h_dag returns the intercept h (single value) at 0 and 1
+#     # h_0 =  h_LS + h_CS + h_dag(L_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(L_START, theta), axis=-1L)
+#     # h_1 =  h_LS + h_CS + h_dag(R_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(R_START, theta), axis=-1L)
+#     # if (DEBUG_NO_EXTRA){
+#     #   s = sample_logistics_within_bounds(h_0$numpy(), h_1$numpy())
+#     #   latent_sample = tf$constant(s)
+#     #   stop("Not IMplemented") #latent_sample = latent_dist$sample(theta_tilde$shape[1])
+#     # } else { #The normal case allowing extrapolations
+#     #   latent_sample = sample_standard_logistic(parents$shape)
+#     # }
+#     latent_sample <- h_obs$h_combined[, node, drop=FALSE]
+#     #ddd = target_sample$numpy() #hist(ddd[,1],100)
+#     
+#     #t_i = tf$ones_like(h_LS) *0.5
+#     #h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS)
+#     #h_dag_extra(t_i, theta)
+#     # h_dag_extra_struc(target_sample, theta, shift, k_min, k_max) - latent_sample
+#     
+#     # We want to know for which t_i, h(t_i) is equal to the latent_sample
+#     # h(t_i) = rlogis()
+#     
+#     # for this we define function f(t_i) that is zero when the observation t_i fulfills the condition:
+#     # f(t_i) = h(t_i) - rlogis() == 0
+#     object_fkt = function(t_i){
+#       return(h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS, k_min, k_max) - latent_sample)
+#     }
+#     #object_fkt(t_i)
+#     #shape = tf$shape(parents)[1]
+#     #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -1E5*tf$ones(c(shape,1L)), high = 1E5*tf$ones(c(shape,1L)))$estimated_root
+#     #TODO better checking
+#     
+#     # find the root of f(t_i) = h(t_i) - rlogis() == 0, those samples are the target samples
+#     target_sample = tfp$math$find_root_chandrupatla(object_fkt)$estimated_root
+#     #target_sample = tfp$math$find_root_chandrupatla(object_fkt, low = -10000., high = 10000.)$estimated_root
+#     #wtfness = object_fkt(target_sample)$numpy()
+#     #summary(wtfness)
+#     
+#     
+#     # Manuly calculating the inverse for the extrapolated samples
+#     ## smaller than h_0
+#     l = latent_sample#tf$expand_dims(latent_sample, -1L)
+#     mask <- tf$math$less_equal(l, h_0)
+#     #cat(paste0('~~~ sample_from_target  Fraction of extrapolated samples < 0 : %f \n', tf$reduce_mean(tf$cast(mask, tf$float32))))
+#     #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
+#     slope0 <- h_dag_dash(L_START, theta)#tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L)
+#     
+#     target_sample = tf$where(mask,
+#                              ((l-h_0)/slope0)*(k_max - k_min) + k_min
+#                              ,target_sample)
+#     
+#     ## larger than h_1
+#     mask <- tf$math$greater_equal(l, h_1)
+#     #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
+#     slope1<- h_dag_dash(R_START, theta)
+#     
+#     target_sample = tf$where(mask,
+#                              (((l-h_1)/slope1) + 1.0)*(k_max - k_min) + k_min,
+#                              target_sample)
+#     cat(paste0('sample_from_target Fraction of extrapolated samples > 1 : %f \n', tf$reduce_mean(tf$cast(mask, tf$float32))))
+#     return(target_sample[,node, drop=FALSE])
+#   }
+# }
+
+
+
+
+
+# Function to calculate ATE (difference in means) for continuous outcomes
+calc.ATE.Continuous <- function(data) {
+  data <- as.data.frame(data)
+  
+  # Mean outcomes in treated and control
+  mean1 <- mean(data$Y[data$Tr == 1])
+  mean0 <- mean(data$Y[data$Tr == 0])
+  
+  # ATE
+  ATE <- mean1 - mean0
+  
+  # Standard error for difference in means
+  n1 <- sum(data$Tr == 1)
+  n0 <- sum(data$Tr == 0)
+  sd1 <- sd(data$Y[data$Tr == 1])
+  sd0 <- sd(data$Y[data$Tr == 0])
+  se <- sqrt((sd1^2 / n1) + (sd0^2 / n0))
+  
+  # 95% Confidence Interval
+  z <- qnorm(0.975)
+  ATE.lb <- ATE - z * se
+  ATE.ub <- ATE + z * se
+  
+  return(data.frame(
+    ATE = ATE,
+    ATE.lb = ATE.lb,
+    ATE.ub = ATE.ub,
+    n.total = nrow(data),
+    n.tr = n1,
+    n.ct = n0
+  ))
+}
+
+
+# Function to create the CATE vs ITE group plot
+plot_CATE_vs_ITE_group <- function(dev.data, val.data) {
+  data <- rbind(
+    dev.data %>% mutate(sample = "derivation"),
+    val.data %>% mutate(sample = "validation")
+  )
+  
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2, position = position_dodge(width = 0.2)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+    scale_color_manual(
+      name = "Group",
+      labels = c("derivation" = "Training Data", "validation" = "Test Data"),
+      values = c("orange", "#36648B")
+    ) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    ylim(min(dev.data$ATE.lb) - 0.1, max(dev.data$ATE.ub) + 0.1) +
+    xlab("ITE Group") +
+    ylab("ATE (Difference in Means)") +
+    theme_minimal() +
+    theme(
+      legend.position = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
+

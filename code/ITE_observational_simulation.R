@@ -4,6 +4,8 @@ if (FALSE){
 }
 
 
+
+
 #### A mixture of discrete and continuous variables ####
 library(tensorflow)
 library(keras)
@@ -15,7 +17,7 @@ library(dplyr)
 
 
 #### For ITE
-# source('code/utils/ITE_utils.R')
+source('code/utils/ITE_utils.R')
 
 #### For TF
 source('code/utils/utils_tf.R')
@@ -59,218 +61,9 @@ print(paste0("Starting experiment ", fn))
 
 
 ###############################################################################
-# ITE in a simple RCT
+# DGP for ITE in observational setting
 ###############################################################################
 
-# 
-# 
-# ##### DGP ########
-# dgp <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123, 
-#                 p=2, p0=0, confounder=FALSE, main_effect = -0.85,
-#                 interaction_effect = 0.7) {
-#   #n_obs = 1e5 n_obs = 10
-#   set.seed(SEED)
-#   
-#   # Data simulation
-#   
-#   ## Case 1: continuous random variables
-#   
-#   # Define sample size
-#   n <- n_obs
-#   
-#   # Generate random binary treatment T
-#   Tr <- rbinom(n, size = 1, prob = 0.5)
-#   
-#   # p <- 2  # number of variables 
-#   
-#   # Define the mean vector (all zeros for simplicity)
-#   mu <- rep(0, p+p0)  # Mean vector of length p
-#   
-#   # Define the covariance matrix (compound symmetric for simplicity)
-#   rho <- 0.1  # Correlation coefficient
-#   Sigma <- matrix(rho, nrow = (p+p0), ncol = (p+p0))  # Start with all elements as rho
-#   diag(Sigma) <- 1  # Set diagonal elements to 1 (variances)
-#   
-#   # Generate n samples from the multivariate normal distribution
-#   data <- MASS::mvrnorm(n, mu = mu, Sigma = Sigma)
-#   colnames(data) <- paste0("X", 1:(p+p0))
-#   
-#   beta_0 <- 0.45
-#   beta_t <- main_effect # -0.85 default
-#   beta_X <- c(-0.5, 0.1, rep(0, p0))  # p0 variables with no effect on outcome
-#   beta_TX <- interaction_effect # 0.7 default
-#   
-#   if(confounder) {
-#     # Add use the first variable X1 as confounder to affect Tr
-#     Tr <- rbinom(n, size = 1, prob = plogis(0.5 * data[,1]))
-#   }
-#   
-#   # Calculate the linear predictor (logit)
-#   logit_Y <- beta_0 + beta_t * Tr + data %*% beta_X + (data[,1] * beta_TX) * Tr
-#   
-#   
-#   # Convert logit to probability of outcome
-#   Y_prob <- plogis(logit_Y)
-#   
-#   # Generate binary outcome Y based on the probability
-#   Y <- rbinom(n, size = 1, prob = Y_prob)
-#   
-#   # Potential outcome for treated and untreated
-#   Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + data[,1] * beta_TX)
-#   # Y1 <- plogis(beta_0 + beta_t + data %*% beta_X + data %*% beta_TX)
-#   Y0 <- plogis(beta_0 + data %*% beta_X)
-#   
-#   # Calculate the individual treatment effect
-#   ITE_true <- Y1 - Y0
-#   # summary(data)
-#   # sd(data[,1])
-#   # mean(data[,1])
-#   # 
-#   # data[,1] <- scale(data[,1])
-#   # data[,2] <- (data[,2]-mean(data[,2]))/sd(data[,2])
-#   
-#   # Combine all variables into a single data frame
-#   simulated_full_data <- data.frame(ID = 1:n, Y=Y, Treatment=Tr, data, Y1, Y0, ITE_true, Y_prob)
-#   
-#   # Data for testing ITE models
-#   simulated_data <- data.frame(ID =1:n, Y=Y, Treatment=Tr, Tr=Tr, data, ITE_true = ITE_true, Y_prob=Y_prob) %>% 
-#     # add Treatment variable Tr=Treatment
-#     mutate(Treatment = ifelse(Treatment==1,"Y", "N")) %>% 
-#     mutate(Treatment = factor(Treatment, levels = c("N", "Y")))
-#   
-#   
-#   set.seed(12345)
-#   test.data <- split_data(simulated_data, 1/2)
-#   test.compl.data <- remove_NA_data(test.data)
-#   
-#   
-#   # for two-model structure we only need the 2 patient specific variables (no Tr)
-#   A <- matrix(c(0, 0, 0, 1, 
-#                 0, 0, 0, 1,
-#                 0, 0, 0, 1,
-#                 0, 0, 0, 0), nrow = 4, ncol = 4, byrow = TRUE)
-#   
-#   # Full dataset
-#   dat.orig =  data.frame(x1 = simulated_full_data$Treatment, 
-#                          x2 = simulated_full_data$X1, 
-#                          x3 = simulated_full_data$X2, 
-#                          x4 = simulated_full_data$Y)
-#   dat_temp <- as.matrix(dat.orig)
-#   # dat_temp[,4] <- dat_temp[,4] + 1
-#   dat_temp[,c(1,4)] <- dat_temp[,c(1,4)] + 1
-#   dat.tf = tf$constant(as.matrix(dat_temp), dtype = 'float32')
-#   
-#   # train dataset
-#   dat.train <- data.frame(x1 = test.compl.data$data.dev$Tr, 
-#                           x2 = test.compl.data$data.dev$X1, 
-#                           x3 = test.compl.data$data.dev$X2, 
-#                           x4 = test.compl.data$data.dev$Y)
-#   dat_temp <- as.matrix(dat.train)
-#   # dat_temp[,4] <- dat_temp[,4] + 1
-#   dat_temp[,c(1,4)] <- dat_temp[,c(1,4)] + 1
-#   dat.train.tf = tf$constant(as.matrix(dat_temp), dtype = 'float32')
-#   
-#   dat.test <- data.frame(x1 = test.compl.data$data.val$Tr, 
-#                          x2 = test.compl.data$data.val$X1, 
-#                          x3 = test.compl.data$data.val$X2, 
-#                          x4 = test.compl.data$data.val$Y)
-#   dat_temp <- as.matrix(dat.test)
-#   # dat_temp[,4] <- dat_temp[,4] + 1
-#   dat_temp[,c(1,4)] <- dat_temp[,c(1,4)] + 1
-#   dat.test.tf = tf$constant(as.matrix(dat_temp), dtype = 'float32')
-#   
-#   
-#   q1 = c(1, 2)
-#   q2 = quantile(dat.orig[,2], probs = c(0.05, 0.95))
-#   q3 = quantile(dat.orig[,3], probs = c(0.05, 0.95))
-#   q4 = c(1, 2) #No Quantiles for ordinal data
-#   # q1 = quantile(dat.orig[,2], probs = c(0.05, 0.95)) 
-#   # q2 = quantile(dat.orig[,3], probs = c(0.05, 0.95))
-#   # q3 = c(0, 1) #No Quantiles for ordinal data
-#   
-#   
-#   return(list(
-#     df_orig=dat.tf, 
-#     df_R = dat.orig,
-#     min =  tf$reduce_min(dat.tf, axis=0L),
-#     max =  tf$reduce_max(dat.tf, axis=0L),
-#     min = tf$constant(c(q1[1], q2[1], q3[1], q4[1]), dtype = 'float32'),
-#     max = tf$constant(c(q1[2], q2[2], q3[2], q4[2]), dtype = 'float32'),
-#     
-#     # min = tf$constant(c(q1[1], q2[1], q3[1]), dtype = 'float32'),
-#     # max = tf$constant(c(q1[2], q2[2], q3[2]), dtype = 'float32'),
-#     type = c('o', 'c', 'c', 'o'),
-#     A=A,
-#     
-#     #train
-#     df_R_train = dat.train,
-#     df_orig_train = dat.train.tf,
-#     
-#     
-#     # df_orig_train_ct = dat.train.ct.tf,
-#     # df_R_train_ct = dat.train.ct,
-#     # 
-#     # df_orig_train_tx = dat.train.tx.tf,
-#     # df_R_train_tx = dat.train.tx,
-#     
-#     #test
-#     df_R_test = dat.test,
-#     df_orig_test = dat.test.tf,
-#     
-#     # df_orig_test_ct = dat.test.ct.tf,
-#     # df_R_test_ct = dat.test.ct,
-#     # 
-#     # df_orig_test_tx = dat.test.tx.tf,
-#     # df_R_test_tx = dat.test.tx,
-#     # 
-#     #full
-#     simulated_full_data = simulated_full_data,
-#     simulated_data = simulated_data,
-#     test.compl.data = test.compl.data,
-#     dgp_params = list(
-#       beta_0 = beta_0,
-#       beta_t = beta_t,
-#       beta_X = beta_X,
-#       beta_TX = beta_TX
-#     )
-#   ))
-# } 
-# 
-# 
-# 
-# 
-# 
-
-# n_obs <- 20000
-# 
-# # specify number of predictor variables
-# p <- 2
-# 
-# # specify number of variables without effect
-# p0 <- 0
-# 
-# 
-# dgp_data = dgp(n_obs, p=p, p0=p0, SEED=123, confounder=FALSE)
-# 
-# # percentage of patients with Y=1
-# mean(dgp_data$simulated_full_data$Y)
-# 
-# # percentage of patients with Y=1 in Control (train)
-# mean(dgp_data$test.compl.data$data.dev.ct$Y)
-# 
-# # percentage of patients with Y=1 in Treatment (train)
-# mean(dgp_data$test.compl.data$data.dev.tx$Y)
-# 
-# dgp_data$df_orig_test
-# 
-# dgp_data$simulated_full_data
-# 
-# boxplot(Y_prob ~ Y, data = dgp_data$simulated_full_data)
-
-
-
-
-#### new dgp for simulation (for choosing different scenarios)
 
 
 ##### DGP ########
@@ -353,6 +146,7 @@ dgp_simulation <- function(n_obs=20000,
     # under Tr = 1
     X5_tx <- 1/2.5 * (x_5_dash - beta15 * 1)
     
+    
   } else{
     X5 = rep(doX[5], n_obs)
   }
@@ -382,7 +176,7 @@ dgp_simulation <- function(n_obs=20000,
   
   
   
-  #### Y (X7): continuous outcome dependent on Tr, X2-X6 (with Tr interactions X3, X4)
+  #### Y (X7): continuous outcome dependent on Tr, X2-X6 (with Tr interactions X2, X3)
   
   data_X <- as.matrix(data.frame(X1 = data[,1], X2 = data[,2], X3 = data[,3], X5 = X5, X6 = X6))
   
@@ -413,18 +207,49 @@ dgp_simulation <- function(n_obs=20000,
     X7_tx <- 1/4.5 * (x_7_dash - logit_X7_tx)
     
     
+    ### ITE with median of potential outcomes (median X_7_dash is 0)
+    ITE_median <- (1/4.5 * (0 - logit_X7_tx)) - 
+      (1/4.5 * (0 - logit_X7_ct))
+    
+    
   } else{
     X7 = rep(doX[7], n_obs)
   }
   
   
-  # Calculate the individual treatment effect
+  # Calculate the individual treatment effect (with the effective potential outcome)
+  # however, in my example I assume that Y was not yet observed. Better compare estimate
+  # to ITE_median that was specified above
+  
   ITE_true <- X7_tx - X7_ct
+  
+  
+  
+  ### Note: ITE_true (with observed Z_i) and ITE_median (with Z_i = 0) are equal
+  ### in this simulation with additive shift (incl. interaction) because the
+  ### latent value cancels out when calculating the ITE:
+  
+  # Y(0) = 1/4.5 * (Z - logit_X7_ct)
+  # Y(1) = 1/4.5 * (Z - logit_X7_tx)
+  # ITE = Y(1) - Y(0) = 1/4.5 * (Z - logit_X7_tx) - 1/4.5 * (Z - logit_X7_ct)
+  # ITE = 1/4.5 * (Z - logit_X7_tx - Z + logit_X7_ct)
+  # ITE = 1/4.5 * (logit_X7_tx + logit_X7_ct)
+  
+  ### Therefore in this setting the latent variable observed for the outcome does 
+  ### not matter, but in other settings with more complex dgp it might be df
+  
+  # plot(density((1/4.5 * (0 - logit_X7_tx))))
+  # lines(density(X7_tx))
+  # 
+  # plot(density((1/4.5 * (0 - logit_X7_ct))))
+  # lines(density(X7_ct))
+  # 
+  # 
+  # plot(density(ITE_true), main = "ITE True vs ITE Median", lwd=2)
+  # lines(density(ITE_median), col = 'red', lty = 3)
+  
 
-  
-  
-  
-  
+
   # Combine all variables into a single data frame (observed)
   simulated_full_data <- data.frame(X1 = data_X[,1],
                                     X2 = data_X[,2],
@@ -433,7 +258,8 @@ dgp_simulation <- function(n_obs=20000,
                                     X5 = X5,
                                     X6 = X6,
                                     Y=X7, 
-                                    ITE_true)
+                                    ITE_true = ITE_true, 
+                                    ITE_median = ITE_median)
   
   # Data for testing ITE models
   # simulated_data <- data.frame(ID =1:n, Y=X7, Tr=Tr, Treatment=Tr, data_X, ITE_true = ITE_true) %>% 
@@ -540,8 +366,8 @@ dgp_simulation <- function(n_obs=20000,
 
 
 train <- dgp_simulation(n_obs = 10000, SEED = 123, rho = 0.1, doX = c(NA, NA, NA, NA, NA, NA, NA))
-(global_min = train$min)
-(global_max = train$max)
+global_min = train$min
+global_max = train$max
 data_type = train$type
 
 ## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 1,2
@@ -634,8 +460,8 @@ fnRdata = paste0(fn, '_E', num_epochs, 'best_model.RData')   #
 if (file.exists(fnh5)) {
   param_model$load_weights(fnh5)
   load(fnRdata)
-  (global_min = min)
-  (global_max = min)
+  # (global_min = min)
+  # (global_max = min)
 } else {
   if (FALSE) { ### Full Training w/o diagnostics
     hist = param_model$fit(x = train$dat.tf, y = train$dat.tf, epochs = 200L, verbose = TRUE,
@@ -804,10 +630,18 @@ if (TRUE){
   df = rbind(df, data.frame(vals=d_tx[,7], type='DGP', X=7, L='L2'))
   
   
-  p = ggplot() +
-    geom_histogram(data = df, 
-                   aes(x=vals, col=type, fill=type, y=..density..), 
-                   position = "identity", alpha=0.2) +
+  
+  p <- ggplot() +
+    # For all X except 4: show as histogram
+    geom_histogram(data = subset(df, X != 4), 
+                   aes(x = vals, col = type, fill = type, y = ..density..), 
+                   position = "identity", alpha = 0.2, bins = 30) +
+    
+    # For X == 4: show as bar plot (binary treatment variable)
+    geom_bar(data = subset(df, X == 4),
+             aes(x = vals, y = ..prop.. , col = type, fill = type),
+             position = "dodge", alpha = 0.4, size = 0.5) +
+    
     facet_grid(L ~ X, scales = 'free_y',
                labeller = as_labeller(c(
                  '1' = 'X1', '2' = 'X2', '3' = 'X3',
@@ -817,14 +651,15 @@ if (TRUE){
                  'L1' = 'Do X4 = 0',
                  'L2' = 'Do X4 = 1'
                ))) +
-    labs(y = "Density", x = "Values") +
+    labs(y = "Density / Probability", x = "Values") +
     theme_minimal() +
     theme(
       legend.title = element_blank(),
       legend.position = c(0.17, 0.25),
       legend.background = element_rect(fill = "white", colour = "white")
     ) +
-    coord_cartesian(ylim = c(0, 2), xlim = NULL)
+    coord_cartesian(ylim = c(0, 1), xlim = NULL)
+  
   p
   
   
@@ -845,14 +680,15 @@ if (TRUE){
 
 # X5 under Tr = 0 and Tr = 1 (estimated)
 par(mfrow = c(1,1))
-plot(density(s_do_fitted_ct[,5]), main = "X5 under Tr=0 and Tr=1", xlab = "X5", ylab = "Density")
+plot(density(s_do_fitted_ct[,5]), main = "X5 under Tr=0 and Tr=1", xlab = "X5", ylab = "Density", ylim=c(0,0.7))
 lines(density(s_do_fitted_tx[,5]), col = 'red')
+
 
 # X5 under Tr = 0 and Tr = 1 (dgp)
 lines(density(d_ct[,5]), xlab = "X5", lty= 2)
 lines(density(d_tx[,5]), col = 'red', lty=2)
 legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", "Tr=1 (DGP)"),
-       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8)
+       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8, bty = 'n')
 
 
 # X6 under Tr = 0 and Tr = 1 (estimated)
@@ -863,7 +699,7 @@ lines(density(s_do_fitted_tx[,6]), col = 'red')
 lines(density(d_ct[,6]), xlab = "X6", lty= 2)
 lines(density(d_tx[,6]), col = 'red', lty=2)
 legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", "Tr=1 (DGP)"),
-       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8)
+       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8, bty = 'n')
 
 
 # X7 under Tr = 0 and Tr = 1 (estimated)
@@ -874,7 +710,7 @@ lines(density(s_do_fitted_tx[,7]), col = 'red')
 lines(density(d_ct[,7]), xlab = "X7", lty= 2)
 lines(density(d_tx[,7]), col = 'red', lty=2)
 legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", "Tr=1 (DGP)"),
-       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8)
+       col=c("black", "red", "black", "red"), lty=c(1, 1, 2, 2), cex=0.8, bty = 'n')
 
 
 
@@ -885,7 +721,7 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 # Estimate ITE
 ############################
 
-# these were the observaitonal variables used to fit the model
+# A scenario of observaitonal variables used to fit the model, medical
 
 # | Variable | Meaning                                        | Type       | Role       |
 #   | -------- | ---------------------------------------------- | ---------- | ---------- |
@@ -896,6 +732,331 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 #   | X₅       | Body fat percentage                            | Continuous | Mediator   |
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
 #   | Y        | Cardiovascular risk score (after 6 months)       | Continuous | Outcome    |
+
+
+
+# another example, marketing.
+
+
+# | Variable | Description                                         | Role                              |
+#   | -------- | --------------------------------------------------- | --------------------------------- |
+#   | **T**    | Received marketing email campaign (1 = yes, 0 = no) | Binary treatment                  |
+#   | **X₁**   | Prior total spend (last 6 months)                   | Confounder (affects both T and Y) |
+#   | **X₂**   | Customer engagement score (website/app activity)    | Confounder (affects both T and Y) |
+#   | **X₃**   | Customer satisfaction score from recent survey      | Covariate (affects Y only)        |
+#   | **X₅**   | Time spent on website after email                   | Mediator (T → X₅ → Y and X₆)      |
+#   | **X₆**   | Number of product pages viewed                      | Downstream mediator (X₅ → X₆ → Y) |
+#   | **Y**    | Customer total spend in the next 30 days            | Outcome (continuous)              |
+  
+
+
+##############################
+
+### estimate ITE on test set with patients that received T=0 and T=1
+
+
+## Train ITE:
+
+# was generated with seed 123
+results.dev <- calculate_ITE_median(train)
+
+res.df.train <- results.dev$data$simulated_full_data
+
+
+
+## Test ITE:
+
+# generate similar as train but with seed = 1
+test <- dgp_simulation(n_obs = 10000, SEED = 1, rho = 0.1, doX = c(NA, NA, NA, NA, NA, NA, NA))
+
+results.val <- calculate_ITE_median(test)
+
+res.df.val <- results.val$data$simulated_full_data
+
+
+
+### Plot the results for the ITE based on Median Potential Y
+
+
+# density ITE (median)
+
+par(mfrow = c(1,2))
+plot(density(res.df.train$ITE_median), main = "ITE (median) Density Train", 
+     xlab = "ITE", ylab = "Density", ylim=c(0, 2))
+lines(density(res.df.train$ITE_median_pred), col = 'red')
+legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"), 
+       lty=1, cex=0.7, bty='n')
+
+plot(density(res.df.val$ITE_median), main = "ITE (median) Density Test",
+     xlab = "ITE", ylab = "Density", ylim=c(0, 2))
+lines(density(res.df.val$ITE_median_pred), col = 'red')
+legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"), 
+       lty=1, cex=0.7, bty='n')
+
+
+# scatterplot ITE_median vs. ITE_median_pred
+
+par(mfrow = c(1,2))
+plot(res.df.train$ITE_median, res.df.train$ITE_median_pred, 
+     main = "ITE Train: True vs. Predicted (median)", 
+     xlab = "ITE_median", ylab = "ITE_median_pred")
+abline(0, 1, col = 'red', lty = 2)
+
+plot(res.df.val$ITE_median, res.df.val$ITE_median_pred, 
+     main = "ITE Test: True vs. Predicted (median)", 
+     xlab = "ITE_median", ylab = "ITE_median_pred")
+abline(0, 1, col = 'red', lty = 2)
+
+
+
+# ITE (median) vs. cATE plot
+
+# STEP 1: Define bin breaks based on training data
+breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
+
+# STEP 2: Group training data and compute ATE per bin
+data.dev.grouped.ATE <- res.df.train %>% 
+  mutate(ITE.Group = cut(ITE_median_pred, breaks = breaks, include.lowest = TRUE)) %>%
+  filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Continuous(.x)) %>%
+  ungroup()
+
+# STEP 3: Group test data using same breaks
+data.val.grouped.ATE <- res.df.val %>% 
+  mutate(ITE.Group = cut(ITE_median_pred, breaks = breaks, include.lowest = TRUE)) %>%
+  filter(!is.na(ITE.Group)) %>%
+  group_by(ITE.Group) %>%
+  group_modify(~ calc.ATE.Continuous(.x)) %>%
+  ungroup()
+
+plot_CATE_vs_ITE_group(
+  dev.data = data.dev.grouped.ATE,
+  val.data = data.val.grouped.ATE)
+
+
+
+###  Note: as result we get 1) the ITE_median_pred which is uses the median for
+### the potential outcomes to calculate the ITE and we also get 2) ITE_obsZ_pred 
+### which was estimated, using the observed latent sample Z_i, this is used here
+### to validate  ITE_true vs. (ITE_obsZ_pred). 
+
+### Note: with linear h as in this DGP, ITE_obsZ_pred and ITE_median_pred
+### in the DGP are equal, but in the TRAM-DAG due to CI we will probably not have 
+### a straight h. I obesrved, that for the observed Latent variable, estimated ITEs are
+### quite off for low or high latent values. I assume that extrapolation 
+### is not ideal in some cases.
+
+
+# maybe check coloured for where the latent_obsZ was outside the 5% and 95% quantiles
+par(mfrow = c(1,2))
+plot(res.df.train$ITE_true , res.df.train$ITE_obsZ_pred, 
+     main = "ITE Train: True vs. Predicted (obsZ)", 
+     xlab = "ITE_true", ylab = "ITE_obsZ_pred")
+abline(0, 1, col = 'red', lty = 2)
+plot(res.df.train$ITE_median , res.df.train$ITE_median_pred,
+     main = "ITE Train: True vs. Predicted (median)", 
+     xlab = "ITE_true", ylab = "ITE_median_pred")
+abline(0, 1, col = 'red', lty = 2)
+
+
+
+
+h_y_tx = h_y_ct = h_X_tx = h_X_ct = h_params_X_tx = h_params_X_ct = xs = seq(-2,1.5,length.out=41)
+for (i in 1:length(xs)){
+  #i = 1
+  x = xs[i]
+  
+  # Varying y (x7) for control group
+  X_ct = tf$constant(c(0, 0, 0, 0, 0, 0, x), shape=c(1L,7L))
+  h_params_X_ct =   param_model(X_ct)
+  h_X_ct = as.numeric(construct_h(X_ct, h_params_X_ct )$h_combined)
+  h_y_ct[i] <- h_X_ct[7]
+  
+  # Varying y (x7) for treatment group
+  X_tx = tf$constant(c(0, 0, 0, 1, 0, 0, x), shape=c(1L,7L))
+  h_params_X_tx =   param_model(X_tx)
+  h_X_tx = as.numeric(construct_h(X_tx, h_params_X_tx )$h_combined)
+  h_y_tx[i] <- h_X_tx[7]
+  
+  
+}
+
+dgp_h_y <- function(y, Tr, data_X, 
+                    beta0, beta_t, beta_X, beta_TX) {
+  # Function to calculate h_y for varying y
+  h_y = y * 4.5 + beta0 + beta_t * Tr + data_X %*% beta_X + (data_X[2:3] %*% beta_TX) * Tr
+  return(h_y)
+}
+
+par(mfrow=c(1,1))
+plot(xs, h_y_tx, type='l', main='h_y for varying y', xlab='y', ylab='h_y', lwd=2)
+lines(xs, h_y_ct, col='blue', lwd=2)
+curve(dgp_h_y(y=x, Tr=0, data_X =c(0, 0, 0, 0, 0), 
+              beta0=0.45, beta_t=1.5, beta_X=c(-0.5, 0.1, 0.2, -0.6, 0.3) , beta_TX=c(-0.9, 0.7)), 
+      from=-3, to=3, add=TRUE, col='black', lty=2)
+curve(dgp_h_y(y=x, Tr=1, data_X =c(0, 0, 0, 0, 0), 
+              beta0=0.45, beta_t=1.5, beta_X=c(-0.5, 0.1, 0.2, -0.6, 0.3) , beta_TX=c(-0.9, 0.7)), 
+      from=-3, to=3, add=TRUE, col='blue', lty=2)
+legend("topleft", legend=c("h_y (Tr=1)", "h_y (Tr=0)", "DGP h_y (Tr=1)", "DGP h_y (Tr=0)"), 
+       col=c("black", "blue", "black", "blue"), lty=c(1, 1, 2, 2), cex=0.8, bty='n')
+
+
+
+
+### Trafos are not entirely parallel (but should be according to the DGP)
+
+
+
+### in the trafo h above, i see that it is not really linear between y_dash (-4.5, -1.5)
+check_latent <- as.numeric(results.dev$latent_obs[,7]) < -1.5 &
+  as.numeric(results.dev$latent_obs[,7]) > -4.5
+
+library(ggplot2)
+ggplot(data = results.dev$data$simulated_full_data, aes(x = ITE_true, y = ITE_obsZ_pred)) +
+  geom_point(aes(color = check_latent), alpha = 0.5) +
+  scale_color_manual(values = c("black", "red"), labels = c("Inside Quantiles", "Outside Quantiles")) +
+  labs(title = "Pred ITE Median vs. ITE ObsZ",
+       x = "ITE Median", y = "ITE ObsZ") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+
+
+ggplot(data = results.dev$data$simulated_full_data, aes(x = ITE_true, y = ITE_obsZ_pred)) +
+  geom_point(aes(color = as.numeric(results.dev$outcome_tx[,7])), alpha = 0.5) +
+  labs(title = "Pred ITE Median vs. ITE ObsZ",
+       x = "ITE Median", y = "ITE ObsZ") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+obs_latent_value <- as.numeric(results.dev$latent_obs[,7])
+
+ggplot(data = results.dev$data$simulated_full_data, aes(x = ITE_true, y = ITE_obsZ_pred)) +
+  geom_point(aes(color = obs_latent_value), alpha = 0.5) +
+  labs(title = "Pred ITE Median vs. ITE ObsZ",
+       x = "ITE Median", y = "ITE ObsZ") +
+  scale_color_gradient(low = "blue", high = "red", name = "Latent Value") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+h_y_tx = h_y_ct = h_X_tx = h_X_ct = h_params_X_tx = h_params_X_ct = xs = seq(-2,1.5,length.out=41)
+for (i in 1:length(xs)){
+  #i = 1
+  x = xs[i]
+  
+  # Varying y (x7) for control group
+  X_ct = tf$constant(c(0.5, 1, 1, 0, -0.5, 1, x), shape=c(1L,7L))
+  h_params_X_ct =   param_model(X_ct)
+  h_X_ct = as.numeric(construct_h(X_ct, h_params_X_ct )$h_combined)
+  h_y_ct[i] <- h_X_ct[7]
+  
+  # Varying y (x7) for treatment group
+  X_tx = tf$constant(c(0.5, 1, 1, 1, -0.5, 1, x), shape=c(1L,7L))
+  h_params_X_tx =   param_model(X_tx)
+  h_X_tx = as.numeric(construct_h(X_tx, h_params_X_tx )$h_combined)
+  h_y_tx[i] <- h_X_tx[7]
+  
+  
+}
+
+dgp_h_y <- function(y, Tr, data_X, 
+                    beta0, beta_t, beta_X, beta_TX) {
+  # Function to calculate h_y for varying y
+  h_y = y * 4.5 + beta0 + beta_t * Tr + data_X %*% beta_X + (data_X[2:3] %*% beta_TX) * Tr
+  return(h_y)
+}
+
+plot(xs, h_y_tx, type='l', main='h_y for varying y', xlab='y', ylab='h_y', lwd=2)
+lines(xs, h_y_ct, col='blue', lwd=2)
+curve(dgp_h_y(y=x, Tr=0, data_X =c(0.5, 1, 1, -0.5, 1), 
+              beta0=0.45, beta_t=1.5, beta_X=c(-0.5, 0.1, 0.2, -0.6, 0.3) , beta_TX=c(-0.9, 0.7)), 
+      from=-3, to=3, add=TRUE, col='blue', lty=2)
+curve(dgp_h_y(y=x, Tr=1, data_X =c(0.5, 1, 1, -0.5, 1), 
+              beta0=0.45, beta_t=1.5, beta_X=c(-0.5, 0.1, 0.2, -0.6, 0.3) , beta_TX=c(-0.9, 0.7)), 
+      from=-3, to=3, add=TRUE, col='black', lty=2)
+
+legend("topright", legend=c("h_y (Tr=1)", "h_y (Tr=0)", "DGP h_y (Tr=1)", "DGP h_y (Tr=0)"), 
+       col=c("black", "blue", "red", "blue"), lty=c(1, 1, 2, 2), cex=0.8, bty='n')
+
+
+
+
+
+
+x_dash <- rlogis(1000)
+par(mfrow = c(1,2))
+plot(density(tan((x_dash*1/7))))
+max(tan(x_dash*1/7))
+min(tan(x_dash*1/7))
+xx <- seq(-2, 2, by=0.01)
+plot(xx, 5*atan(xx))
+
+# my suggestion:
+## ITE_median_pred: for ITE prediction on new patients, who did not yet have an observed outcome
+## ITE_obsZ_pred: for patients who already had an observed outcome
+
+
+
+
+
+
+outside_quantiles <- as.numeric(results.dev$latent_obs[,7]) < quantile(as.numeric(results.dev$latent_obs[,7]), 0.1) |
+  as.numeric(results.dev$latent_obs[,7]) > quantile(as.numeric(results.dev$latent_obs[,7]), 0.9)
+# plot results.dev$data$simulated_full_data$ITE_median_pred vs results.dev$data$simulated_full_data$ITE_obsZ_pred,
+# colored where outside_quantiles with ggplot
+
+
+library(ggplot2)
+ggplot(data = results.dev$data$simulated_full_data, aes(x = ITE_true, y = ITE_obsZ_pred)) +
+  geom_point(aes(color = outside_quantiles), alpha = 0.5) +
+  scale_color_manual(values = c("black", "red"), labels = c("Inside Quantiles", "Outside Quantiles")) +
+  labs(title = "Pred ITE Median vs. ITE ObsZ",
+       x = "ITE Median", y = "ITE ObsZ") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+
+
+### in the trafo h above, i see that it is not really linear between y_dash (-4.5, -1.5)
+check_latent <- as.numeric(results.dev$latent_obs[,7]) < -1.5 &
+  as.numeric(results.dev$latent_obs[,7]) > -4.5
+
+library(ggplot2)
+ggplot(data = results.dev$data$simulated_full_data, aes(x = ITE_true, y = ITE_obsZ_pred)) +
+  geom_point(aes(color = check_latent), alpha = 0.5) +
+  scale_color_manual(values = c("black", "red"), labels = c("Inside Quantiles", "Outside Quantiles")) +
+  labs(title = "Pred ITE Median vs. ITE ObsZ",
+       x = "ITE Median", y = "ITE ObsZ") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+df <- data.frame(y_z_ct = as.numeric(results.dev$outcome_ct[,7]), y_z_tx = as.numeric(results.dev$outcome_tx[,7]),
+                 y_median_ct = as.numeric(results.dev$outcome_ct_median),
+                 y_median_tx = as.numeric(results.dev$outcome_tx_median))
+
+ggplot(data = df, aes(x = y_z_ct, y = y_median_ct)) +
+  geom_point(aes(color = outside_quantiles), alpha = 0.5) +
+  scale_color_manual(values = c("black", "red"), labels = c("Inside Quantiles", "Outside Quantiles")) +
+  #add line 0,1
+  geom_abline(slope = 1, intercept = 0, color = 'red', linetype = 'dashed') +
+  labs(title = "Outcome Ct: ObsZ vs. Median",
+       x = "Outcome Ct (ObsZ)", y = "Outcome Ct (Median)") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+
+
+
+
+
+
+
 
 
 # to calculate the ITE, i assume that we have new (unseen patients), with following characteristics recorded:
@@ -912,7 +1073,7 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 
 # we have this test data (new patients not yet treated Treatment=0): 
-test <- dgp_simulation(n_obs = 10000, SEED = 1, rho = 0.1, doX = c(NA, NA, NA, 0, NA, NA, NA))
+test2 <- dgp_simulation(n_obs = 10000, SEED = 1, rho = 0.1, doX = c(NA, NA, NA, 0, NA, NA, NA))
 
 # this is the full dataset
 test$simulated_full_data
@@ -925,125 +1086,95 @@ test$simulated_full_data
 # I estimate the ITE as the difference in 50% quantiles of Y under T=1 and T=0
 # ITE_i = Q50_i(T=1) - Q50_i(T=0)
 
-calculate_ITE_median <- function(data){
-  # data <- test
-  
-  # from the observed patient characteristics determine the latent value
+
+
+ITE_sampling <- calculate_ITE_median(test2)
+
 
   
-  # NN outputs (CS, LS, theta') at the observed values
-  h_params_obs <- param_model(data$dat.tf)
-  
-  # combine outputs to the transformation function
-  h_obs <- construct_h(t_i = data$dat.tf, h_params = h_params_obs)
-  
-  # this is the cut point for the Treatment (X4), it is not used because we will intervene on this variable
-  # h_obs$h_ord_vars
-  
-  # these are the latent values for the continuous variables (X1, X2, X3, X5, X6, X7 (outcome, not used))
-  # h_obs$h_cont_vars
-  
-  ### Note that we only use the latent values for the observed patient characteristics
-  ### (X1, X2, X3, X5, X6) , where X5 and X6 depended on the treatment received (here T=0), 
-  ### the received treatment was considered when h was constructed with construct_h
-  ### because I assume that the patients were not yet treated, all is constructed with T=0
-  
-  ### in ITE estimation, the outcome is not known already, we only 
-  
-  h_obs$h_cont_vars
-  
-  # prepare tensor for control
-  
-  # set data$dat.tf[,4] <- 0
   
   
   
-}
+### Plot the results for the ITE based on Median Potential Y
+
+
+# density ITE (median)
+
+
+par(mfrow = c(1,1))
+plot(density(ITE_sampling$data$simulated_full_data$ITE_median), main = "ITE (median) Density Train", 
+     xlab = "ITE", ylab = "Density", ylim=c(0, 2))
+lines(density(ITE_sampling$data$simulated_full_data$ITE_median_pred), col = 'red')
+legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"), 
+       lty=1, cex=0.7, bty='n')
 
 
 
 
-construct_h <- function (t_i, h_params){
+# scatterplot ITE_median vs. ITE_median_pred
 
-  #t_i <- data$dat.tf   # original data x1, x2, x3 for each obs
-  #h_params = h_params_obs    # NN outputs (CS, LS, theta') for each obs
-  k_min <- k_constant(global_min)
-  k_max <- k_constant(global_max)
-  
-  # from the last dimension of h_params the first entry is h_cs1
-  # the second to |X|+1 are the LS
-  # the 2+|X|+1 to the end is H_I
-  
-  # complex shifts for each observation
-  h_cs <- h_params[,,1, drop = FALSE]
-  
-  # linear shifts for each observation
-  h_ls <- h_params[,,2, drop = FALSE]
-  #LS
-  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
-  #CS
-  h_CS = tf$squeeze(h_cs, axis=-1L)
-  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
-  #Thetas for intercept -> to_theta3 to make them increasing
-  theta = to_theta3(theta_tilde)
-  
-  if (!exists('data_type')){ #Defaulting to all continuous 
-    cont_dims = 1:dim(theta_tilde)[2]
-    cont_ord = c()
-  } else{ 
-    cont_dims = which(data_type == 'c')
-    cont_ord = which(data_type == 'o')
-  }
-  if (len_theta == -1){ 
-    len_theta = dim(theta_tilde)[3]
-  }
+par(mfrow = c(1,1), pty = "s")
+plot(ITE_sampling$data$simulated_full_data$ITE_median, ITE_sampling$data$simulated_full_data$ITE_median_pred, 
+     main = "ITE Train: True vs. Predicted (median)", 
+     xlab = "ITE_median", ylab = "ITE_median_pred")
+abline(0, 1, col = 'red', lty = 2)
 
-  ### Continiuous dimensions
-  #### At least one continuous dimension exits
-  if (length(cont_dims) != 0){
-    
-    # inputs in h_dag_extra:
-    # data=(40000, 3), 
-    # theta=(40000, 3, 20), k_min=(3), k_max=(3))
-    
-    # creates the value of the Bernstein at each observation
-    # and current parameters: output shape=(40000, 3)
-    # h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims])
-    h_I = h_dag_extra(tf$gather(t_i, as.integer(cont_dims-1L), axis = 1L), 
-                      tf$gather(theta, as.integer(cont_dims-1L), axis = 1L)[,,1:len_theta,drop=FALSE],
-                      tf$gather(k_min, as.integer(cont_dims-1L)),
-                      tf$gather(k_max, as.integer(cont_dims-1L)))
-    
-    
-    # adding the intercepts and shifts: results in shape=(40000, 3)
-    # basically the estimated value of the latent variable
-    h_cont_vars = h_I + tf$gather(h_LS, as.integer(cont_dims-1L), axis = 1L) + 
-      tf$gather(h_CS, as.integer(cont_dims-1L), axis = 1L)
-    
-    
-  }
-  
-  ### Ordinal dimensions
-  if (length(cont_ord) != 0){
-    B = tf$shape(t_i)[1]
-    for (col in cont_ord){
-      # col=4
-      # nol = tf$cast(k_max[col] - 1L, tf$int32) # Number of cut-points in respective dimension
-      nol = tf$cast(k_max[col], tf$int32) # Number of cut-points in respective dimension (binary encoded)
-      
-      theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
-      
-      
-      h_ord_vars = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
-    }
-  }
-  
-  ### DEBUG 
-  #if (sum(is.infinite(log_lik$numpy())) > 0){
-  #  print("Hall")
-  #}
-  return (list(
-    h_cont_vars = h_cont_vars, 
-    h_ord_vars = h_ord_vars))
-}
+
+
+
+
+
+
+
+
+
+#### Check if the Sampled values for T=0 are equal to the observed values (when T was assumed == 0)
+
+# --> Yes the sampling for control group is correct because it is equal to the observed:
+
+df_sampled <- as.matrix(ITE_sampling$outcome_ct)
+df_true <- as.matrix(test2$dat.tf)
+
+# Compare the density of X1 when T=0 between observed and sampled
+plot(density(df_sampled[,1]), main = "X1", ylab = "Density", col = 'red', 
+     lty = 1, lwd = 2)
+lines(density(df_true[,1]), col = 'blue', lty = 2, lwd = 2)
+legend("topright", legend = c("Sampled", "True"), 
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2, cex = 0.8)
+
+# Compare the density of X2 when T=0 between observed and sampled
+plot(density(df_sampled[,2]), main = "X2", ylab = "Density", col = 'red', 
+     lty = 1, lwd = 2)
+lines(density(df_true[,2]), col = 'blue', lty = 2, lwd = 2)
+legend("topright", legend = c("Sampled", "True"), 
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2, cex = 0.8)
+
+# Compare the density of X3 when T=0 between observed and sampled
+plot(density(df_sampled[,3]), main = "X3", ylab = "Density", col = 'red', 
+     lty = 1, lwd = 2)
+lines(density(df_true[,3]), col = 'blue', lty = 2, lwd = 2)
+legend("topright", legend = c("Sampled", "True"), 
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2, cex = 0.8)
+
+# Compare the fractions of X4 when T=0 between observed and sampled
+table(df_sampled[,4])
+table(df_true[,4])
+
+# Compare the density of X5 when T=0 between observed and sampled
+plot(density(df_sampled[,5]), main = "X5", ylab = "Density", col = 'red', 
+     lty = 1, lwd = 2)
+lines(density(df_true[,5]), col = 'blue', lty = 2, lwd = 2)
+legend("topright", legend = c("Sampled", "True"), 
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2, cex = 0.8)
+
+# Compare the density of X6 when T=0 between observed and sampled
+plot(density(df_sampled[,6]), main = "X6", ylab = "Density", col = 'red', 
+     lty = 1, lwd = 2)
+lines(density(df_true[,6]), col = 'blue', lty = 2, lwd = 2)
+legend("topright", legend = c("Sampled", "True"), 
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2, cex = 0.8)
+
+
+
+
 

@@ -174,7 +174,7 @@ do_dag_struct_ITE_observational = function(param_model, MA, doX = c(0.5, NA, NA,
   xl = list() 
   s = tf$ones(c(num_samples, N))
   for (i in 1:N){
-    # i = 7
+    # i = 1
     ts = NA
     parents = which(MA[,i] != "0")
     if (length(parents) == 0) { #Root node?
@@ -208,7 +208,7 @@ do_dag_struct_ITE_observational = function(param_model, MA, doX = c(0.5, NA, NA,
 sample_from_target_MAF_struct_ITE_observational = function(param_model, node, parents){
   DEBUG_NO_EXTRA = FALSE
   # parents = s
-  # node = 4
+  # node = 1
   
   # if no parents, then h_params is model output for x1=1, x2=1, x3=1
   h_params = param_model(parents)
