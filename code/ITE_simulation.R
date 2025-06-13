@@ -51,8 +51,8 @@ file.copy('/code/ITE_simulation.R', file.path(DIR, 'ITE_simulation.R'), overwrit
 
 
 
-fn = file.path(DIR, paste0(MODEL_NAME))
-print(paste0("Starting experiment ", fn))
+# fn = file.path(DIR, paste0(MODEL_NAME))
+# print(paste0("Starting experiment ", fn))
 
 
 
@@ -564,13 +564,17 @@ plot_pred_ite <- function(model.results, ate_ite = FALSE){
   ite_dev_plot <- ggplot(model.results$data.dev.rs, aes(x=ITE_true, y=ITE, color=Y)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, color = "red") +
+    # add a regression slope in black
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
     labs(title = "ITE (Train)", x = "True ITE", y = "Estimated ITE") +
     theme_minimal() +
     theme(legend.position = "top")
   
   ite_val_plot <- ggplot(model.results$data.val.rs, aes(x=ITE_true, y=ITE, color=Y)) +
     geom_point() +
-    geom_abline(slope = 1, intercept = 0, color = "red") +
+    geom_abline(slope = 1, intercept = 0, color = "red") + 
+    # add a regression slope in black
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
     labs(title = "ITE (Test)", x = "True ITE", y = "Estimated ITE") +
     theme_minimal() +
     theme(legend.position = "top")
@@ -726,9 +730,15 @@ glm.results1 <- fit.glm(dgp_model1$test.compl.data)
 
 
 # plot the results
-plot_pred_ite(glm.results1, ate_ite = TRUE) # ate_ite = TRUE adds the cATE plot 
+plot_pred_ite(glm.results1, ate_ite = FALSE) # ate_ite = TRUE adds the cATE plot 
 
 check_ate(glm.results1)
+
+glm.results1$data.val.rs$Y_pred
+
+par(mfrow=c(1,1), pty="s")
+library("CalibrationCurves")
+res <- val.prob.ci.2(glm.results1$data.val.rs$Y_pred,glm.results1$data.val.rs$Y, dostats=FALSE)
 
 
 #### Model 2: 4 unnecessary variables, no confounder  ####

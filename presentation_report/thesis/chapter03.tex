@@ -2,3 +2,24 @@
 
 
 \chapter{Results}
+
+
+
+\section{TRAM-DAGs simple simulation study}
+
+Intercepts: show estimates vs. dgp same as in intermediate presentation.
+
+Show the Discrete case with just cutpints (only K-1 parameters of outputs are used)
+Show the continuous case where the outputs are transformed to monotonically increasing betas for the bernstein polynomial.
+
+Linear and complex shifts: 
+
+Here in the first two plots we can see the linear shifts. And in the right plot we have the complex shift of X2 on X3. The estimated shifts match quite well with the DGP.
+
+Complex shift (Interaction example) to show what is also possible:
+
+Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
+And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
+
+
+

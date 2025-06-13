@@ -10,11 +10,19 @@ opts_chunk$set(
 @
 
 
+%  possible title: Causal inference for non-randomized data and heterogeneous treatment effect estimation
+
+
 \chapter{Introduction}
 
 % Why, what and how\dots
 
-The important questions that studies want to answer are usually not associational but causal \citep{pearl2009}. For example, these are questions that ask for effects when making a certain intervention, like the effect of a treatment. They can ask for reasons that lead to the observed outcome, like which disease caused the given symptoms. Or what would have been different if another action was taken, like what would the gdp have benn, if the interest rates were incereased only by 25 instead of 75 Bps. To answer such questions, a causal reasoning must be applied that aims to understand the underlying data genearting mechanism, sole associational reasoning directly from the data is not sufficient. 
+The important questions that studies want to answer are usually not associational but causal \citep{pearl2009}. For example, these are questions that ask for effects when making a certain intervention, like the effect of a treatment. They can ask for reasons that lead to the observed outcome, like which disease caused the given symptoms. Or what would have been different if another action was taken, like what would the GDP have been, if the interest rates were incereased only by 25 instead of 75 Bps. To answer such questions, a causal reasoning must be applied that aims to understand the underlying data genearting mechanism, sole associational reasoning directly from the data is not sufficient. 
+
+
+% https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
+% One of the main reasons for this is thatML methods are particularly good at learning about the status quofrom existing data to ultimately make outcome predictions thatare exactly in line with the current distribution of data character-istics, but usually not designed for tasks that involve the need toreason about interventions on the data generating distributionsleading to counterfactual scenarios,
+
 
 \textbf{Importance of Causal Inference on Observational Data}
 
@@ -108,12 +116,17 @@ Then there is also the possibility to model the relationships with various metho
 The framework of TRAM-DAGs proposed by \citet{sick2025} builds a bridge between these two approaches of classical statistical and deep learning methods. It allows us to model the causal relationships with interpretable or fully-flexible parts, depending on what is regarded more important at the moment. The basis of this model is to construct the structural equations as transformation models as introduced by \citet{hothorn2014}, which is a flexible distributional regression method. To make them even more customizable, these transformation models (TRAMS) were extended to deep TRAMS \citep{sick2020}. Applied in a causal context, these deep TRAMS form the framework of TRAM-DAGs that can be fitted on observational data and allow to tackle causal queries on all three levels of Pearl's causal hierarchy. This framework will be explained in detail in the Section XXX.
 
 
-The primary goal of this thesis is to apply TRAM-DAGs on real world data where the underlying data generating process is unknown. 
+
+The first goal of this thesis is to further analyze and extend TRAM-DAGs. This includes the application of TRAM-DAGs in different scenarios, such as different datatypes, level of complexity or Neural Network structures (activation function, batchnormalization, dropout). Most analyses are performed in simulation studies, but the model was also applied on real-world climate data.
+
+
+An application where causal inference is of particular importance is the estimation of individualized treatment effects (ITE) or also referred to conditional average treatment effect (cATE) or uplift modelling often in a marketing context. They can be understood in the difference in outcomes under different treatments, on an individual or subgroup level. The idea is that they can be used for example in personnalized medicine or for targeted direct marketing campaigns. Each individual patient might respond differently to a specific treatment, depending on his unique characteristics. RCTs traditionally are used to estimate an average treatment effect (ATE) which might indicate the trend in the analyzed population, but the ITEs might be very different for individual patients. In the marketing context this individual effect is of high interest because marketing campaings can be executed very specific and individualized. For example, in the assessment wheter a certain customers should receive a push notification (treatment) or not. Here each customer could be attributed to one of 4 categories, the persuadables (if receiving a notification, they will buy a product or service), the sure thing (they will buy the product either way), the lost causes (they will not buy, regardless of receiving a notification or not), or the sleeping dogs (they will eventually buy, but not if they were treated). Therefore it is crucial to know for each (potential) customer, how he might respond to the treatment, the persuadables should definetely be treated so that we gain them as a customer and the sleeping dogs shall not receive one as we would loos them as customers. There exists many approaches and methods to estimate these individualized treatment effects. However, this is more difficult compared to sole predictive modelling. \citet{chen2025} showed that all causal machine learning models that were trained on a train set failed to generalize to a test set. 
+
+Analyzing what could be the reason for this behaviour and potential solutions constitute the second goal of this thesis. With the help of simulaition studies we evalueate scenarios when the estimation of ITE fails. Furthermore we show that TRAM-DAGs can be used to estimate the ITE, also in a non-RCT setting, as long as the data can be described by a fully observed DAG.
 
 
 
-An application where causal inference is of particular importance is the estimation of individualized treatment effects (ITE). \citet{chen2025} showed that all causal machine learning models that were trained on a train set failed to generalize to a test set. 
 
-The estimation of this with the help of TRAM-DAGs constitutes the second objective of this thesis. Although I analyze it in the setting of RCT data and not observational.
+
 
 

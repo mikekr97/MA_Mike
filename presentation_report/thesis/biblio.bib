@@ -278,6 +278,36 @@ year = {2018}
 }
 
 
+@article{curth2024,
+author = {Curth, Alicia and Peck, Richard W. and McKinney, Eoin and Weatherall, James and van der Schaar, Mihaela},
+title = {Using Machine Learning to Individualize Treatment Effect Estimation: Challenges and Opportunities},
+journal = {Clinical Pharmacology \& Therapeutics},
+volume = {115},
+number = {4},
+pages = {710-719},
+doi = {https://doi.org/10.1002/cpt.3159},
+url = {https://ascpt.onlinelibrary.wiley.com/doi/abs/10.1002/cpt.3159},
+eprint = {https://ascpt.onlinelibrary.wiley.com/doi/pdf/10.1002/cpt.3159},
+abstract = {The use of data from randomized clinical trials to justify treatment decisions for real-world patients is the current state of the art. It relies on the assumption that average treatment effects from the trial can be extrapolated to patients with personal and/or disease characteristics different from those treated in the trial. Yet, because of heterogeneity of treatment effects between patients and between the trial population and real-world patients, this assumption may not be correct for many patients. Using machine learning to estimate the expected conditional average treatment effect (CATE) in individual patients from observational data offers the potential for more accurate estimation of the expected treatment effects in each patient based on their observed characteristics. In this review, we discuss some of the challenges and opportunities for machine learning to estimate CATE, including ensuring identification assumptions are met, managing covariate shift, and learning without access to the true label of interest. We also discuss the potential applications as well as future work and collaborations needed to further improve identification and utilization of CATE estimates to increase patient benefit.},
+year = {2024}
+}
+
+
+
+@inproceedings{reisach2021,
+author = {Reisach, Alexander G. and Seiler, Christof and Weichwald, Sebastian},
+title = {Beware of the simulated DAG! causal discovery benchmarks may be easy to game},
+year = {2021},
+isbn = {9781713845393},
+publisher = {Curran Associates Inc.},
+address = {Red Hook, NY, USA},
+abstract = {Simulated DAG models may exhibit properties that, perhaps inadvertently, render their structure identifiable and unexpectedly affect structure learning algorithms. Here, we show that marginal variance tends to increase along the causal order for generically sampled additive noise models. We introduce varsortability as a measure of the agreement between the order of increasing marginal variance and the causal order. For commonly sampled graphs and model parameters, we show that the remarkable performance of some continuous structure learning algorithms can be explained by high varsortability and matched by a simple baseline method. Yet, this performance may not transfer to real-world data where varsortability may be moderate or dependent on the choice of measurement scales. On standardized data, the same algorithms fail to identify the ground-truth DAG or its Markov equivalence class. While standardization removes the pattern in marginal variance, we show that data generating processes that incur high varsortability also leave a distinct covariance pattern that may be exploited even after standardization. Our findings challenge the significance of generic benchmarks with independently drawn parameters.},
+booktitle = {Proceedings of the 35th International Conference on Neural Information Processing Systems},
+articleno = {2127},
+numpages = {13},
+series = {NIPS '21}
+}
+
 @article{calster2020,
 author = {Ben Van Calster and Maarten van Smeden and Bavo De Cock and Ewout W Steyerberg},
 title ={Regression shrinkage methods for clinical prediction models do not guarantee improved performance: Simulation study},
@@ -318,4 +348,50 @@ Results
 In a particular model development data set, penalization methods can be unreliable because tuning parameters are estimated with large uncertainty. This is of most concern when development data sets have a small effective sample size and the model's Cox-Snell R2 is low. The problem can lead to considerable miscalibration of model predictions in new individuals.
 Conclusion
 Penalization methods are not a ‘carte blanche’; they do not guarantee a reliable prediction model is developed. They are more unreliable when needed most (i.e., when overfitting may be large). We recommend they are best applied with large effective sample sizes, as identified from recent sample size calculations that aim to minimize the potential for model overfitting and precisely estimate key parameters.}
+}
+
+
+@inproceedings{guo2017,
+  author       = {Chuan Guo and
+                  Geoff Pleiss and
+                  Yu Sun and
+                  Kilian Q. Weinberger},
+  editor       = {Doina Precup and
+                  Yee Whye Teh},
+  title        = {On Calibration of Modern Neural Networks},
+  booktitle    = {Proceedings of the 34th International Conference on Machine Learning,
+                  {ICML} 2017, Sydney, NSW, Australia, 6-11 August 2017},
+  series       = {Proceedings of Machine Learning Research},
+  volume       = {70},
+  pages        = {1321--1330},
+  publisher    = {{PMLR}},
+  year         = {2017},
+  url          = {http://proceedings.mlr.press/v70/guo17a.html},
+  timestamp    = {Wed, 02 Oct 2024 14:40:04 +0200},
+  biburl       = {https://dblp.org/rec/conf/icml/GuoPSW17.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{hartford2017,
+author = {Hartford, Jason and Lewis, Greg and Leyton-Brown, Kevin and Taddy, Matt},
+title = {Deep IV: a flexible approach for counterfactual prediction},
+year = {2017},
+publisher = {JMLR.org},
+abstract = {Counterfactual prediction requires understanding causal relationships between so-called treatment and outcome variables. This paper provides a recipe for augmenting deep learning methods to accurately characterize such relationships in the presence of instrument variables (IVs)—sources of treatment randomization that are conditionally independent from the outcomes. Our IV specification resolves into two prediction tasks that can be solved with deep neural nets: a first-stage network for treatment prediction and a second-stage network whose loss function involves integration over the conditional treatment distribution. This Deep IV framework allows us to take advantage of off-the-shelf supervised learning techniques to estimate causal effects by adapting the loss function. Experiments show that it outperforms existing machine learning approaches.},
+booktitle = {Proceedings of the 34th International Conference on Machine Learning - Volume 70},
+pages = {1414–1423},
+numpages = {10},
+location = {Sydney, NSW, Australia},
+series = {ICML'17}
+}
+
+@misc{frauen2023,
+      title={Estimating individual treatment effects under unobserved confounding using binary instruments}, 
+      author={Dennis Frauen and Stefan Feuerriegel},
+      note  = {Accepted at ICLR 2023},
+      year={2023},
+      eprint={2208.08544},
+      archivePrefix={arXiv},
+      primaryClass={stat.ME},
+      url={https://arxiv.org/abs/2208.08544}, 
 }

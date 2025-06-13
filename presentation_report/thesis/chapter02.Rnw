@@ -13,8 +13,17 @@ opts_chunk$set(
 
 \chapter{Methods} 
 
-In this section I will explain the necessary background needed to understand the TRAM-DAGs. Once the framework of tram dags is explained, I will present how the experiments of the simulation, the application on real data and the ITE estimation are conducted.
+In this section I will explain the necessary background needed to understand the TRAM-DAGs. Once the framework of tram dags is explained, I will present how the experiments of the simulation, the application on real data and the ITE estimation are conducted. Following research questions are addressed:
 
+\begin{itemize}
+
+\item How can TRAM-DAGs be applied under different scenarios (datatypes, DAG structure, complexity, scaled varaibles) and how does this influence the interpretation of parameters?
+\item Why does the estimation of Individualized Treatment Effects (ITE) fail in some cases for most causal ML methods when validating them out of sample? 
+\item How can TRAM-DAGs be used to estimate the Individualized Treatment Effect (ITE) in a RCT and in a observational setting with confounding and mediating variables?
+
+\end{itemize}
+
+\section{TRAM-DAGs}
 
 The goal of TRAM-DAGs is to estimate the structural equations according to the causal order in a given DAG in a flexible and possibly still interpretable way in order to sample observational and interventional distributions and to make counterfactual statements. The estimation requires data and a DAG that describes the causal structure. It must be assumed that there are no hidden confounders. TRAM-DAGs estimate for each variable $X_i$ a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ is the noise value and $pa(X_i)$ are the causal parents of $X_i$. The important part here is that we can rearrange this equation to $X_i = h_i^{-1}(Z_i \mid pa(x_i))$ to get to the structural equation. The transformation functions $h$ are monotonically increasing functions that are a representation of the conditional distribution of $X_i$ on a latent scale. They are based on the idea of transformation models as introduced by \citet{hothorn2014} but were extended to deep trams by \citet{sick2020}. In the following sections I review the most important ideas of these methods as they are the essential components of TRAM-DAGs.
 
@@ -97,9 +106,9 @@ h(y \mid \mathbf{x}_L, \mathbf{x}_C ) = h_I(y) + \mathbf{x}_L^\top \boldsymbol{\
 \textbf{Intercept } the shape of the transformation function at the baseline configuration $\mathbf{x}_L^\top \boldsymbol{\beta}_L = 0$ and $f_C(\mathbf{x}_C)=0$ is determined by the intercept $h_I(y)$. For a continuous outcome the intercept is represented by a smooth bernstein polynomial and in the discrete case by cut-points. In either case the parameters $\vartheta$ are obtained as output nodes of the neural network. A simple intercept (SI) is the case where the parameters $\vartheta$ do not depend on the any explanatory variables. The neural network thereby only takes a constant as input and directly outputs the parameters $\vartheta$. To make the intercept more flexible, the intercept can also depend on the explanatory variables. In this case the complex intercept (CI) models the intercept $\vartheta(x)$ by taking the predictors $x$ as input to a neural network with some hidden layers. This allows the intercept to change with the value of the predictors. Depending on the assumptions, predictors can be used in the complex intercept, or only a subset of them. A detailed explanation of the construction of the bernstein polynomial is given in appendix XXX.
 
 \textbf{Linear shift } If the predictors should have a linear effect on the transformation function, it can be modelled by a linear shift (LS). For this part the neural network without hidden layers and without biases takes the linear predictors $pa(X_i)$ as input and generates a single output node with a linear activation function. This results in the linear combination $\mathbf{x}_L^\top \boldsymbol{\beta}_L$ and it induces a linear vertical shift of the transformation function. The weights $\boldsymbol{\beta}_L$ are the interpretable coefficients of the linear shift. For the logistic transformation model, they are interpreted as log-odds-ratios.
-The interpretation is further described in the appendix XX.
+The interpretation is further described in the appendix \ref{sec:interpretation_linear_coefficients}. %  for interpretation see pearl book 2009 p. 366. the key is to say leaving all other variables "untouched" and not "constant". he also talks about the connection to the do-operator.
 
-\textbf{Complex shift } If the transformation function should be allowed to be shifted vertically in a non-linear manner, a complex shift (CS) can be applied. The predictor variables are inputed in a (deep) neural network with at least one hidden layer and a single output node with $f_C(X_C)$ is obtained. With a complex shift, also interactions between predictor variables can be captured.
+\textbf{Complex shift } If the transformation function should be allowed to be shifted vertically in a non-linear manner, a complex shift (CS) can be applied. The predictor variables are inputted in a (deep) neural network with at least one hidden layer and non-linear activation functions such as sigmoid or ReLU. A single output node with $f_C(X_C)$ is obtained. With a complex shift, also interactions between predictor variables can be captured by giving the interacting variables into the same neural network.
 
 
 \textbf{Level of complexity } One practical feature of these modular deep TRAMs is that one can specify, which predictors should have a linear or complex shift effect on the transformation function or that predictors are even allowed to deterimine the shape of the transformation function by a complex intercept. \citet{herzog2023} predicted the ordinal functional outcome three months after stroke by using semi-structured data that included tabular predictors and images. The two data modalities can be included in a single deep TRAM by modeling the part of the images with a CNN.
@@ -156,38 +165,8 @@ X_3 &\sim F_Z(h_I(x_3) + \mathrm{LS}_{x_1} + \mathrm{CS}_{x_2})
 
 \textbf{Construct Modular Neural network}
 
-As discussed in the section \ref{sec:deep_trams}, the transformation functions are constructed by a modular neural network. The inputs are the variables in the system as well as the adjacency matrix \ref{eq:MA} which controls the information flow and assures that only valid connections according to the causal dependence are made. Discrete variables with few categories are dummy encoded, and continuous variables are scaled before feeding them in the neural network. The encoding and the effect of scaling on the interpretation of parameters is discussed in the appendix (ref XXX). The outputs are the three components for the transformation function (SI, LS, CS) for each variable. These components are assembled to the transformation functions. For the complex shift and complex intercept, the structure of the neural network (depth and width) has to be defined. 
-Finally the loss is defined as the negative log likelihood, which the model aims to optimize to estimate the optimal parameterization. 
-
-
-Describe interpretation quickly and refer to formal proof in the Appendix.
-%  for interpretation see pearl book 2009 p. 366. the key is to say leaving all other variables "untouched" and not "constant". he also talks about the connection to the do-operator.
-
-Finally, neural network works best if inputs are scaled. Proof that we can do that, it just changes the interpretation. For structure finding algorithms, this might be problematic, because increasing variance along the causal order would be destroyed. (why, how, interpretation change etc. check meeting notes 22.04.2025)
-
-Fitting Betas Interpretable
-
-The two parameters for our linear shift terms are plotted here. We can see that they converge quickly to the same values as we used in the DGP. We can interpret these parameters as log-odds ratios if changing the value of the parent by one unit.
-
-Intercepts
-
-Show the Discrete case with just cutpints (only K-1 parameters of outputs are used)
-Show the continuous case where the outputs are transformed to monotonically increasing betas for the bernstein polynomial. Also describe Bernstein polynomial construction in detail with scaling and linear extrapolation.
-
-Here I plotted the intercepts of the 3 transformation functions. They also resemble the DGP very nicely.
-
-
-Linear and complex shifts
-
-Here in the first two plots we can see the linear shifts. And in the right plot we have the complex shift of X2 on X3. The estimated shifts match quite well with the DGP.
-
-Complex shift (Interaction example) to show what is also possible
-
-Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
-
-And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
-
-
+As discussed in the section \ref{sec:deep_trams}, the transformation functions are constructed by a modular neural network. The inputs are the variables in the system as well as the adjacency matrix \ref{eq:MA} which controls the information flow and assures that only valid connections according to the causal dependence are made. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled before feeding them in the neural network. The encoding and the effect of scaling on the interpretation of parameters is discussed in the appendix (\ref{sec:encoding_discrete_variables} and  \ref{sec:scaling_continuous_variables}). Scaling the input variables, meaning to bring the variables onto a zero-mean and one-variance, can remove the pattern in marginal variance which some structure learning algorithms rely on \citep{reisach2021}. However, since our analysis does not require to find the structure and already assumes a known DAG, this is not a problem. 
+Once the input variables are prepared and the structure is defined by the adjacency matrix, the architecture of the neural network for the complex shift and complex intercept has to be specified. These are factors such as depth, width, activation function, and whether dropout or batch normalization should be used. These considerations depend on the assumed complexity of the shifts. The outputs of the neural networks are the three components for the transformation function (SI, LS, CS) for each variable. These components are assembled to the transformation functions. Finally, the loss is defined as the negative log likelihood, which the model aims to optimize to estimate the optimal parameterization. The estimated parameters $\boldsymbol{beta}$ in the linear shifts are interpretable as log-odds-ratios when changing the value of the respective parent by one unit, leaving all others unchanged. 
 
 
 
@@ -268,56 +247,139 @@ While the probability of Y under the hypothetical condition $X=x$ can be determi
 (What pearl writes:  Likewise, in contrast with the potential-outcome framework, counterfactuals in the structural account are not treated as undefined primitives but rather as quantities to be derived from the more fundamental concepts of causal mechanisms and their structure. )
 
 
-\textbf{ITE how it is applied in our model?}
 
-% \citet{hoogland2021} gave guidance on how ITE estimation should be performed. A crucial aspect is the consideration is the model complexity and the susceptibility to overfitting. Also the decision whether a HGL or HTE model should be applied. (Especially include stuff from Practical Considerations part , quite good)
-% RCTs only measure the average treatment effect. There will be patients who respond better or worse to the treatment because patient specific characteristcs. In personalized medicine however, the aim is to find the optimal treatment for a specific individual. Such a measure that can help in decision making is the ITE.
+
+
+\section{Individualized Treatment Effect (ITE)}
+
+
+% https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
+% --> perfect introduction and overview and assumptions also in observatinoal setting about ITE with causal ML --> check it!
+% also limitations and how to validate models
+
+
+\citet{curth2024} provide a comprehensive overview of the individualized treatment effect (ITE) and its estimation in the context of causal machine learning. They state its importance in comparison to average treatment effects, the assumpitons that need to be fulfilled, what kind of limiations typically are encountered and how models should be validated.
+% take this paper as guide to the structure of this section to explain overview and concept
+% https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
+
+% another paper of Alicia Curth https://proceedings.mlr.press/v130/curth21a/curth21a.pdf
+
+% mostly chatgpt
+
+Randomized controlled trials (RCTs) are considered the gold standard for estimating causal effects due to their ability to eliminate confounding through randomization. However, RCTs typically report the \textit{average treatment effect (ATE)}, which summarizes the effect of a treatment across an entire study population. This obscures individual-level variation in treatment response: some individuals may benefit substantially, others not at all, or even be harmed. In personalized medicine and risk-based decision-making, such population-level summaries are insufficient. Instead, the objective is to guide treatment decisions tailored to individual patient characteristics, for which the \textit{individualized treatment effect (ITE)} is a more appropriate target. Where the homogeneous treatment effect refers to the part of the effect that is equal for all patients, the heterogeneous treatment effect describes the non-random variation in treatment effects across individuals or groups. 
+
+\textbf{The Potential Outcomes Framework } Causal inference is commonly formalized within the \textit{Rubin Causal Model}, also known as the potential outcomes framework. For each individual $i$, let $Y_i(1)$ denote the potential outcome under treatment, and $Y_i(0)$ the outcome under control. The individual treatment effect is defined as
+\begin{equation}
+\tau_i = Y_i(1) - Y_i(0).
+\end{equation}
+However, only one of the two potential outcomes can be observed for each individual, which constitutes the \textit{fundamental problem of causal inference}. Related estimands include the \textit{conditional average treatment effect (CATE)},
+\begin{equation}
+\tau(x) = \mathbb{E}[Y(1) - Y(0) \mid X = x],
+\end{equation}
+which reflects the expected effect conditional on covariates $X = x$, and the more general concept of \textit{heterogeneous treatment effects (HTE)}.
+
+In contrast to the mean-based estimands above, the \textit{quantile treatment effect (QTE)} evaluates differences in the distribution of potential outcomes. For instance, the median treatment effect is defined as
+\begin{equation}
+\tau^{(0.5)}(x) = Q_{Y(1) \mid X = x}(0.5) - Q_{Y(0) \mid X = x}(0.5),
+\end{equation}
+where $Q_{Y(t) \mid X = x}(q)$ denotes the $q$-th quantile of the potential outcome under treatment $t$. QTEs are particularly relevant when treatment effects are not symmetrically distributed or when tail behavior is of interest. We will later perform a simulation study using the median for the QTE estimation.
+
+\section{Assumptions for Identifiability}
+
+To identify treatment effects from observational data, several key assumptions are required. \textit{Consistency} ensures that the observed outcome equals the potential outcome under the received treatment. The \textit{Stable Unit Treatment Value Assumption (SUTVA)} assumes no interference between units and that treatments are well-defined. The most critical assumption is \textit{ignorability} (or unconfoundedness), which posits that, conditional on covariates $X$, the treatment assignment is independent of the potential outcomes:
+\begin{equation}
+(Y(1), Y(0)) \perp T \mid X.
+\end{equation}
+In addition, the \textit{positivity} assumption requires that the probability of receiving each treatment is strictly between 0 and 1 for all covariate strata:
+
+\begin{equation}
+0 < P(T = 1 \mid X = x) < 1.
+\end{equation}
+These assumptions are untestable but are necessary for identifying causal effects from non-randomized data.
+
+\section{Propensity Score Adjustment in Observational Settings}
+
+In the absence of randomization, the \textit{propensity score}, defined as the probability of receiving treatment conditional on covariates $X$,
+\begin{equation}
+e(X) = P(T = 1 \mid X),
+\end{equation}
+can be used to balance treatment groups and reduce confounding rosenbaum1983central. When the ignorability assumption holds, adjusting for the propensity score allows for unbiased estimation of average treatment effects. However, while propensity score methods (e.g., matching, stratification, weighting) are effective for estimating population-level quantities like the ATE, they are often insufficient for ITE estimation. Since ITE requires modeling both potential outcomes at the individual level, direct modeling approaches such as outcome regression, meta-learners, or Bayesian models are typically more appropriate rubin2007design, nie2021quasi. Moreover, reliance on the propensity score alone may fail to capture fine-grained individual heterogeneity necessary for personalized treatment decisions ali2019addressing.
+
+
+
+% \section{Individualized Treatment Effect}
+% 
+% % following mainly chatgpt
+% 
+% In causal inference, the individualized treatment effect (ITE), quantifies the difference in potential outcomes for a single individual under treatment and control. Formally, for an individual $i$, the ITE is defined as
+% 
+% \begin{equation}
+% \tau_i = Y_i(1) - Y_i(0),
+% \end{equation}
+% where $Y_i(1)$ and $Y_i(0)$ denote the potential outcomes under treatment and control, respectively. Closely related concepts include the conditional average treatment effect (CATE), defined as the average treatment effect conditional on covariates $X = x$:
+% \begin{equation}
+% \tau(x) = \mathbb{E}[Y(1) - Y(0) \mid X = x],
+% \end{equation}
+% and the broader notion of heterogeneous treatment effects (HTE), which refers to any variation in treatment effects across individuals or subpopulations. In applied fields such as marketing, uplift modeling is a term used to describe models that target individuals most likely to benefit from a treatment, essentially estimating the ITE without necessarily relying on a formal causal framework.
+% 
+% Estimating ITEs is of particular importance in personalized medicine, policy targeting, and risk-based decision-making, where treatment decisions must be tailored to individual characteristics. Unlike standard predictive modeling, which estimates expected outcomes $\mathbb{E}[Y \mid X]$, ITE estimation requires assumptions about counterfactual outcomes and typically involves modeling both treated and untreated potential outcomes. Accurate estimation is challenging due to the fundamental problem of causal inference: only one potential outcome is observed per individual.
+% 
+% 
+% Estimation of the individualized treatment effect relies on several fundamental assumptions to ensure identifiability of causal effects from observational data. A central assumption is consistency, which requires that the observed outcome corresponds to the potential outcome under the treatment actually received: $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$. The \textit{Stable Unit Treatment Value Assumption (SUTVA)} ensures no interference between units and that treatments are well-defined. Crucially, the \textit{ignorability} or \textit{unconfoundedness} assumption requires that, conditional on observed covariates $X$, the treatment assignment is independent of the potential outcomes:
+% \begin{equation}
+% (Y(1), Y(0)) \perp T \mid X.
+% \end{equation}
+% 
+% This implies that there are no unmeasured confounders affecting both treatment and outcome. Additionally, the \textit{positivity} or \textit{overlap} assumption requires that every individual has a non-zero probability of receiving each treatment level:
+% \begin{equation}
+% 0 < P(T = 1 \mid X = x) < 1 \quad \text{for all } x.
+% \end{equation}
+% 
+% Violation of this condition leads to lack of support and unstable estimates in regions of the covariate space. Together, these assumptions enable identification of causal effects from observed data and form the basis for model-based or algorithmic estimation of ITEs. In practice, these conditions are untestable and must be justified based on subject-matter knowledge and study design.
+% 
+% 
+
 
 Rubins potential outcomes framework.
 
-
-simulation studies
- "The setup was such that development and test sets were generated from the same data generating mechanism. In practice, there may be differences between these two settings that are not captured by the models, and the uncertainty that accompanies these unknowns may overshadow relatively small gains realized by more complex models."
- % https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/#sim9154-bib-0065
- 
- "This could include the analysis of individual patient data from multiple randomized trials, or even the use of nonrandomized studies for the estimation of outcome risk under a control condition." this motivates the need for observational modeling.
-
-
-Maybe it is the methods section. Here however, we give a couple hints.
-Note that you can wisely use \rr{preamble}-chunks. Minimal, is likely:
+Quantile Treatment effect
 
 
 
-Problems with ITE: (in an RCT setting)
-- to estimate the ITE we must assume un-confoundedness. Does this also apply to itneractions (effect modifiers)? Check how this is handled in the literature.
-- when there are treatment covariate interactions and these covariates are in the DGP but dropped from the dataset (so unobserved), then the ITE Estimation failed in the simulations. At least when there is only 1 strongly interacting variable and we drop this one. An example could be the psychological condition of a patient which might also affect how the treatment works, this is not a confounder but an effect modifier, and i would assume that this variable is rarely recorede or measured.
-
-- Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
-
-- question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-cATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-cATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
-
-- another point is the effect of the correlation of the variables. If the X's are strongly correlated, and one X with interaction effect is dropped, can the info then still be retreived from the other variables? maybe the effect is then attributed to another correlated variable. --> check with simulations and or theroretical proof.
-
-
-- maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
 
 - also talk about propensity score Rubin(2007) to basically estimate an RCT...and overcome the problem of confounding. but this might work for ATE but not really for ITE, direct modelling of the outcome is necessary % https://pmc.ncbi.nlm.nih.gov/articles/PMC5920646/
 
 
 \textbf{Models for ITE Estimation}
 
-T-learner vs s-learner, metalearner,
 
-The ITE for a binary endpoint is estimated as the difference of two probabilities (the risk under treatment minus the risk under control). It is essential that the model used to estimate these probabilities is well calibrated and generalizes to new (unseen) data. When using models that are estimated with conventional methods such as ordinary least squares or standard maximum likelihood, they tend to overfit on the training data and make too extreme predictions on the test data. This problem increases with reduced sample size, low event rate or large number of predictor variables. To prevent such overfitting, penalization (shrinkage) methods are proposed as they shrink the estimated coefficients towards zero to reduce the variance in predictions on new data \citep{riley2021}. 
+
+% \citet{hoogland2021} gave guidance on how ITE estimation should be performed. A crucial aspect is the consideration is the model complexity and the susceptibility to overfitting. Also the decision whether a HGL or HTE model should be applied. (Especially include stuff from Practical Considerations part , quite good)
+% RCTs only measure the average treatment effect. There will be patients who respond better or worse to the treatment because patient specific characteristcs. In personalized medicine however, the aim is to find the optimal treatment for a specific individual. Such a measure that can help in decision making is the ITE.
+
+Assessing predictive performance with AUC, calibration slope, and brier score. In Leo presentation, he says that recalibration can either be done with deviance statistics or by leave one out (loo) cross validation the slope of this regression would then be the estimated shrinkage factor.
+T-learner vs s-learner, metalearner, virtual twins
+
+The ITE for a binary endpoint is estimated as the difference of two probabilities (the risk under treatment minus the risk under control). It is essential that the model used to estimate these probabilities is well calibrated and generalizes to new (unseen) data. \citep{guo2017} point out that even though modern neural networks became much more accurate in terms of prediction performance, they are no longer well-calibrated. As it may not be a big problem for the sole purpose of making good predictions, it is very problematic for applications where an accurate quantification of the uncertainty is needed. When using models that are estimated with conventional methods such as ordinary least squares or standard maximum likelihood, they tend to overfit on the training data and make too extreme predictions on the test data. This problem increases with reduced sample size, low event rate or large number of predictor variables. To prevent such overfitting in regression models, penalization (shrinkage) methods are proposed as they shrink the estimated coefficients towards zero to reduce the variance in predictions on new data \citep{riley2021}. 
+
 
 
 Logistic regression, penalized logistic regression (shrinkage, lasso
 Shrinkage methods should provide better predictive perfomance on average (cite articles). \citet{calster2020} analyzed different regression shrinkage methods with a binary outcome in a simulation study. They concluded, although the calibration slope improved on average, shrinkage often worked poorly on individual datasets. With small sample size and low number of events per variable the performance of most of these methods were highly variable and should be used with caution in such settings. \citet{riley2021} obtained to similar results in their simulation study. Problems occur, because tuning parameters are often estimated with large uncertainty on the training data and fail to generalize. In both studies the autors pointed out that these penalization methods are more unreliable when needed most, that is when the risk of overfitting may be large.
 
-In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
 
+(Shrinkage shrinks the coefficients so that the calibration slope is improved on a test set. The shrinkage factor can for example be found with n-fold cross validation, as e.g. done by lasso with L1 penalization)
 
 Explain tuning of random forest, with depth number of trees and mtry (ranger?)
+
+
+
+Use of instrumental variables (IV) to also estimate CATE in presence of unobserved confounders \citep{nichols2007}, \citep{hartford2017}. \citet{frauen2023} propose a model based on IV that is said to also be applicable on observational data. % check more details, they also have an example DAG, however it is not yet accepted and still under review
+
+% https://www.rfberlin.com/wp-content/uploads/2024/12/24030.pdf good book/paper about instrumental variables, also talks about potential outcomes (but i should maybe not go too much into detial)
+
+% http://www.mit.edu/~vchern/papers/ch_iqr_ema.pdf estimate the quantile treatment effect (heterogeneous) with instrumental variables, it looks very similar to the TRAM-DAG approach: *This interpretation makes quantile analysis an interesting tool for describing and learning the structure of heterogeneous treatment effects and controlling for unobserved heterogeneity."
+
 
 \section{Experiments}
 
@@ -331,20 +393,57 @@ maybe the Weather data case, or another if we find a practical observational dat
 
 \subsection{ITE simulations}
 
-Show types of models that will be applied and dgp and when problems occure.
+Reason to do experiment is the findings of Holly, now we want to show types of models that will be applied and dgp and when problems occure.
+
+In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
+
+
+simulation studies
+ "The setup was such that development and test sets were generated from the same data generating mechanism. In practice, there may be differences between these two settings that are not captured by the models, and the uncertainty that accompanies these unknowns may overshadow relatively small gains realized by more complex models."
+ % https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/#sim9154-bib-0065
+ 
+ "This could include the analysis of individual patient data from multiple randomized trials, or even the use of nonrandomized studies for the estimation of outcome risk under a control condition." this motivates the need for observational modeling.
+
+
+Problems with ITE: (in an RCT setting)
+- to estimate the ITE we must assume un-confoundedness. Does this also apply to itneractions (effect modifiers)? Check how this is handled in the literature.
+% https://journals.lww.com/epidem/fulltext/2007/09000/four_types_of_effect_modification__a.6.aspx talks about different types of effect modifiers (not sure if this really contributes to the thesis)
+- when there are treatment covariate interactions and these covariates are in the DGP but dropped from the dataset (so unobserved), then the ITE Estimation failed in the simulations. At least when there is only 1 strongly interacting variable and we drop this one. An example could be the psychological condition of a patient which might also affect how the treatment works, this is not a confounder but an effect modifier, and i would assume that this variable is rarely recorede or measured.
+
+- Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
+
+- question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-cATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-cATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
+
+- another point is the effect of the correlation of the variables. If the X's are strongly correlated, and one X with interaction effect is dropped, can the info then still be retreived from the other variables? maybe the effect is then attributed to another correlated variable. --> check with simulations and or theroretical proof.
+
+
+
+% Plot mit Regression line: durch die regression line lässt sich die differenz zwischen train und test plots rechts auch nicht erklären. Grund ist vermutlich, dass beim ITE nur die probabilities modelliert werden und beim plot rechts die observed outcomes Y=1 oder Y=0 (was ja die optimierungsgrösse im modell fitting war).
 
 \subsection{ITE real data}
 
 % describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
 Results on IST trial wiht the interpretation in the discussion part.
 
+%  here the authors made the IST database available and described the trial, refer tho it
+% https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101 
+
 show results of different models including tram dag.
+
+- maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
 
 
 
 \section{Software}
 
 All code was done in R wiht packages xx ussed for yy.
+
+
+
+
+Maybe it is the methods section. Here however, we give a couple hints.
+Note that you can wisely use \rr{preamble}-chunks. Minimal, is likely:
+
 
 \bigskip
 

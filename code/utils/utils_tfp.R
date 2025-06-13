@@ -174,7 +174,7 @@ do_dag_struct_ITE_observational = function(param_model, MA, doX = c(0.5, NA, NA,
   xl = list() 
   s = tf$ones(c(num_samples, N))
   for (i in 1:N){
-    # i = 1
+    # i = 4
     ts = NA
     parents = which(MA[,i] != "0")
     if (length(parents) == 0) { #Root node?
@@ -208,7 +208,7 @@ do_dag_struct_ITE_observational = function(param_model, MA, doX = c(0.5, NA, NA,
 sample_from_target_MAF_struct_ITE_observational = function(param_model, node, parents){
   DEBUG_NO_EXTRA = FALSE
   # parents = s
-  # node = 1
+  # node = 4
   
   # if no parents, then h_params is model output for x1=1, x2=1, x3=1
   h_params = param_model(parents)
@@ -237,7 +237,7 @@ sample_from_target_MAF_struct_ITE_observational = function(param_model, node, pa
     #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
     cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
     samples <- tf$random$categorical(logits = tf$math$log(cdf_diffs), num_samples = 1L)
-    samples = tf$cast(samples * 1.0 + 1, dtype='float32')
+    samples = tf$cast(samples * 1.0 , dtype='float32') # if ordinal encoded, then +1
     return(samples)
     # Picking the observed cdf_diff entry
   } else {

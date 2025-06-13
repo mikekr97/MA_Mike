@@ -90,10 +90,38 @@ from which the NLL-contributions are derived
 \end{equation}
 
 
+\section{Interpretation of Linear Coefficients} \label{sec:interpretation_linear_coefficients}
 
-\subsection{Encoding of discrete variables}
+The transformation model framework allows for interpretation of the coefficients in the linear shift. Consider the conditional transformation function:
 
-In the TRAM-DAG a variable $X_i$ can act as a predictor variable for a child node, or as a outcome (child node) that depends on some parent nodes. When $X_i$ is acting as an outcome, the distribution of the variable $X_i$ represented by the transformation function $h$ which estimates a cut-point for each variable. So different form of intercept $h_i$ is used compared to a continuous outcome variable.
+\begin{equation}
+F_{X_2 \mid X_1}(x_2) = \operatorname{expit}( h(x_2) + \beta_{12} x_1 ),
+\end{equation}
+
+where \( h(x_2) \) is a smooth, monotonic transformation (e.g., a Bernstein polynomial), and \( \beta_{12} \) is a linear coefficient encoding the effect of \( X_1 \) on \( X_2 \).
+
+Taking the logit (inverse expit) yields:
+
+\begin{equation}
+\log\left( \frac{F_{X_2 \mid X_1}(x_2)}{1 - F_{X_2 \mid X_1}(x_2)} \right)
+= h(x_2) + \beta_{12} x_1.
+\end{equation}
+
+This linear additive structure allows the interpretation of \( \beta_{12} \). The odds ratio when increasing \( x_1 \) by one unit is:
+
+\begin{equation}
+\text{OR}_{x_1 \to x_1 + 1} = 
+\frac{\exp(h(x_2) + \beta_{12}(x_1 + 1))}{\exp(h(x_2) + \beta_{12} x_1)} 
+= \exp(\beta_{12}).
+\end{equation}
+
+\noindent\textbf{Interpretation:} The quantity \( \exp(\beta_{12}) \) represents the \textbf{multiplicative change in odds} for \( X_2 \le x_2 \) when increasing \( X_1 \) by one unit, holding all else constant.
+
+
+
+\section{Encoding of discrete variables} \label{sec:encoding_discrete_variables}
+
+In the TRAM-DAG a variable $X_i$ can act as a predictor variable for a child node, or as an outcome (child node) that depends on some parent nodes. When $X_i$ is acting as an outcome, the distribution of the variable $X_i$ represented by the transformation function $h$ which estimates a cut-point for each variable. So different form of intercept $h_i$ is used compared to a continuous outcome variable.
 
 If a discrete variable $X_i$ with $K$ categories is used as a predictor variable, it should be dummy encoded. This is done by creating $K-1$ binary variables, where each variable indicates whether the observation belongs to this specific category/level or not. The first category/level is used as the reference and is not explicitly included in the model.
 
@@ -117,7 +145,7 @@ For $X=3$, the CDF becomes: $F(Y \mid X=1) = F_Z(h_I(y) + \beta_2)$
 The coefficients $\beta_1$ and $\beta_2$ can be interpreted as the additive shift in the latent scale $h_I(y)$ when moving from the reference level (1) to levels 2 and 3, respectively.
 
 
-\subsubsection{Scaling of continuous variables}
+\section{Scaling of continuous variables} \label{sec:scaling_continuous_variables}
 
 Neural networks work best when the input variables are standardized. A linear, monotonic and invertible transformation of a predictor variable changes the interpretation of the coefficient. Scaling a predictor variable $X$ as $X_{\text{std}} = (X - mean(X)) / sd(X)$ will imply that the coefficient $\tilde{\beta}$ is interpreted as the change in log-odds for a one standard deviation increase in the predictor variable or equivalently, for a one unit increase in the standardized predictor. This is different from the interpretation of the coefficient $\beta$ in the original scale, which represents the change in log-odds for a one unit increase in the predictor variable.
 
@@ -179,4 +207,105 @@ For example, if we want to know the probability \( P(Y < 20 \mid X = 3) \) with 
 P\left(\frac{Y - \mu_Y}{\sigma_Y} < \frac{20 - \mu_Y}{\sigma_Y} \,\middle|\, X_{\text{std}} = \frac{3 - \mu_X}{\sigma_X} \right)
 = F_z\left(\tilde{h}\left(\frac{20 - \mu_Y}{\sigma_Y}\right) + \tilde{\beta} \cdot \frac{3 - \mu_X}{\sigma_X} \right)
 \]
+
+
+\section{Bernstein Polynomial for Continuous Outcomes}
+
+In deep TRAMs the intercept for continuous variables is a smooth monotonically increasing function that is represented by a Bernstein polynomial of order \( K \) (here the complex intercept case where the Intercept already depends on the predictors $x$, however, the same principle that follows also applies for the simple intercept case):
+
+\begin{equation}
+h_I(y \mid \mathbf{x}) = \sum_{k=0}^{K} b_k(\mathbf{x}) \cdot B_k(s(y))
+\label{eq:bernstein_intercept}
+\end{equation}
+
+where \( B_k(s(y)) \) is the Bernstein basis polynomial of order \( K \) evaluated at the scaled outcome \( s(y) \):
+
+
+To guarantee that the transformation \( h_I(y \mid \mathbf{x}) \) is monotonically increasing in \( y \), the coefficients \( b_k(\mathbf{x}) \) must form a non-decreasing sequence. This is ensured via a *cumulative softmax* parameterization. Instead of learning \( b_k(\mathbf{x}) \) directly as the outputs of the intercept neural network, we first define unbounded parameters \( \theta_k(\mathbf{x}) \in \mathbb{R} \) and then compute the Bernstein parameters using the cumulative softmax transformation:
+
+\begin{equation}
+\tilde{b}_k(\mathbf{x}) = \sum_{j=0}^{k} \frac{\exp(\theta_j(\mathbf{x}))}{\sum_{\ell=0}^{K} \exp(\theta_\ell(\mathbf{x}))}, \quad \text{for } k = 0, \ldots, K.
+\end{equation}
+
+This transformation produces a vector \( \tilde{b}_k(\mathbf{x}) \) that is monotonically increasing in \( k \), with values bounded in \( [0, 1] \). It ensures that:
+
+- \( \tilde{b}_0(\mathbf{x}) \leq \tilde{b}_1(\mathbf{x}) \leq \ldots \leq \tilde{b}_K(\mathbf{x}) \),
+- The sum of increments is 1,
+- The transformation is smooth and differentiable.
+
+
+The combination of Bernstein polynomials with cumulative softmax-transformed parameters allows flexible, smooth, and strictly monotonic transformations of continuous outcomes, which are essential properties for distribution estimation and generative sampling within the deep TRAM architecture.
+
+\subsection{Scaling and Extrapolation of the Bernstein Polynomial}
+
+
+
+% :
+
+% \begin{equation}
+% s(y) = \frac{y - \min(y)}{\max(y) - \min(y)}
+% \end{equation}
+Because the Bernstein polynomial is only defined on the range \( [0, 1] \) the outcome y has to be scaled onto the same range. Furthermore, for the sole purpose of estimating the parameters of the Bernstein polynomial it would be sufficient to finish here. However, one has to be able to also evaluate $h(y \mid \mathbf{x})$ for arbitrary values of y, in particular also the ones that are outside of $(\min(y_{train}), \max(y_{train}))$). This is also crucial for sampling. Therefore we extend the Bernstein polynomial by linearly extrapolating the tails of the polynomial. We do this by constructing inside the 5\% and 95\% quantiles of $y$ by the smooth Bernstein polynomial \ref{eq:bernstein_intercept} and linearly extrapolating the outside this range using the slope of the polynomial at the boundaries. This results in a piecewise-defined function that is differentiable, monotonic, and defined for all real values of \( y \), which is essential for evaluating the model at arbitrary outcomes or for generative sampling.
+
+Tho formalize this, let \( q_{0.05} \) and \( q_{0.95} \) denote the 5\% and 95\% empirical quantiles of the outcome \( y \), computed on the training data. The scaled outcome is defined as
+
+\begin{equation}
+s(y) = \frac{y - q_{0.05}}{q_{0.95} - q_{0.05}}.
+\end{equation}
+
+This scaling maps the interval \( [q_{0.05}, q_{0.95}] \) to the unit interval \( [0, 1] \), which is the domain of the Bernstein basis polynomials. Let \( h_I(s(y) \mid \mathbf{x}) \) be the original transformation as defined in Equation~\eqref{eq:bernstein_intercept}. The extrapolated transformation \( h^*(y \mid \mathbf{x}) \) is then defined as
+
+\begin{equation}
+h^*(y \mid \mathbf{x}) =
+\begin{cases}
+h_I(0 \mid \mathbf{x}) + h_I'(0 \mid \mathbf{x}) \cdot (s(y) - 0), & \text{if } s(y) < 0 \\
+h_I(s(y) \mid \mathbf{x}), & \text{if } 0 \leq s(y) \leq 1 \\
+h_I(1 \mid \mathbf{x}) + h_I'(1 \mid \mathbf{x}) \cdot (s(y) - 1), & \text{if } s(y) > 1
+\end{cases}
+\label{eq:extended_bernstein}
+\end{equation}
+
+The function is thus extrapolated beyond the central range using the tangent line at the boundaries. The derivatives \( h_I'(0 \mid \mathbf{x}) \) and \( h_I'(1 \mid \mathbf{x}) \) are computed analytically from the Bernstein basis and the learned coefficients \( b_k(\mathbf{x}) \), and ensure continuous differentiability across the domain (see next subsection).
+
+
+This construction ensures several desirable mathematical properties. First, the transformation \( \tilde{h}(y \mid \mathbf{x}) \) is globally defined on \( \mathbb{R} \), avoiding undefined regions or discontinuities. Second, it preserves monotonicity due to the use of the cumulative softmax parameterization of the coefficients \( b_k(\mathbf{x}) \), which guarantees that the Bernstein polynomial is strictly increasing. Finally, the piecewise-linear extrapolation ensures the function is continuously differentiable and smooth at the junctions \( s(y) = 0 \) and \( s(y) = 1 \).
+
+
+
+
+\subsection{Analytical Derivative of the Bernstein Polynomial Transformation}
+
+To efficiently compute the gradient of the transformation \( h_I(y \mid \mathbf{x}) \) with respect to its inputs, we can exploit the analytical structure of the Bernstein basis polynomials. Recall the general form of the transformation:
+
+\begin{equation}
+h_I(y \mid \mathbf{x}) = \sum_{k=0}^{K} b_k(\mathbf{x}) \cdot B_k(s(y)),
+\end{equation}
+
+where \( B_k(s) \) are the Bernstein basis polynomials of order \( K \), and \( b_k(\mathbf{x}) \) are predictor-dependent coefficients. For fixed \( \mathbf{x} \), the derivative with respect to \( y \) is needed, for example, to evaluate the density function when \( h_I \) is used in a generative model.
+
+Let us denote \( s = s(y) \). Using the chain rule, we compute:
+
+\begin{equation}
+\frac{d}{dy} h_I(y \mid \mathbf{x}) = \sum_{k=0}^{K} b_k(\mathbf{x}) \cdot \frac{d}{dy} B_k(s) = \sum_{k=0}^{K} b_k(\mathbf{x}) \cdot \frac{dB_k(s)}{ds} \cdot \frac{ds}{dy}.
+\end{equation}
+
+The derivative of the scaled outcome \( s(y) = \frac{y - q_{0.05}}{q_{0.95} - q_{0.05}} \) is simply
+
+\begin{equation}
+\frac{ds}{dy} = \frac{1}{q_{0.95} - q_{0.05}}.
+\end{equation}
+
+The derivative of the Bernstein basis polynomial \( B_{k,K}(s) \) is known and given by:
+
+\begin{equation}
+\frac{d}{ds} B_{k,K}(s) = K \left[ B_{k-1,K-1}(s) - B_{k,K-1}(s) \right].
+\end{equation}
+
+Therefore, the full derivative is:
+
+\begin{equation}
+\frac{d}{dy} h_I(y \mid \mathbf{x}) = \frac{K}{q_{0.95} - q_{0.05}} \sum_{k=0}^{K} b_k(\mathbf{x}) \left[ B_{k-1,K-1}(s) - B_{k,K-1}(s) \right].
+\end{equation}
+
+This expression can be evaluated efficiently and is used both in the likelihood computation (e.g., via change-of-variables) and for constructing tail extrapolations with matching slopes.
 

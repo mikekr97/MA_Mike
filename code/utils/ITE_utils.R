@@ -441,6 +441,116 @@ struct_dag_loss_ITE = function (t_i, h_params, binary_treatment = TRUE){
 ##### ------- MA Mike funcitons for ITE_observatinoal_simulation.R -------------
 
 
+# baseline transformation function for dgp
+
+# Define the interval boundaries for the core function
+x_left_boundary <- -2
+x_right_boundary <- 2
+# Define the constant divisor as per the problem description (1/0.2)
+constant_divisor <- 0.2
+
+# --- Pre-calculate constants for linear extrapolation ---
+
+# Calculate the y-values of the core function at the boundaries
+# f(x) = tan(x/2) / 0.2
+y_at_x_left_boundary <- tan(x_left_boundary / 2) / constant_divisor
+y_at_x_right_boundary <- tan(x_right_boundary / 2) / constant_divisor
+
+# Calculate the slopes (derivatives) of the core function at the boundaries
+# f'(x) = d/dx (tan(x/2) / 0.2)
+#       = (1 / 0.2) * (1/2) * sec^2(x/2)
+#       = (1 / 0.4) * (1 / cos(x/2)^2)
+slope_at_x_left_boundary <- (1 / constant_divisor) * (1 / 2) * (1 / cos(x_left_boundary / 2)^2)
+slope_at_x_right_boundary <- (1 / constant_divisor) * (1 / 2) * (1 / cos(x_right_boundary / 2)^2)
+
+# --- Define the h_y function ---
+
+h_y <- function(x) {
+  # Initialize a numeric vector to store the results, matching the length of x
+  result <- numeric(length(x))
+  
+  # Identify indices for each segment
+  indices_left_extrapolation <- which(x < x_left_boundary)
+  indices_middle_segment <- which(x >= x_left_boundary & x <= x_right_boundary)
+  indices_right_extrapolation <- which(x > x_right_boundary)
+  
+  # Apply the function logic for each segment
+  if (length(indices_left_extrapolation) > 0) {
+    # Linear extrapolation for x < -2: y = y_at_x_left_boundary + slope_at_x_left_boundary * (x - x_left_boundary)
+    result[indices_left_extrapolation] <- y_at_x_left_boundary + slope_at_x_left_boundary * (x[indices_left_extrapolation] - x_left_boundary)
+  }
+  
+  if (length(indices_middle_segment) > 0) {
+    # Core function for -2 <= x <= 2: y = tan(x/2) / 0.4
+    result[indices_middle_segment] <- tan(x[indices_middle_segment] / 2) / constant_divisor
+  }
+  
+  if (length(indices_right_extrapolation) > 0) {
+    # Linear extrapolation for x > 2: y = y_at_x_right_boundary + slope_at_x_right_boundary * (x - x_right_boundary)
+    result[indices_right_extrapolation] <- y_at_x_right_boundary + slope_at_x_right_boundary * (x[indices_right_extrapolation] - x_right_boundary)
+  }
+  
+  return(result)
+}
+
+# --- Define the h_y_inverse function ---
+
+h_y_inverse <- function(y) {
+  # Initialize a numeric vector to store the results, matching the length of y
+  result <- numeric(length(y))
+  
+  # The y-values at the tangent points define the boundaries for the inverse function
+  # These are the y-values at x = -2 and x = 2
+  y_boundary_left_tangent_point <- y_at_x_left_boundary
+  y_boundary_right_tangent_point <- y_at_x_right_boundary
+  
+  # Identify indices for each inverse segment based on y-values
+  indices_inverse_left_extrapolation <- which(y <= y_boundary_left_tangent_point)
+  indices_inverse_middle_segment <- which(y > y_boundary_left_tangent_point & y < y_boundary_right_tangent_point)
+  indices_inverse_right_extrapolation <- which(y >= y_boundary_right_tangent_point)
+  
+  # Apply the inverse function logic for each segment
+  if (length(indices_inverse_left_extrapolation) > 0) {
+    # Inverse of left extrapolation: x = (y - y_at_x_left_boundary) / slope_at_x_left_boundary + x_left_boundary
+    result[indices_inverse_left_extrapolation] <- (y[indices_inverse_left_extrapolation] - y_at_x_left_boundary) / slope_at_x_left_boundary + x_left_boundary
+  }
+  
+  if (length(indices_inverse_middle_segment) > 0) {
+    # Inverse of core function: y = tan(x/2) / 0.4 => 0.4 * y = tan(x/2) => x/2 = atan(0.4 * y) => x = 2 * atan(0.4 * y)
+    result[indices_inverse_middle_segment] <- 2 * atan(constant_divisor * y[indices_inverse_middle_segment])
+  }
+  
+  if (length(indices_inverse_right_extrapolation) > 0) {
+    # Inverse of right extrapolation: x = (y - y_at_x_right_boundary) / slope_at_x_right_boundary + x_right_boundary
+    result[indices_inverse_right_extrapolation] <- (y[indices_inverse_right_extrapolation] - y_at_x_right_boundary) / slope_at_x_right_boundary + x_right_boundary
+  }
+  
+  return(result)
+}
+
+
+# --- Example usage of the functions ---
+
+# Example usage of h_y and h_y_inverse functions
+example_x_values <- seq(-4, 4, by = 0.1)  # Example x values for testing
+example_y_values <- h_y(example_x_values)  # Calculate h_y for the example x values
+
+
+# plot to check if it works:
+
+plot(example_x_values, example_y_values, type = "l", col = "blue", lwd = 2,
+     main = "Plot of h_y(x)",
+     xlab = "x", ylab = "h_y(x)",
+     xlim = c(-4, 4), ylim = c(-10, 10))
+
+# inverse of y value
+
+example_y_values_inverse <- h_y_inverse(example_y_values)  # Calculate h_y_inverse for the example y values
+plot(example_x_values, example_y_values_inverse)
+
+
+
+
 
 calculate_ITE_median <- function(data){
   # data <- train
@@ -1100,6 +1210,145 @@ plot_CATE_vs_ITE_group <- function(dev.data, val.data) {
   
   return(result)
 }
+
+
+
+
+
+
+
+
+# Function to calculate ATE (difference in means) for continuous outcomes
+calc.ATE.Continuous.median <- function(data) {
+  data <- as.data.frame(data)
+  
+  y_tx <- data$Y[data$Tr == 1]
+  y_ct <- data$Y[data$Tr == 0]
+  
+  # Mean outcomes in treated and control
+  median1 <- median(y_tx)
+  median0 <- median(y_ct)
+  
+  # ATE (difference of medians)
+  ATE <- median1 - median0
+  
+  # Number of observations in this bin
+  n1 <- sum(data$Tr == 1)
+  n0 <- sum(data$Tr == 0)
+  
+
+  # Set number of bootstrap iterations
+  n_boot <- 10000
+  
+  # Bootstrap distribution of difference in medians
+  boot_diff <- replicate(n_boot, {
+    sample_tx <- sample(y_tx, length(y_tx), replace = TRUE)
+    sample_ct <- sample(y_ct, length(y_ct), replace = TRUE)
+    median(sample_tx) - median(sample_ct)
+  })
+  
+  # Compute 95% confidence interval
+  ATE.lb <- quantile(boot_diff, 0.025)
+  ATE.ub <- quantile(boot_diff, 0.975)
+  
+  
+  return(data.frame(
+    ATE = ATE,
+    ATE.lb = ATE.lb,
+    ATE.ub = ATE.ub,
+    n.total = nrow(data),
+    n.tr = n1,
+    n.ct = n0
+  ))
+}
+
+
+# Function to create the CATE vs ITE group plot
+plot_CATE_vs_ITE_group_median <- function(dev.data, val.data) {
+  data <- rbind(
+    dev.data %>% mutate(sample = "derivation"),
+    val.data %>% mutate(sample = "validation")
+  )
+  
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2, position = position_dodge(width = 0.2)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+    scale_color_manual(
+      name = "Group",
+      labels = c("derivation" = "Training Data", "validation" = "Test Data"),
+      values = c("orange", "#36648B")
+    ) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    ylim(min(c(dev.data$ATE.lb, val.data$ATE.lb)) - 0.1, max(c(dev.data$ATE.ub, val.data$ATE.ub)) + 0.1) +
+    xlab("ITE Group") +
+    ylab("ATE (Difference in Medians)") +
+    theme_minimal() +
+    theme(
+      legend.position = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
+
+
+
+
+
+
+# Function to create the CATE vs ITE group plot
+plot_CATE_vs_ITE_group_median_with_theoretical <- function(dev.data, val.data, bin_centers) {
+  data <- rbind(
+    dev.data %>% mutate(sample = "derivation"),
+    val.data %>% mutate(sample = "validation")
+  )
+  
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2, position = position_dodge(width = 0.2)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+    scale_color_manual(
+      name = "Group",
+      labels = c("derivation" = "Training Data", "validation" = "Test Data", "theoretical" = "Theoretical Center"),
+      values = c("orange", "#36648B", "black")
+    ) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    geom_line(data = bin_centers, aes(x = ITE.Group, y = theoretical.center, group = 1, color = "theoretical"),
+              linetype = "dashed")+
+    ylim(min(c(dev.data$ATE.lb, val.data$ATE.lb)) - 0.1, max(c(dev.data$ATE.ub, val.data$ATE.ub)) + 0.1) +
+    xlab("ITE Group") +
+    ylab("ATE (Difference in Medians)") +
+    theme_minimal() +
+    theme(
+      legend.position = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
 
 
 
