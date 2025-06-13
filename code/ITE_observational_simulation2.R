@@ -225,62 +225,7 @@ dgp_simulation <- function(n_obs=20000,
     }
     # beta_TX <- c(-0.9, 0.7)  # interaction effects of X2, X3 with treatment
     
-    # logit_X7 <- beta0 + beta_t * Tr + data_X %*% beta_X + (data_X[,c("X2", "X3")] %*% beta_TX) * Tr
-    
-    # 
-    # logit_Y_tx <- -0.5 * -0.6205212 +0.5 * -1.901664 + 0.2 * 3.183446 + -0.6 * -1.677867 + 0.4* -0.1310818 + 1 * 1.5 +
-    #   1 * (-0.9 * -1.901664 + 0.7 * 3.183446)
-    # logit_Y_ct <- -0.5 * -0.6205212 + 0.5 * -1.901664 + 0.2 * 3.183446 + (-0.6) * -1.677867 + 0.4* -0.1310818 + 0 * 1.5 +
-    #   0 * (-0.9 * -1.901664 + 0.7 * 3.183446)
-    # 
-    # # x7dash = h_y(x7) + logit_X7
-    # # x7 = h_y_inverse(x_7_dash - logit_X7)
-    # y_txx <- h_y_inverse(0 - logit_Y_tx)
-    # y_ctt <- h_y_inverse(0 - logit_Y_ct)
-    # y_txx-y_ctt
-    # 
-    # y_txx <- h_y_inverse(-0.2151 - logit_Y_tx)
-    # y_ctt <- h_y_inverse(-0.2151 - logit_Y_ct)
-    # y_txx-y_ctt
-    # 
-    # latent_observed_bsp <- h_y(-1.110635) + logit_Y_ct
-    # latent_observed_bsp
-    # results.dev$latent_obs[indexx,]
-    # 
-    # train_mat[2,]
-    # X1        X2       X3 Tr        X5         X6         Y ITE_true ITE_median ITE_median_pred
-    # -1.827895 -1.992647 2.004102  1 -2.046042 -0.5662024 -1.914149 -1.07669  -1.754709      -0.4966255
-    # ITE_obsZ_pred
-    # -0.04825521
 
-# 
-#     logit_Y_tx <- -0.5 * -1.827895 +0.5 * -1.992647 + 0.2 * 2.004102 + -0.6 * -2.046042 + 0.4* -0.5662024 + 1 * 1.5 +
-#       1 * (-0.9 * -1.992647 + 0.7 * 2.004102)
-#     logit_Y_ct <- -0.5 * -1.827895 +0.5 * -1.992647 + 0.2 * 2.004102 + -0.6 * -2.046042 + 0.4* -0.5662024 + 0 * 1.5 +
-#       0 * (-0.9 * -1.992647 + 0.7 * 2.004102)
-
-    
-    # # lat_obs <- h_y(-1.914149) + logit_Y_tx
-    # # # x7dash = h_y(x7) + logit_X7
-    # # # x7 = h_y_inverse(x_7_dash - logit_X7)
-    # y_txx <- h_y_inverse(0 - logit_Y_tx)
-    # y_ctt <- h_y_inverse(0 - logit_Y_ct)
-    # y_txx-y_ctt
-    # 
-    # y_txx <- h_y_inverse(-0.2151 - logit_Y_tx)
-    # y_ctt <- h_y_inverse(-0.2151 - logit_Y_ct)
-    # y_txx-y_ctt
-    # 
-    # results.dev$latent_obs[indexx2,]
-    # 
-    # latent_observed_bsp2 <- h_y(-1.914149) + logit_Y_tx
-    # 
-    # # sort ascending according to ITE_median
-    # train_mat <- res.df.train[order(res.df.train$ITE_median), ]
-    # train_mat[2,]
-    # 
-    # indexx2 <- order(res.df.train$ITE_median)[2]
-    
     logit_X7 <- beta0 + beta_t * Tr + data_X %*% beta_X + (data_X[,c("X2", "X3")] %*% beta_TX) * Tr
     
 
@@ -442,7 +387,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 2
+scenario <- 3
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -716,7 +661,7 @@ if (TRUE){
   # DIR_plot <- file.path(DIR, MODEL_NAME)
   # create a folder named MODEL_NAME in DIR and save the image p in this folder with name 'sampling_distributions.png'
   # DIR_szenario
-  if (!dir.exists(file.path(DIR, MODEL_NAME, 'sampling_distributions.png'))) {
+  if (!file.exists(file.path(DIR, MODEL_NAME, 'sampling_distributions.png'))) {
     # dir.create(file.path(DIR, MODEL_NAME), recursive = TRUE)
     # 
     
@@ -902,6 +847,23 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 
 
+############################
+# Check predictive power
+############################
+
+# predict outcome Y for original data (train set)
+
+h_params_orig <- param_model(train$dat.tf)
+
+predicted_y <- predict_outcome(h_params_orig, train$dat.tf)
+
+plot(as.numeric(train$dat.tf[,7]), as.numeric(predicted_y), 
+     main = "Predicted vs. True Y (train)", 
+     xlab = "True Y", ylab = "Predicted Y")
+abline(0, 1, col = 'red', lty = 2)
+
+sqrt(mean((as.numeric(train$dat.tf[,7]) - as.numeric(predicted_y))^2))
+
 
 
 
@@ -942,7 +904,7 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 ### estimate ITE on test set with patients that received T=0 and T=1
 
-samplesRdata <- file.path(DIR_plot, 'ITE_samples.RData')
+samplesRdata <- file.path(DIR, MODEL_NAME, 'ITE_samples.RData')
 # file for this scenario:
 # samplesRdata = paste0(fn, '_E', num_epochs, 'ITE_samples.RData')
 
@@ -956,6 +918,7 @@ if (file.exists(samplesRdata)) {
   ## Train ITE:
   # was generated with seed 123
   results.dev <- calculate_ITE_median(train)
+
   
   ## Test ITE:
   # generate similar as train but with seed = 1
@@ -964,9 +927,11 @@ if (file.exists(samplesRdata)) {
   
   results.val <- calculate_ITE_median(test)
   
+
   save(results.dev, 
-     results.val,
-     file = samplesRdata)
+       results.val, 
+       file = samplesRdata)
+
 }
 
 
@@ -974,17 +939,22 @@ if (file.exists(samplesRdata)) {
 
 res.df.train <- results.dev$data$simulated_full_data
 res.df.val <- results.val$data$simulated_full_data
-  
 
 
 
-### ATE in terms of mean ITE
+
+### ATE in terms of mean ITE_median
 
 # train set
 mean(res.df.train$ITE_median_pred)
 
 # test set
 mean(res.df.val$ITE_median_pred)
+
+
+# ATE in terms of mean ITE_obsZ_pred (not possible in practice, because outcome not observed)
+mean(res.df.train$ITE_obsZ_pred)
+mean(res.df.val$ITE_obsZ_pred)
   
   
 ### Plot the results for the ITE based on Median Potential Y
@@ -1020,6 +990,16 @@ plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
 abline(0, 1, col = 'red', lty = 2)
 
 
+## Check predicted values of Y for original treatment allocation (same as plot above in skript):
+y_sampled <- ifelse(train$simulated_full_data$Tr == 1, 
+       results.dev$outcome_tx_median, 
+       results.dev$outcome_ct_median)
+
+par(mfrow = c(1,1))
+plot(train$simulated_full_data$Y, y_sampled, 
+     main = "Predicted Y vs. True Y (train)", 
+     xlab = "True Y", ylab = "Predicted Y (median)")
+abline(0, 1, col = 'red', lty = 2)
 
 
 
