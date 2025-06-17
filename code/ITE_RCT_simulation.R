@@ -40,8 +40,8 @@ file.copy('/code/ITE_RCT_simulation.R', file.path(DIR, 'ITE_RCT_simulation.R'), 
 
 # X1, X2, X3, X4 (Tr), X5, X6, X7 (Y)
 MA =  matrix(c(
-  0,   0,  0, 0, 0, 0, 'ci',    ## X1 impacts X4 (Tr) and X7 (Y) directly
-  0,   0,  0, 0, 0, 0, 'ci',    ## X2 impacts X4 (Tr) and X7 (Y) directly
+  0,   0,  0, 0, 0, 0, 'ci',    ## X1 impacts X7 (Y) directly
+  0,   0,  0, 0, 0, 0, 'ci',    ## X2 impacts  X7 (Y) directly
   0,   0,  0,  0  , 0, 0, 'ci',    ## X3 impacts X7 (Y) directly
   0,   0,  0,  0, 'ci',0, 'ci',    ## X4 (Tr) impacts X5 and X7 (Y) directly
   0,   0,  0,  0,  0,'ci','ci',    ## X5 impacts X6 and X7 (Y) directly
@@ -59,14 +59,16 @@ MA =  matrix(c(
 
 # DGP for simulation as done by: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/
 
-# sorce nodes by standard normal with corr 0.1
-# main effects of covariates X1, X2, X3, X5, X6 stay constant
-# effects of T:X5 and X5:X6 stay constant
+# source nodes by standard normal with corr 0.1
+# direct effects of covariates X1, X2, X3, X5, X6 unchanged in each szenario
+# effects of T->X5 and X5->X6 unchanged in each scenario
+
+# no confounding: randomized
 
 
-# Number of observations: 10000 and 500
-# Main effect treatment: present (b0 = ), absent (b0 = 0)
-# Heterogeneous effect treatment: present (beta_X2 = , beta_X3 = ), absent (beta_X2 = 0, beta_X3 = 0)
+# number of observations: 20000 
+# direct effect treatment: present (b0 = 1.5), absent (b0 = 0)
+# heterogeneous effect treatment: present (beta_X2 = -0.9, beta_X3 = 0.7), absent (beta_X2 = 0, beta_X3 = 0)
 
 
 
@@ -132,11 +134,11 @@ dgp_simulation <- function(n_obs=20000,
   } else {
     Tr <- rep(doX[4], n_obs)
   }
-  # mean(Tr)
   
   
   
   ### X5 dependent on Tr
+  
   # Sampling according to colr
   if (is.na(doX[5])){
     U5 = runif(n_obs)
@@ -160,6 +162,7 @@ dgp_simulation <- function(n_obs=20000,
   
   
   ### X6 dependent on X5
+  
   # Sampling according to colr
   if (is.na(doX[6])){
     U6 = runif(n_obs)
@@ -167,7 +170,7 @@ dgp_simulation <- function(n_obs=20000,
     
     beta56 <- (-0.5)
     #x_6_dash = h_0(x_6) + beta56 * X5
-    #x_6_dash = 0.7*x_6 + beta56 * X5
+    #x_6_dash = 4*x_6 + beta56 * X5
     X6 = 1/4 * (x_6_dash - beta56 * X5)
     
     # under Tr = 0
@@ -183,28 +186,24 @@ dgp_simulation <- function(n_obs=20000,
   
   
   
-  #### Y (X7): continuous outcome dependent on Tr, X2-X6 (with Tr interactions X2, X3)
+  #### Y (X7): continuous outcome dependent on Tr, X1, X2, X3, X5, X6 (incl. Tr interactions between X2, X3)
   
   data_X <- as.matrix(data.frame(X1 = data[,1], X2 = data[,2], X3 = data[,3], X5 = X5, X6 = X6))
-  
   
   if (is.na(doX[7])){
     U7 = runif(n_obs)
     x_7_dash = qlogis(U7)
     
     
-    # Main effect treatment: present (b0 = log(0.6)), absent (b0 = 0)
-    # Heterogeneous effect treatment: present (beta_X2 = -1/2, beta_X3 = -1/4), absent (beta_X2 = 0, beta_X3 = 0)
-    
-    beta0 <- 0
+    beta0 <- 0 # no intercept
     
     if (main_effect) {
-      beta_t <- 1.5  # main effect of treatment
+      beta_t <- 1.5  # direct effect of treatment
     } else {
-      beta_t <- 0  # no main effect of treatment
+      beta_t <- 0  # no direct effect of treatment
     }
-    # beta_t <- 1.5
-    beta_X <- c(-0.5, 0.5, 0.2, -0.6, 0.4)  # main effects of X1, X2, X3   , X5, X6
+    
+    beta_X <- c(-0.5, 0.5, 0.2, -0.6, 0.4)  # direct effects of X1, X2, X3, X5, X6
     
     if (interaction_effect) {
       # interaction effects of X2, X3 with treatment
@@ -213,8 +212,6 @@ dgp_simulation <- function(n_obs=20000,
       # no interaction effects of X2, X3 with treatment
       beta_TX <- c(0, 0)  
     }
-    # beta_TX <- c(-0.9, 0.7)  # interaction effects of X2, X3 with treatment
-    
     
     logit_X7 <- beta0 + beta_t * Tr + data_X %*% beta_X + (data_X[,c("X2", "X3")] %*% beta_TX) * Tr
     
@@ -246,7 +243,6 @@ dgp_simulation <- function(n_obs=20000,
     X7_tx <- h_y_inverse(x_7_dash - logit_X7_tx)
     
     
-    
   } else{
     X7 = rep(doX[7], n_obs)
   }
@@ -254,11 +250,11 @@ dgp_simulation <- function(n_obs=20000,
   ### ITE with median of potential outcomes (median X_7_dash is 0)
   ITE_median <- h_y_inverse(0 - logit_X7_tx) -
     h_y_inverse(0 - logit_X7_ct)
+
+  
   
   ### ITE with the effective potential outcome (observed latent value, probably not practical in practice)
   ITE_true <- X7_tx - X7_ct
-  
-  
   
   
   
@@ -273,7 +269,6 @@ dgp_simulation <- function(n_obs=20000,
                                     ITE_true = ITE_true, 
                                     ITE_median = ITE_median)
   
-
   
   
   
@@ -321,13 +316,16 @@ dgp_simulation <- function(n_obs=20000,
 } 
 
 
+### Select scenarios (with main_effect, the direct effect of Tr on Y is meant)
+
+
 # scenario1:  main_present, interaction_present
 # scenario2:  main_present, interaction_absent
 # scenario3:  main_absent, interaction_present
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 3
+scenario <- 1
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -361,6 +359,18 @@ if (scenario == 1) {
   MODEL_NAME <- paste0(MODEL_NAME, '_' ,n_obs,'obs', '_main_absent_interaction_absent')
 }
 
+
+# set scenario_name for plot naming
+if (scenario == 1) {
+  scenario_name <- 'rct_scenario1_'
+} else if (scenario == 2) {
+  scenario_name <- 'rct_scenario2_'
+} else if (scenario == 3) {
+  scenario_name <- 'rct_scenario3_'
+} else if (scenario == 4) {
+  scenario_name <- 'rct_scenario4_'
+}
+
 fn = file.path(DIR, paste0(MODEL_NAME))
 print(paste0("Starting experiment ", fn))
 
@@ -373,13 +383,15 @@ global_min = train$min
 global_max = train$max
 data_type = train$type
 
-## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 1,2
+## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 
+# where the transformation function is the cut-point representing the probability P(X4)
 
 
 ############################
 # Check simulated Train Data
 ############################
 
+### Possible example of the dag (medical case):
 
 # | Variable | Meaning                                        | Type       | Role       |
 #   | -------- | ---------------------------------------------- | ---------- | ---------- |
@@ -416,6 +428,32 @@ boxplot(train$simulated_full_data$X2 ~ train$simulated_full_data$Tr,
         main = "X2 True by Tr")
 
 
+
+
+# Set the output path (same as sampling_distributions.png)
+DIR_szenario <- file.path(DIR, MODEL_NAME)
+file_name <- file.path(DIR_szenario, paste0(scenario_name, "ite_distribution_dgp.png"))
+
+# Open PNG device
+png(filename = file_name, width = 8, height = 6, units = "in", res = 300)
+
+# Base R histogram
+hist(
+  train$simulated_full_data$ITE_median,
+  breaks = 50,
+  main = "",
+  xlab = "ITE",
+  ylab = "Frequency",
+  col = "gray90",
+  border = "gray30",
+  las = 1,              # axis labels horizontal
+  cex.lab = 1.2,        # axis label size
+  cex.axis = 1,         # axis tick label size
+  cex.main = 1.4        # title size
+)
+
+# Close device
+dev.off()
 
 ### check ATE
 
@@ -473,11 +511,10 @@ ATE_median_theoretical
 ############################
 
 
-
 len_theta_max = 20 # max number for intercept (ordinal)
 len_theta = 20 # number of coefficients of the Bernstein polynomials
 
-# Attention, number of nodes in each layer shouldbe grater than the number of 
+# Attention, number of nodes in each layer should be grater than the number of 
 # variable that have a complex influence (CI or CS) on other variables, because
 # with masking, some connections are "cut", so for 7 influencing variables, we 
 # need at least 7 nodes in the first layer, to ensure there are enough 
@@ -487,7 +524,6 @@ hidden_features_I = c(10, 10, 10)
 hidden_features_CS = c(2, 5, 5, 2)
 
 
-# t_i <- train$dat.tf
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS,
                                  dropout = TRUE, batchnorm = TRUE, activation = "relu")
 optimizer = optimizer_adam(learning_rate = 0.001)
@@ -500,6 +536,7 @@ summary(param_model)
 
 # show activation function activation_68 --> Relu is used (before it was sigmoid)
 param_model$get_layer("activation_761")$get_config()
+
 
 
 
@@ -518,7 +555,8 @@ num_epochs <- 1000
 
 
 DIR_szenario <- file.path(DIR, MODEL_NAME)
-# create a folder named MODEL_NAME in DIR and save the image p in this folder with name 'sampling_distributions.png'
+
+# if not exists yet
 if (!dir.exists(DIR_szenario)) {
   dir.create(DIR_szenario, recursive = TRUE)
 }
@@ -619,6 +657,7 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 
+
 if (TRUE){
   
   # DIR_plot <- file.path(DIR, MODEL_NAME)
@@ -626,10 +665,8 @@ if (TRUE){
   # DIR_szenario
   if (!file.exists(file.path(DIR, MODEL_NAME, 'sampling_distributions.png'))) {
     # dir.create(file.path(DIR, MODEL_NAME), recursive = TRUE)
-    # 
     
-    
-    
+    ### Observational distributions
     doX = c(NA, NA, NA, NA, NA, NA, NA)
     s_obs_fitted = do_dag_struct_ITE_observational(param_model, train$A, doX, num_samples = 5000)$numpy()
     
@@ -762,6 +799,79 @@ if (TRUE){
 }
 
 
+## save plot vertically
+
+
+
+p <- ggplot(data = df) + # Explicitly pass df to ggplot() for clarity
+  geom_histogram(data = subset(df, X != 4),
+                 aes(x = vals, col = type, fill = type, y = after_stat(density)),
+                 position = "identity", alpha = 0.2, bins = 30) +
+  geom_bar(data = subset(df, X == 4),
+           aes(x = vals, y = after_stat(prop), col = type, fill = type),
+           position = "dodge", alpha = 0.4, size = 0.5) +
+  facet_grid(X ~ L, scales = 'free_y',
+             labeller = as_labeller(c(
+               '1' = 'X1', '2' = 'X2', '3' = 'X3',
+               '4' = 'X4 (Tr)', '5' = 'X5', '6' = 'X6',
+               '7' = 'X7 (Y)',
+               'L0' = 'Obs',
+               'L1' = 'Do X4 = 0',
+               'L2' = 'Do X4 = 1'
+             ))) +
+  labs(y = "Density / Probability", x = "Values") +
+  
+  # Start with theme_minimal() for better control over individual elements
+  # It's often easier to build up from minimal than strip down from classic for custom axes
+  theme_minimal() + # Changed back to theme_minimal for better explicit control
+  
+  # Define axis breaks - n.breaks is more robust than pretty(x,n) with free scales
+  scale_x_continuous(n.breaks = 5) +
+  scale_y_continuous(n.breaks = 3, labels = scales::label_number_auto()) + # Use scales::label_number_auto for y-axis
+  
+  theme(
+    # --- Text Sizes ---
+    text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 10), # Keep axis numbers slightly smaller
+    
+    # --- Facet Strips (Labels for X1, X2, etc. and Obs, Do X4=0) ---
+    strip.text = element_text(size = 12, face = "bold"),
+    strip.text.y = element_text(angle = 0, hjust = 0),
+    strip.background = element_blank(), # Remove background box behind facet labels
+    
+    # --- Legend ---
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.justification = "center",
+    legend.box = "horizontal",
+    # legend.background = element_rect(fill = "white", colour = NA), # No border for legend background
+    legend.key.size = unit(0.7, "cm"),
+    legend.text = element_text(size = 10),
+    
+    # --- Panel Background and Borders ---
+    # panel.background = element_rect(fill = "white", colour = NA), # White background for panels
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.5), # Border around each facet
+    
+    # --- Grid Lines (Remove for clean look) ---
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    
+    
+    # Add a little spacing between panels for readability
+    panel.spacing = unit(0.5, "lines")
+  ) +
+  # Coordinate system: no expansion, ensures axes go right to panel border
+  # Adjusted ylim to avoid cutting off data while still providing a ceiling for bars
+  coord_cartesian(ylim = c(0, 1.1), xlim = NULL, expand = FALSE)
+p
+
+# save plot
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'sampling_distributions_vertical.png'))
+ggsave(file_name, plot = p, width = 6, height = 8, dpi = 300, device = "png")
+
+
+
 ### analyze distributions
 
 
@@ -810,6 +920,50 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 
 
+
+#### Save last plot (X7)
+
+# Set file name
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'X7_treatment_densities.png'))
+
+# Save to PNG with high resolution
+png(filename = file_name, width = 2000, height = 1600, res = 300)
+
+# Plot
+par(mfrow = c(1,1), mar = c(4.5, 4.5, 2, 1))
+plot(density(s_do_fitted_ct[,7]), 
+     main = "", 
+     xlab = "X7 (Outcome Y)", 
+     ylab = "Density", 
+     lty = 1, 
+     col = "black", 
+     lwd = 2, 
+     ylim = c(0, max(density(s_do_fitted_tx[,7])$y,
+                     density(d_tx[,7])$y, density(d_ct[,7])$y)))
+
+# Add estimated Tr=1
+lines(density(s_do_fitted_tx[,7]), col = "darkred", lwd = 2)
+
+# Add DGP Tr=0
+lines(density(d_ct[,7]), lty = 2, col = "black", lwd = 2)
+
+# Add DGP Tr=1
+lines(density(d_tx[,7]), lty = 2, col = "darkred", lwd = 2)
+
+# Add legend
+legend("topright", 
+       legend = c("Tr = 0 (Model)", "Tr = 1 (Model)", "Tr = 0 (DGP)", "Tr = 1 (DGP)"),
+       col = c("black", "darkred", "black", "darkred"), 
+       lty = c(1, 1, 2, 2), 
+       lwd = 2,
+       cex = 0.85, 
+       bty = "n")
+
+# Close PNG device
+dev.off()
+
+
+
 ############################
 # Check predictive power
 ############################
@@ -829,18 +983,64 @@ sqrt(mean((as.numeric(train$dat.tf[,7]) - as.numeric(predicted_y))^2))
 
 
 
+# calibration plot (Y is continuous)
+
+y_pred <- as.numeric(predicted_y)
+y_true <- as.numeric(train$dat.tf[,7])
+
+
+# Create calibration dataframe
+calibration_data <- data.frame(
+  predicted = y_pred,
+  true = y_true
+)
+
+# Binning
+calibration_data <- calibration_data %>%
+  mutate(prob_bin = cut(
+    y_pred,
+    breaks = seq(min(y_pred), max(y_pred), length.out = bins + 1),
+    include.lowest = TRUE
+  ))
+
+# Aggregate
+agg_bin <- calibration_data %>%
+  group_by(prob_bin) %>%
+  summarise(
+    pred_probability = mean(predicted),
+    obs_proportion = mean(true),
+    n_total = n(),
+    .groups = "drop"
+  )
+
+# Plot
+ggplot(agg_bin, aes(x = pred_probability, y = obs_proportion)) +
+  geom_point(color = "blue", size = 2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = paste("Calibration Plot (Train) (", bins, " bins)", sep = ""),
+    x = "Predicted Y",
+    y = "Observed Mean Y"
+  ) +
+  coord_equal() +
+  theme_minimal()
+
+
+
 
 ############################
 # Estimate ITE
 ############################
 
-# A scenario of observtational variables used to fit the model, medical
+
+
+# A example scenario of observtional variables used to fit the model, medical
 
 # | Variable | Meaning                                        | Type       | Role       |
 #   | -------- | ---------------------------------------------- | ---------- | ---------- |
 #   | T        | Weight loss drug participation                 | Binary     | Treatment  |
-#   | X₁       | Age                                            | Continuous | Confounder |
-#   | X₂       | Baseline BMI                                   | Continuous | Confounder |
+#   | X₁       | Age                                            | Continuous | Covariate |
+#   | X₂       | Baseline BMI                                   | Continuous | Covariate |
 #   | X₃       |Physical activity level      (e.g., hours/week) | Continuous | Covariate  |
 #   | X₅       | Body fat percentage                            | Continuous | Mediator   |
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
@@ -854,8 +1054,8 @@ sqrt(mean((as.numeric(train$dat.tf[,7]) - as.numeric(predicted_y))^2))
 # | Variable | Description                                         | Role                              |
 #   | -------- | --------------------------------------------------- | --------------------------------- |
 #   | **T**    | Received marketing email campaign (1 = yes, 0 = no) | Binary treatment                  |
-#   | **X₁**   | Prior total spend (last 6 months)                   | Confounder (affects both T and Y) |
-#   | **X₂**   | Customer engagement score (website/app activity)    | Confounder (affects both T and Y) |
+#   | **X₁**   | Prior total spend (last 6 months)                   | Covariate |
+#   | **X₂**   | Customer engagement score (website/app activity)    | Covariate |
 #   | **X₃**   | Customer satisfaction score from recent survey      | Covariate (affects Y only)        |
 #   | **X₅**   | Time spent on website after email                   | Mediator (T → X₅ → Y and X₆)      |
 #   | **X₆**   | Number of product pages viewed                      | Downstream mediator (X₅ → X₆ → Y) |
@@ -920,6 +1120,8 @@ mean(res.df.train$ITE_obsZ_pred)
 mean(res.df.val$ITE_obsZ_pred)
 
 
+
+
 ### Plot the results for the ITE based on Median Potential Y
 
 
@@ -939,6 +1141,50 @@ legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"),
        lty=1, cex=0.7, bty='n')
 
 
+
+### save the density ITE plots:
+
+# Save as PNG in same location as other plots
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_densities_train_test.png'))
+# png(filename = file_name, width = 3000, height = 1600, res = 300)
+png(filename = file_name, width = 2000, height = 1000, res = 300)
+
+# Layout: two plots side by side
+par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+
+# --- Plot 1: Train set
+plot(density(res.df.train$ITE_median_pred),
+     main = "", xlab = "ITE", ylab = "Density",
+     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
+     col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
+
+lines(density(res.df.train$ITE_median),
+      col = "black", lwd = 2, lty = 2)
+
+legend("topright", legend = c("TRAM-DAG", "DGP"),
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+
+mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+
+# --- Plot 2: Test set
+plot(density(res.df.val$ITE_median_pred),
+     main = "", xlab = "ITE", ylab = "Density",
+     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
+     col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
+
+lines(density(res.df.val$ITE_median),
+      col = "black", lwd = 2, lty = 2)
+
+legend("topright", legend = c("TRAM-DAG", "DGP"),
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+
+mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+
+# Close PNG device
+dev.off()
+
+
+
 # scatterplot ITE_median vs. ITE_median_pred
 
 par(mfrow = c(1,2))
@@ -951,6 +1197,39 @@ plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
      main = "ITE Test: True vs. Predicted (median)", 
      xlab = "ITE_median", ylab = "ITE_median_pred")
 abline(0, 1, col = 'red', lty = 2)
+
+
+
+### Save ITE scatterplots
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_scatter_train_test.png'))
+# png(filename = file_name, width = 3000, height = 1600, res = 300)
+png(filename = file_name, width = 2000, height = 1000, res = 300)
+
+# Layout: two plots side by side
+par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+
+# --- Plot 1: Train scatter
+plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
+     main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)  # semi-transparent black
+
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+
+# --- Plot 2: Test scatter
+plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
+     main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+
+# Close PNG device
+dev.off()
+
+
+
 
 
 ## Check predicted values of Y for original treatment allocation (same as plot above in skript):
@@ -969,9 +1248,9 @@ abline(0, 1, col = 'red', lty = 2)
 # ITE (median) vs. cATE plot
 
 # STEP 1: Define bin breaks based on training data
-breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
+# breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
 
-# breaks <- round(seq(-1, 0.3, length.out = 10), 1)
+breaks <- seq(-1, 0.3, by = 0.1)
 
 
 # STEP 2: Group training data and compute ATE per bin
@@ -994,6 +1273,17 @@ data.val.grouped.ATE <- res.df.val %>%
 plot_CATE_vs_ITE_group_median(
   dev.data = data.dev.grouped.ATE,
   val.data = data.val.grouped.ATE)
+
+
+### save ITE-cATE plot without theoretical centers
+
+
+p_ate_ite <- plot_CATE_vs_ITE_group_median(
+  dev.data = data.dev.grouped.ATE,
+  val.data = data.val.grouped.ATE)
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_cATE.png'))
+ggsave(file_name, plot=p_ate_ite, width = 5, height = 4, dpi = 300, device = "png")
 
 
 

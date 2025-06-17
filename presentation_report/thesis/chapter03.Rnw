@@ -8,6 +8,248 @@ opts_chunk$set(
 ) 
 @
 
+
+
+<<'results_data',include=FALSE>>=
+
+#### Results of the simulation study of ITE under observational and RCT setting
+
+
+
+evaluate_scenario <- function(scenario_data) {
+	
+		### TRAIN: Calculate values (dev)
+		dev_df <- scenario_data$dev$data$simulated_full_data
+		
+		# percentage in control and treatment group
+		dev_treatment_allocation <- as.numeric(table(dev_df$Tr) / nrow(dev_df))
+		
+		# ATE in terms of mean(ITE_median)
+		dev_ITE_median_average <- mean(dev_df$ITE_median)
+		
+		# ATE in terms of mean(ITE_median_pred)
+		dev_ITE_median_pred_average <- mean(dev_df$ITE_median_pred)
+		
+		# ATE in terms of observed Y difference in means (Biased in Observational setting)
+		lm_dev <- lm(Y ~ Tr, data = dev_df)
+		dev_ATE_observed_Y_mean_diff <- coefficients(lm_dev)[2]
+		dev_ATE_observed_Y_mean_diff_CI <- confint(lm_dev)[2, ]
+		
+		# ATE in terms of observed Y difference in medians
+		dev_ATE_observed_Y_median_diff <- median(dev_df$Y[dev_df$Tr == 1]) - median(dev_df$Y[dev_df$Tr == 0])
+		
+		
+		
+		### TEST: Calculate values (val)
+		val_df <- scenario_data$val$data$simulated_full_data
+		
+		# percentage in control and treatment group
+		val_treatment_allocation <- as.numeric(table(val_df$Tr) / nrow(val_df))
+		
+		# ATE in terms of mean(ITE_median)
+		val_ITE_median_average <- mean(val_df$ITE_median)
+		
+		# ATE in terms of mean(ITE_median_pred)
+		val_ITE_median_pred_average <- mean(val_df$ITE_median_pred)
+		
+		# ATE in terms of observed Y difference in means (Biased in Observational setting)
+		lm_val <- lm(Y ~ Tr, data = val_df)
+		val_ATE_observed_Y_mean_diff <- coefficients(lm_val)[2]
+		val_ATE_observed_Y_mean_diff_CI <- confint(lm_val)[2, ]
+		
+		# ATE in terms of observed Y difference in medians
+		val_ATE_observed_Y_median_diff <- median(val_df$Y[val_df$Tr == 1]) - median(val_df$Y[val_df$Tr == 0])
+		
+		return(list(dev_treatment_allocation = dev_treatment_allocation,
+								dev_ITE_median_average = dev_ITE_median_average,
+								dev_ITE_median_pred_average = dev_ITE_median_pred_average,
+								dev_ATE_observed_Y_mean_diff = dev_ATE_observed_Y_mean_diff,
+								dev_ATE_observed_Y_mean_diff_CI = dev_ATE_observed_Y_mean_diff_CI,
+								dev_ATE_observed_Y_median_diff = dev_ATE_observed_Y_median_diff,
+								val_treatment_allocation = val_treatment_allocation,
+								val_ITE_median_average = val_ITE_median_average,
+								val_ITE_median_pred_average = val_ITE_median_pred_average,
+								val_ATE_observed_Y_mean_diff = val_ATE_observed_Y_mean_diff,
+								val_ATE_observed_Y_mean_diff_CI = val_ATE_observed_Y_mean_diff_CI,
+								val_ATE_observed_Y_median_diff = val_ATE_observed_Y_median_diff
+								
+			))
+}
+
+
+# A simple function to calculate the bootstrap CI for the difference in medians.
+# This function assumes 'data' is a data frame with a 'Tr' column for
+# treatment/control indicators (e.g., 0/1) and a 'Y' column for the
+# numerical outcome.
+
+calculate_median_diff_ci <- function(data, n_bootstraps = 5000, confidence_level = 0.95) {
+  
+  # Separate data into treatment and control groups based on 'Tr' and 'Y' columns
+  # Assuming 'Tr' column uses 1 for treatment and 0 for control
+  treatment_data <- data$Y[data$Tr == 1]
+  control_data <- data$Y[data$Tr == 0]
+
+  # Calculate the observed medians and their difference
+  observed_median_treatment <- median(treatment_data, na.rm = TRUE)
+  observed_median_control <- median(control_data, na.rm = TRUE)
+  observed_median_diff <- observed_median_treatment - observed_median_control
+
+  # Initialize a vector to store bootstrap differences
+  bootstrap_differences <- numeric(n_bootstraps)
+
+  # Loop to perform bootstrapping
+  for (i in 1:n_bootstraps) {
+    # Resample treatment data with replacement
+    bootstrap_sample_treatment <- sample(treatment_data, size = length(treatment_data), replace = TRUE)
+    # Resample control data with replacement
+    bootstrap_sample_control <- sample(control_data, size = length(control_data), replace = TRUE)
+
+    # Calculate medians for the bootstrap samples
+    bootstrap_median_treatment <- median(bootstrap_sample_treatment, na.rm = TRUE)
+    bootstrap_median_control <- median(bootstrap_sample_control, na.rm = TRUE)
+
+    # Calculate the difference for this bootstrap sample and store it
+    bootstrap_differences[i] <- bootstrap_median_treatment - bootstrap_median_control
+  }
+
+  # Determine percentiles for the confidence interval
+  alpha <- 1 - confidence_level
+  lower_percentile_val <- alpha / 2
+  upper_percentile_val <- 1 - (alpha / 2)
+
+  # Get the confidence interval bounds
+  ci_bounds <- quantile(bootstrap_differences, probs = c(lower_percentile_val, upper_percentile_val), na.rm = TRUE)
+
+  # Return the observed difference and the CI bounds
+  return(list(
+    observed_diff = observed_median_diff,
+    ci_lower = ci_bounds[1],
+    ci_upper = ci_bounds[2]
+  ))
+}
+
+
+#### Scenario 1: Observational
+
+# load RData
+load("results_data/observ_scenario1_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 1
+obs_scenario1_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+observ_scenario1 <- evaluate_scenario(obs_scenario1_data)
+
+
+
+#### Scenario 1: RCT
+
+# load RData
+load("results_data/rct_scenario1_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 1
+rct_scenario1_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+
+# rct_scenario1$dev_ATE_observed_Y_mean_diff
+
+rct_scenario1 <- evaluate_scenario(rct_scenario1_data)
+
+# bootstrap CI for difference in medians for RCT scenario 1 (test)
+
+
+
+results_ci_scenario1_rct_val <- calculate_median_diff_ci(
+  data = rct_scenario1_data$val$data$simulated_full_data,
+  n_bootstraps = 5000,
+  confidence_level = 0.95
+)
+
+
+#### Scenario 2: Observational
+
+# load RData
+load("results_data/observ_scenario2_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 2
+obs_scenario2_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+observ_scenario2 <- evaluate_scenario(obs_scenario2_data)
+
+
+#### Scenario 2: RCT
+
+# load RData
+load("results_data/rct_scenario2_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 2
+rct_scenario2_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+rct_scenario2 <- evaluate_scenario(rct_scenario2_data)
+
+
+results_ci_scenario2_rct_val_5k <- calculate_median_diff_ci(
+  data = rct_scenario2_data$val$data$simulated_full_data,
+  n_bootstraps = 5000,
+  confidence_level = 0.95
+)
+
+results_ci_scenario2_rct_val <- calculate_median_diff_ci(
+  data = rct_scenario2_data$val$data$simulated_full_data,
+  n_bootstraps = 10000,
+  confidence_level = 0.95
+)
+
+
+
+#### Scenario 3: Observational
+
+# load RData
+load("results_data/observ_scenario3_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 3
+obs_scenario3_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+observ_scenario3 <- evaluate_scenario(obs_scenario3_data)
+
+
+#### Scenario 3: RCT
+
+# load RData
+load("results_data/rct_scenario3_ITE_samples.RData")
+
+# store results.dev and results.val of scenario 3
+rct_scenario3_data <- list(dev = results.dev, val = results.val)
+
+# remove results.dev and results.val
+rm(results.dev, results.val)
+
+rct_scenario3 <- evaluate_scenario(rct_scenario3_data)
+
+
+results_ci_scenario3_rct_val <- calculate_median_diff_ci(
+  data = rct_scenario3_data$val$data$simulated_full_data,
+  n_bootstraps = 10000,
+  confidence_level = 0.95
+)
+
+@
+
+
 \chapter{Results}
 
 
@@ -28,5 +270,294 @@ Complex shift (Interaction example) to show what is also possible:
 Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
 And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
 
+
+\section{ITE simulation study - when do causal ML models fail?}
+
+In this section, we present the performance of different causal ML models for estimating the ITE under different scenarios. Starting with a favourable scenario where everything is assumed to be known and effect sizes are large, we will sequentially introduce more complexity and uncertainty into the data generating process (DGP) to see how the models perform under less favourable conditions. The scenarios are designed to reflect different real-world situations, such as the presence of (confounding variables - maybe not include, since ITE estimation must assume no unobserved confounding?), interaction effects, and varying treatment effects across individuals and unobserved variables.
+
+The results are presented for all causal ML models per scenario.
+
+\subsection{Scenario (1): Fully observed, large effects}
+
+\subsection{Scenario (2): Fully observed, small effects}
+
+maybe other scenario
+
+\section{ITE estimation with TRAM-DAGs}
+
+First, we present the results for scenario (1) with a direct and interaction effect. Then, we present the results for scenario (2) with a direct effect but no interaction effects, and finally, scenario (3) with interaction effects but no direct effect of the treatment. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounders. We also compare the average treatment effect (ATE), which can directly be calculated in the RCT, with the ATE based on the estimated individualized treatment effects. If the estimated ITEs are unbiased, they should be a good estimate of the ATE. All ITEs presented in this section are technically quantile treatment effects (QTEs) based on the 0.5-quantile of the potential outcomes. For simplicity we will refer to them as ITEs in the following.
+
+
+\subsection{Scenario (1): Direct and interaction effects}
+
+Scenario (1) included a direct effect of the treatment on the outcome and an additional interaction effect of the treatment with the covariates X2 and X3. A train and test set were generated with 20'000 observations each. In the observational setting, the treatment allocation was confounded by the covariates X1 and X2.  In the train set, $\Sexpr{round(observ_scenario1$dev_treatment_allocation[1]*100, 1)}$\% of patients were in the control group and $\Sexpr{round(observ_scenario1$dev_treatment_allocation[2]*100, 1)}$\% were in the treatment group. This ratio was similar in the test set. In the RCT setting treatment allocation was randomized. In the train set $\Sexpr{round(rct_scenario1$dev_treatment_allocation[1]*100, 1)}$\% individuals were in the control group and $\Sexpr{round(rct_scenario1$dev_treatment_allocation[2]*100, 1)}$\% in the treatment group. In the test set $\Sexpr{round(rct_scenario1$val_treatment_allocation[1]*100, 1)}$\% were in the control group and $\Sexpr{round(rct_scenario1$val_treatment_allocation[2]*100, 1)}$\% in the treatment group. Figure \ref{fig:scenario1_ite_distribution_dgp} illustrates the true ITE distribution that resulted from the DGP. Due to the interaction effects, there is some heterogeneity in the ITE distribution. Figure \ref{fig:scenario1_sampling_distributions_vertical} shows the marginal distributions of all variables according to the DGP and the estimates of the fitted TRAM-DAG. Figure \ref{fig:scenario1_outcome_distributions} shows the distribution of the outcome under the do(Tr=0) and do(Tr=1) interventions. The fitted model was applied to estimate the ITEs in terms of the difference in medians of the potential outcomes. The resulting density of the estimated ITEs compared to the true ITEs according to the DGP is shown in Figure \ref{fig:scenario1_ite_densities_train_test}. Across both settings, the densities of the estimated ITEs are close to the true densities in both the training and test datasets. Figure \ref{fig:scenario1_ite_scatter_train_test} shows the scatterplots of true against estimated ITEs. Finally, Figure \ref{fig:scenario1_ite_cATE} displays the ITE-ATE plot where the ATE is computed as the difference in medians of the observed outcome under the treatments within the respective ITE-subgroups The trends observed in the training and test sets are consistent.
+
+The average treatment effect (ATE) is presented in Table \ref{tab:scenario1_ate_comparison}. In the RCT setting in the training set, the difference in means of the outcomes in the two treatment groups was $\Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff, 3)}$ with a confidence interval of $\Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff_CI[1], 3)}$ to $\Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff_CI[2], 3)}$. The ATE in terms of the difference in medians of the observed outcomes was $\Sexpr{round(rct_scenario1$dev_ATE_observed_Y_median_diff, 3)}$. Also in the training set, the ATE in terms of the mean of the true ITEs was $\Sexpr{round(rct_scenario1$dev_ITE_median_average, 3)}$ and the ATE in terms of the mean of the estimated ITEs was $\Sexpr{round(rct_scenario1$dev_ITE_median_pred_average, 3)}$. All measures, including the ones from the test datasets, are shown in Table \ref{tab:scenario1_ate_comparison}.
+
+NOTE: also add CIs in the table with the ATEs?
+
+\begin{table}[htbp]
+\centering
+\caption{Scenario (1), including direct and interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
+\label{tab:scenario1_ate_comparison}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Measure} & \multicolumn{2}{c}{\textbf{Observational}} & \multicolumn{2}{c}{\textbf{RCT}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+ & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
+\midrule
+ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario1$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario1$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario1$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario1$val_ITE_median_average, 3)} \\
+ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario1$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario1$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario1$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario1$val_ITE_median_pred_average, 3)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_ite_distribution_dgp.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_ite_distribution_dgp.png}
+\caption{True ITE distribution resulting from the DGP for scenario (1) with direct and interaction effects. The true ITEs are identical in the observational and in the RCT setting, since they depend on the potential outcomes under both treatment allocations. Left: Observational; Right: RCT setting.}
+\label{fig:scenario1_ite_distribution_dgp}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_sampling_distributions_vertical.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_sampling_distributions_vertical.png}
+\caption{Marginal distributions of DGP variables and fitted TRAM-DAG samples for scenario (1) with direct and interaction effects. The distributions shown as observed (Obs), under control intervention (Do $X4=0$) and under treatment intervention (Do $X4=1$). Left: Observational; Right: RCT setting.}
+\label{fig:scenario1_sampling_distributions_vertical}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_X7_treatment_densities.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_X7_treatment_densities.png}
+\caption{Distributions of the outcome variable (X7) under treatment and control interventions for scenario (1), including direct and interaction effects. This plot is a higher resolution view of the X7 panels (Do $X4=0$) and (Do $X4=1$) from Figure \ref{fig:scenario1_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\label{fig:scenario1_outcome_distributions}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_ITE_densities_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_ITE_densities_train_test.png}
+\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (1), including direct and interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario1_ite_densities_train_test}
+\end{figure}
+
+
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_ITE_scatter_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_ITE_scatter_train_test.png}
+\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (1), including direct and interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario1_ite_scatter_train_test}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_ITE_cATE.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_ITE_cATE.png}
+\caption{ITE-ATE plot for scenario (1), including direct and interaction effects. Individuals are grouped into bins according to the estimated ITE and in each bin the ATE is calculated as the difference in medians of the observed outcomes under the treatments. 95\% bootstrap confidence intervals indicate the uncertainty. Left: Observational; right: RCT setting.}
+\label{fig:scenario1_ite_cATE}
+\end{figure}
+
+
+
+% start a new page
+\clearpage
+
+
+\subsection{Scenario (2): With direct but no interaction effects}
+
+Scenario (2) included a direct effect of the treatment on the outcome and coefficients of the interaction effects are set to zero. This results in less heterogeneity of ITE compared to scenario (1) as shown in Figure \ref{fig:scenario2_ite_distribution_dgp}. The observational and interventional densities sampled by the fitted TRAM-DAG are aligned with the true densities according to the DGP as illustrated in Figures \ref{fig:scenario2_sampling_distributions_vertical} and \ref{fig:scenario2_outcome_distributions}. A notable discrepancy in variance exists between the estimated and true ITEs, as illustrated in Figures \ref{fig:scenario2_ite_densities_train_test} and \ref{fig:scenario2_ite_scatter_train_test}. The ITE-ATE plot in Figure \ref{fig:scenario2_ite_cATE} shows a less informative view compared to scenario (1). Table \ref{tab:scenario2_ate_comparison} presents the ATE measures for scenario (2). In the test set of the RCT setting, the ATE in terms of the difference in medians of the observed outcomes was $\Sexpr{round(rct_scenario2$val_ATE_observed_Y_median_diff, 3)}$. In contrast, the ATE based on the estimated ITEs in the same dataset was $\Sexpr{round(rct_scenario2$val_ITE_median_pred_average, 3)}$.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Scenario (2), including a direct treatment but no interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
+\label{tab:scenario2_ate_comparison}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Measure} & \multicolumn{2}{c}{\textbf{Observational}} & \multicolumn{2}{c}{\textbf{RCT}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+ & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
+\midrule
+ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario2$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario2$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario2$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario2$val_ITE_median_average, 3)} \\
+ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario2$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario2$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario2$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario2$val_ITE_median_pred_average, 3)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_ite_distribution_dgp.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_ite_distribution_dgp.png}
+\caption{True ITE distribution resulting from the DGP for scenario (2), including a direct treatment but no interaction effects. The true ITEs are identical in the observational and in the RCT setting, since they depend on the potential outcomes under both treatment allocations. Left: Observational; Right: RCT setting.}
+\label{fig:scenario2_ite_distribution_dgp}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_sampling_distributions_vertical.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_sampling_distributions_vertical.png}
+\caption{Marginal distributions of DGP variables and fitted TRAM-DAG samples for scenario (2), including a direct treatment but no interaction effects. The distributions shown as observed (Obs), under control intervention (Do $X4=0$) and under treatment intervention (Do $X4=1$). Left: Observational; Right: RCT setting.}
+\label{fig:scenario2_sampling_distributions_vertical}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_X7_treatment_densities.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_X7_treatment_densities.png}
+\caption{Distributions of the outcome variable (X7) under treatment and control interventions for scenario (2), including a direct treatment but no interaction effects. This plot is a higher resolution view of the X7 panels (Do $X4=0$) and (Do $X4=1$) from Figure \ref{fig:scenario2_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\label{fig:scenario2_outcome_distributions}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_ITE_densities_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_ITE_densities_train_test.png}
+\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (2), including a direct treatment but no interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario2_ite_densities_train_test}
+\end{figure}
+
+
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_ITE_scatter_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_ITE_scatter_train_test.png}
+\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (2), including a direct treatment but no interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario2_ite_scatter_train_test}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_ITE_cATE.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_ITE_cATE.png}
+\caption{ITE-ATE plot for scenario (2), including a direct treatment but no interaction effects. Individuals are grouped into bins according to the estimated ITE and in each bin the ATE is calculated as the difference in medians of the observed outcomes under the treatments. 95\% bootstrap confidence intervals indicate the uncertainty. Left: Observational; right: RCT setting.}
+\label{fig:scenario2_ite_cATE}
+\end{figure}
+
+
+
+\clearpage 
+¨
+\subsection{Scenario (3): No direct but with interaction effects}
+
+Scenario (3) included no direct effect of the treatment on the outcome but it included interaction effects of the treatment with the covariates X2 and X3. Compared to scenario (1), when excluding the direct effect of the treatment, the distribution of ITEs is more centered as shown in Figure \ref{fig:scenario3_ite_distribution_dgp}. The ATE in terms of the mean difference in the test set of the RCT setting is $\Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff, 3)}$ with a confidence interval of $\Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff_CI[1], 3)}$ to $\Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff_CI[2], 3)}$. 
+
+
+
+\begin{table}[htbp]
+\centering
+\caption{Scenario (3), without direct treatment effect but including interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
+\label{tab:scenario3_ate_comparison}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Measure} & \multicolumn{2}{c}{\textbf{Observational}} & \multicolumn{2}{c}{\textbf{RCT}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+ & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
+\midrule
+ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario3$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario3$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario3$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario3$val_ITE_median_average, 3)} \\
+ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario3$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario3$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario3$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario3$val_ITE_median_pred_average, 3)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_ite_distribution_dgp.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_ite_distribution_dgp.png}
+\caption{True ITE distribution resulting from the DGP for scenario (3), without direct treatment effect but including interaction effects. The true ITEs are identical in the observational and in the RCT setting, since they depend on the potential outcomes under both treatment allocations. Left: Observational; Right: RCT setting.}
+\label{fig:scenario3_ite_distribution_dgp}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_sampling_distributions_vertical.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_sampling_distributions_vertical.png}
+\caption{Marginal distributions of DGP variables and fitted TRAM-DAG samples for scenario (3), without direct treatment effect but including interaction effects. The distributions shown as observed (Obs), under control intervention (Do $X4=0$) and under treatment intervention (Do $X4=1$). Left: Observational; Right: RCT setting.}
+\label{fig:scenario3_sampling_distributions_vertical}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_X7_treatment_densities.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_X7_treatment_densities.png}
+\caption{Distributions of the outcome variable (X7) under treatment and control interventions for scenario (3), without direct treatment effect but including interaction effects. This plot is a higher resolution view of the X7 panels (Do $X4=0$) and (Do $X4=1$) from Figure \ref{fig:scenario3_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\label{fig:scenario3_outcome_distributions}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_ITE_densities_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_ITE_densities_train_test.png}
+\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (3), without direct treatment effect but including interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario3_ite_densities_train_test}
+\end{figure}
+
+
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_ITE_scatter_train_test.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_ITE_scatter_train_test.png}
+\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for scenario (3), without direct treatment effect but including interaction effects. Left: Observational; right: RCT setting.}
+\label{fig:scenario3_ite_scatter_train_test}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_ITE_cATE.png}
+\includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_ITE_cATE.png}
+\caption{ITE-ATE plot for scenario (3), without direct treatment effect but including interaction effects. Individuals are grouped into bins according to the estimated ITE and in each bin the ATE is calculated as the difference in medians of the observed outcomes under the treatments. 95\% bootstrap confidence intervals indicate the uncertainty. Left: Observational; right: RCT setting.}
+\label{fig:scenario3_ite_cATE}
+\end{figure}
 
 

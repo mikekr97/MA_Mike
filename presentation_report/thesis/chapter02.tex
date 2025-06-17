@@ -251,7 +251,10 @@ While the probability of Y under the hypothetical condition $X=x$ can be determi
 
 
 \citet{curth2024} provide a comprehensive overview of the individualized treatment effect (ITE) and its estimation in the context of causal machine learning. They state its importance in comparison to average treatment effects, the assumpitons that need to be fulfilled, what kind of limiations typically are encountered and how models should be validated.
+% take this paper as guide to the structure of this section to explain overview and concept
+% https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
 
+% another paper of Alicia Curth https://proceedings.mlr.press/v130/curth21a/curth21a.pdf
 
 % mostly chatgpt
 
@@ -352,6 +355,8 @@ T-learner vs s-learner, metalearner, virtual twins
 The ITE for a binary endpoint is estimated as the difference of two probabilities (the risk under treatment minus the risk under control). It is essential that the model used to estimate these probabilities is well calibrated and generalizes to new (unseen) data. \citep{guo2017} point out that even though modern neural networks became much more accurate in terms of prediction performance, they are no longer well-calibrated. As it may not be a big problem for the sole purpose of making good predictions, it is very problematic for applications where an accurate quantification of the uncertainty is needed. When using models that are estimated with conventional methods such as ordinary least squares or standard maximum likelihood, they tend to overfit on the training data and make too extreme predictions on the test data. This problem increases with reduced sample size, low event rate or large number of predictor variables. To prevent such overfitting in regression models, penalization (shrinkage) methods are proposed as they shrink the estimated coefficients towards zero to reduce the variance in predictions on new data \citep{riley2021}. 
 
 
+% https://pmc.ncbi.nlm.nih.gov/articles/PMC5074325/ explained how to calibrate random forests for probability estimation (or just explain what comets does, maybe enough)
+
 
 Logistic regression, penalized logistic regression (shrinkage, lasso
 Shrinkage methods should provide better predictive perfomance on average (cite articles). \citet{calster2020} analyzed different regression shrinkage methods with a binary outcome in a simulation study. They concluded, although the calibration slope improved on average, shrinkage often worked poorly on individual datasets. With small sample size and low number of events per variable the performance of most of these methods were highly variable and should be used with caution in such settings. \citet{riley2021} obtained to similar results in their simulation study. Problems occur, because tuning parameters are often estimated with large uncertainty on the training data and fail to generalize. In both studies the autors pointed out that these penalization methods are more unreliable when needed most, that is when the risk of overfitting may be large.
@@ -367,7 +372,13 @@ Use of instrumental variables (IV) to also estimate CATE in presence of unobserv
 
 % https://www.rfberlin.com/wp-content/uploads/2024/12/24030.pdf good book/paper about instrumental variables, also talks about potential outcomes (but i should maybe not go too much into detial)
 
-% http://www.mit.edu/~vchern/papers/ch_iqr_ema.pdf estimate the quantile treatment effect (heterogeneous) with instrumental variables, it looks very similar to the TRAM-DAG approach
+% http://www.mit.edu/~vchern/papers/ch_iqr_ema.pdf estimate the quantile treatment effect (heterogeneous) with instrumental variables, it looks very similar to the TRAM-DAG approach: *This interpretation makes quantile analysis an interesting tool for describing and learning the structure of heterogeneous treatment effects and controlling for unobserved heterogeneity."
+
+
+% https://journals.sagepub.com/doi/pdf/10.1177/1536867X1001000309 also explain how to do quantile treatment effect QTE estimation with instrumental variables etc
+
+
+% Explain the kinds of validation measures & plots so that i dont have to explain them again in the next sections (experiments)
 
 
 \section{Experiments}
@@ -376,13 +387,57 @@ Use of instrumental variables (IV) to also estimate CATE in presence of unobserv
 
 Show easy simulation with 3 variables and in the results the plots of the loss function, the coefficient learning, intercepts, shifts, and the sampling results. The sampling results should show that the sampled data matches the DGP very well. Also show the estimated parameters of the linear shifts and the intercepts. The complex shift can be shown by plotting the transformation function of X3 with respect to X2. also some queries for observational, interventional and counterfactual.
 
-\subsection{TRAM-DAG real data}
+- ideally an experiment with ordinal predictor, and with interpretability and a complex shift and 4 variables.
 
-maybe the Weather data case, or another if we find a practical observational data example.
 
-\subsection{ITE simulations}
 
-Reason to do experiment is the findings of Holly, now we want to show types of models that will be applied and dgp and when problems occure.
+\subsection{ITE real data}
+
+We also want to check if we end up with similar results as \citet{chen2025} in their ITE estimation on the IST stroke trial. We will use the same data preprocessing and apply the TRAM-DAG framework as well as a tuned random forest (comets) to estimate the ITE. Both models are trained on a training set and validated on a hold-out test set. For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we will predict the potential outcomes (potentially with the re-calibrated models) to estimate the ITE on the train and test set. For visual validation, we will use ITE-ATE plots and ITE-outcome plots. Due to the binary outcome, the ATE is defined as the risk-difference of the individuals in the respective ITE subgroup (bin $j$) $ATE_j = \mathbb{E}[Y(1) - Y(0) \mid ITE \in bin_j]$.
+
+The cATE is defined as:
+
+\begin{equation}
+cATE = \mathbb{E}[Y \mid T = 1] - \mathbb{E}[Y \mid T = 0]
+\end{equation}
+
+Since the IST stroke trial is a randomized controlled trial, the full potential of TRAM-DAGs is not needed, since only the outcome has to be modelled as a function of the baseline patient characteristics. Nevertheless, this is not a reason not to apply it. The TRAM-DAG is specified so that only the loss for the outcome node is optimized, the distributions of the other nodes are not estimated. The transformation function for the outcome is modelled by a complex intercept model $h(Y \mid X) = CI(X)$, with 4 hidden layers of shape (20, 10, 10, 2). The numerical values are further standardized and dropout (0.1) is used to prevent severe overfitting (and batchnorm?). The model is trained for..
+
+The Random Forest is specified accoring to the default version of the comets package.
+
+As benchmark, we also fit a t-learner logistic regression.
+
+% describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
+Results on IST trial with the interpretation in the discussion part.
+
+%  here the authors made the IST database available and described the trial, refer tho it
+% https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101 
+
+show results of different models including tram dag.
+
+- maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
+
+
+
+
+\subsection{ITE simulations (RCT) - assess when estimations fail}
+
+In this section, we will perform a simulation study to estimate the ITE with different models in an RCT setting under different szenarios. The aim is to identify, in which circumstances the ITE estimation fails and if failure is model agnostic, meaning that the reason for failure lies in external factors like (unobserved variables, sample size, effect size) and not the models itself. It should give potential explanations, why modeles for estimating the ITE failed in a real world application as \citet{chen2025} showed. The simulation is based on the data generating process (DGP) that should resemble an RCT. We assume a binary outcome and a set of covariates that influence the treatment effect. There further potentially exist treatment covariate interacitons that are responsible for heterogeneity of treatment effect. The Szenarios are laid out in (Table XX)
+
+table with szenarios:
+
+
+
+table with models:
+
+logistic t-learner, lasso t-learner, lasso s-learner, random forest, tuned random forest (comets), (TRAM-dag was not applied here due to time reasons, it further would not add much value since we want to mainly get a feeling of the bahaviour of ML models in general under different scenarios)
+
+
+With these scenarios we want to show, what must be fulfilled that ITE estimation works and what implication this has on non-randomized settings.
+
+% # DGP for simulation similarly done as: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/ (although, this was RCT setting), maybe also refer to the observational data ITE with RF paper
+
+
 
 In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
 
@@ -401,7 +456,7 @@ Problems with ITE: (in an RCT setting)
 
 - Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
 
-- question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-cATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-cATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
+- question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-ATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-ATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
 
 - another point is the effect of the correlation of the variables. If the X's are strongly correlated, and one X with interaction effect is dropped, can the info then still be retreived from the other variables? maybe the effect is then attributed to another correlated variable. --> check with simulations and or theroretical proof.
 
@@ -409,14 +464,81 @@ Problems with ITE: (in an RCT setting)
 
 % Plot mit Regression line: durch die regression line lässt sich die differenz zwischen train und test plots rechts auch nicht erklären. Grund ist vermutlich, dass beim ITE nur die probabilities modelliert werden und beim plot rechts die observed outcomes Y=1 oder Y=0 (was ja die optimierungsgrösse im modell fitting war).
 
-\subsection{ITE real data}
+\subsection{ITE estimation in observational data}
 
-% describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
-Results on IST trial wiht the interpretation in the discussion part.
+We claim that if the assumptions for ITE estimation (identifiability, (unobserved) unconfoundedness etc.) are fulfilled and the DAG is fully known, with the TRAM-DAG framework, the ITE can be estimated under observational data just like with RCT data. We aim to proof this with the DAG as displayed in Figure \ref{fig:ite_dag_observational}. The binary treatment (X4) is the intervention variable and we want to estimate the ITE for the continuous outcome Y. 
 
-show results of different models including tram dag.
 
-- maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{img/dag_ITE_observational.png}
+\caption{DAG used for the experiment to estimate the ITE. DGP: the source nodes X1, X2 and X3 come from a multivariate standard normal distribution with 0.1 correlation. In the observational setting the binary treatment X4 depends on the parents X1 and X2, in the RCT Setting, this dependency is omitted due to randomization. X5 depends on the treatment X4. X6 depends on X5. The outcome Y depends on all variables with additional interaction effects between the treatment and the variables X2 and X3. All variables except the treatment X4 are continuous.}
+\label{fig:ite_dag_observational}
+\end{figure}
+
+% \textbf{Observational setting} The treatment T is not randomized. Instead it depends on the values of the patient characteristics X1 and X2 (confounders). 
+% 
+% \textbf{Interventional setting} The treatment T is randomized and therefore the connections from X1 and X2 to the treatment X4 are cut. 
+
+
+
+An example scenario that would have the structure of the proposed dag could be the following: A marketing campaign is conducted to increase customer spending. The treatment is the marketing email (X4) that is sent to the customers. If the treatment is not randomized, it depends on the prior total spend (X1) and the customer engagement score (X2). The outcome is the total spend in the next 30 days after receiving the email (X7). The prior total spend and customer engagement score are confounders that influence both the treatment and the outcome. Customer satisfaction score (X3) from a recent survey is another predictor. The time spent on the website after receiving the email (X5) is a mediator that influences the number of product pages viewed (X6), which in turn influences the total spend in the next 30 days. 
+
+
+\textbf{Data generating mechanism:} The standard logistic was chosen as the noise distribution to align with other examples in this thesis. Also any other noise distribution cold be chosen, as we are not interested in interpretability of the coefficients in this experiment. All variables except the binary treatment X4 are continuous. The source nodes X1, X2 and X3 are generated from a multivariate standard normal distribution, where each pair of variables has a correlation of 0.1. These variables represent baseline patient characteristics. In the observational setting, X1 and X2 act as confounders by influencing the treatment allocation X4 and the outcome Y. In the RCT setting, these connections are cut due to randomization. X5 depends on the treatment X4. X6 depends on X5. The log odds for the continuous outcome are linearly depend on all covariates including additional interaction terms between the treatment and X2 and X3. Hence, the log odds of the outcome can be written in terms of a transformation model with linear shift $h(y \mid X) = h_I(y) + \text{LS}$. Equation \ref{eq:outcome_dgp} outlines the outcome on the log odds scale
+
+
+
+\begin{equation}
+h(y \mid \mathbf{X}) = h_I(y) + \boldsymbol{\beta}_X^\top \mathbf{X} + \boldsymbol{\beta}_{TX}^\top \mathbf{X}_{\text{int}}  X_4
+\label{eq:outcome_dgp}
+\end{equation}
+
+where $h_I(y)$ is the intercept function, $\mathbf{X}$ is the covariate vector including all variables and $\mathbf{X}_{\text{int}} = \{X2, X3\}$ is the vector with the interaction variables that only has an effect if the treatment is present ($X4 = 1$). The intercept $h_I(y)$ has to be a smooth monotonically increasing and function which we defined as $h_I(y) = tan(y/2) / 0.2$ in the interval between -2 and 2 and linearly extrapolated the function at the boundaries. The coefficients $\boldsymbol{\beta}_X$ are set to $\boldsymbol{\beta}_X = (-0.5, 0.5, 0.2, 1.5, -0.6, 0.4)$, where $1.5$ is the direct effect of the treatment X4 on the outcome. $\boldsymbol{\beta}_{TX}$ are set to $\boldsymbol{\beta}_{TX} = (-0.9, 0.7)$ for the interaction terms.
+
+
+\textbf{Experiment: } The experiment is conducted with 3 different scenarios of data generating mechanism for the outcome Y accordingly: (1) direct and interaction effect, (2) only direct effect, (3) only interaction effect. Depending on the scenario, the corresponding coefficients in $\boldsymbol{\beta}_{X}$ and $\boldsymbol{\beta}_{TX}$ are set to zero. The data is generated with a sample size of 20'000 samples for the training set. In both settings, observational and RCT, the TRAM-DAG is first fitted on the data. To allow for full flexibility, all nodes that depend on some parents are modelled by complex intercepts with 3 hidden layers of shape (10, 10, 10). Batch normalization, dropout (0.1) and ReLU activation are used. The model is fitted on the training data consisting of 20'000 samples. To prevent overfitting, an additional validation set with 10'000 samples is used and the model is selected, where the validation loss was is (early stopping).
+
+
+Once the model is fitted, we obtained the estimated (inverse) transformation functions $X_i = h^{-1}(Z_i \mid pa(X_i))$ that represent the equations $X_i = f(Z_i, pa(X_i))$ in the structural causal model. The process for the ITE estimation is outlined in \ref{alg:ite_qte}. In a first step to estimate the ITE, we determine the latent values $z_{ij}$ in all observed samples $j$ for the explanatory nodes $i$ - X1, X2, X3, X5 and X6. The latent values are the values of the transformation functions at the observed value of the variable given the observed values of its parents $z_{ij} = h_i(x_{ij} \mid pa(x_{ij}))$. In a second step, these latent values $z_{ij}$ are used to sequentially sample from the two interventional distributions when setting the treatment X4 to either 0 or 1. For each individual, these interventions impact the mediator nodes X5 and X6 as well as the outcome Y. The source nodes X1, X2 and X3 are the same under both treatments. The treatment X4 is the variable which we fix by the do-intervention. X5 and X6 will change according to the treatment. Finally, for each set of samples $j$ (meaning for each individual) we get two distributions for the outcome, one under treatment and one under control. In contrast to the potential outcomes framework, where the potential outcomes are defined as the expected value of the outcome under treatment, we define the potential outcomes as the median of the outcome distribution under treatment - the quantile treatment effect (QTE). For simplicity, we will further refer to the individual treatment effect as ITE even though technically, the QTE is meant. Determining the potential outcomes in terms of the expected values would also be possible, but would require us to repeatedly sample from each resulting potential outcome distribution for each individual and average the results. This was computationally too time consuming and therefore we decided to estimate the QTE instead. In the ITE estimation in the previous examples with binary outcome, this was not necessary, since the potential outcomes were defined as the probabilities of the outcome under treatment and control, hence a single number that represents the expected value.
+
+
+Maybe visualize the potential outcome transformation funcitons (both funcitons in one plot) and then show that the median Latent value 0 creates the two potential median outcomes on the x axis.
+
+
+
+\begin{algorithm}
+\caption{ITE Estimation (QTE) Using TRAM-DAG in Observational Data}
+\label{alg:ite_qte}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Fitted TRAM-DAG, observational dataset with $n$ samples
+\For{each sample $j = 1$ to $n$}
+  \State \textbf{Step 1: Encode explanatory nodes}
+  \For{each explanatory node $X_i \in \{X_1, X_2, X_3, X_5, X_6\}$}
+    \State Compute latent value: $z_{ij} = h_i(x_{ij} \mid \text{pa}(x_{ij}))$
+  \EndFor
+
+  \State \textbf{Step 2: Generate potential outcomes under treatment and control}
+  \For{$x_4 \in \{0, 1\}$} \Comment{Simulate both treatment states}
+    \State Fix $X_4 = x_4$ (intervention)
+    \State Sample $X_5$ and $X_6$ sequentially using $z_{ij}$ and inverse transformations
+    \State Sample potential outcome $y_j^{(x_4)}$ using $z_{7,i} = 0$ (median of the potential outcome distribution)
+
+  \EndFor
+
+  \State \textbf{Step 3: Compute QTE for individual $j$}
+  \State $\text{ITE}_j = \text{median}(y_j^{(1)}) - \text{median}(y_j^{(0)})$
+\EndFor
+\State \textbf{Output:} ITE estimates $\{\text{ITE}_j\}_{j=1}^n$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+
+\textbf{Validation of results: } In the data generating mechanism, along with the actually sampled values, the potential values under both treatments are also recorded and used to determine the true QTE (the ITE based on the 50 percent quantiles of the potential outcome distributions of each individual.)
+The results are displayed by densities of the estimated ITE, the scatterplots of the true vs. estimated ITE, the ITE-ATE plot with the difference in medians as ATE within subgroups to make it comparable to the estimated ITEs. Furthermore the average of all estimated and true (dgp) ITEs are presented in a table (XX) which should be an estimator (?) for the ATE. We further calculate the ATE as the overall difference in medians in the RCT setting and compare it to the estimated values based on the ITEs. If these estimates are comparable, it would support our claim that with TRAM-DAGs it does not matter if the data is from an RCT or observational setting, as long as the assumptions are fulfilled and the DAG is fully known and observed.
 
 
 

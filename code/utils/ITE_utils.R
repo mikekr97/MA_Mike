@@ -481,7 +481,7 @@ h_y <- function(x) {
   }
   
   if (length(indices_middle_segment) > 0) {
-    # Core function for -2 <= x <= 2: y = tan(x/2) / 0.4
+    # Core function for -2 <= x <= 2: y = tan(x/2) / 0.2
     result[indices_middle_segment] <- tan(x[indices_middle_segment] / 2) / constant_divisor
   }
   
@@ -1188,7 +1188,7 @@ plot_CATE_vs_ITE_group_median <- function(dev.data, val.data) {
     geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2, position = position_dodge(width = 0.2)) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
     scale_color_manual(
-      name = "Group",
+      name = "",
       labels = c("derivation" = "Training Data", "validation" = "Test Data"),
       values = c("orange", "#36648B")
     ) +
@@ -1198,7 +1198,7 @@ plot_CATE_vs_ITE_group_median <- function(dev.data, val.data) {
     ylab("ATE (Difference in Medians)") +
     theme_minimal() +
     theme(
-      legend.position = c(0.9, 0.9),
+      legend.position = c(0.95, 0.3),
       legend.justification = c("right", "top"),
       legend.box.just = "right",
       panel.grid.major = element_blank(),

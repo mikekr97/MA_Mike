@@ -3,3 +3,26 @@
 
 \chapter{Discussion and Outlook}
 
+
+Check all of the following again when including the final Experiment results in section 3 (here written just from memory):
+
+
+\section{Experiment 1: TRAM-DAG simulation}
+
+The tram dag can accurately estimate the causal dependencies with interpretable coefficients.
+
+
+\section{Experiment 2: ITE estimation - IST stroke trial}
+
+We used the same data as was used by \ref{chen2025}. Both models, the tuned RF and the TRAM-DAG did not generalize to the test set. The results are very similar to the ones of the original paper. Calibration seemed to be not bad in both cases...Possible reasons could be small true heterogeneity, low effect size of the treatment, missing important variables (e.g. effect modifiers/interaction variables with treatment). In the the next section (discussion for experiment 3) we are looking into those cases in a simulation study.
+
+
+\section{Experiment 3: When do causal ML models fail? (ITE simulation study)}
+
+All models achieve good performance as long as the effect sizes are large and the dag is fully observed. Once effect sizes and through that heterogeneity gets smaller, the models become powerful (which is obvious since we can not estimate an effect where there isnt an effect in reality). But in the training sets the complex models still estimate a quite high ITE but this doesnt generalize to the test sets. The largest problem occured when an effect modifier (interaction variable was unobserved), meaning that it was included in the data generating mechanism but not included in the dataset for training the models. 
+
+
+
+\section{Experiment 4: TRAM-DAGs in Observational vs. RCT setting  (ITE simulation study)}
+
+We analyzed ITE estimation under an observational setting (confounded) and under an RCT setting (randomized treatment allocation) in three different scenarios - direct and interaciton treatment effect, only direct but no interaction effect, and no direct but with interaction effect. We noticed that in the first scenario with 
