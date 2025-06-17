@@ -325,7 +325,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 1
+scenario <- 2
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -403,6 +403,18 @@ data_type = train$type
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
 #   | Y        | Cardiovascular risk score                      | Continuous | Outcome    |
 #   
+
+ATE_median <- median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
+  median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
+ATE_median
+
+par(mfrow=c(1,2))
+hist(train$simulated_full_data$ITE_median, main = "ITE Median", xlab = "ITE Median", breaks = 50)
+abline(v=ATE_median)
+abline(v=mean(train$simulated_full_data$ITE_median), col = "red", lwd = 2)
+legend("topright", legend = c("ATE=median(Y|T=1)-median(Y|T=0) ", "ATE=mean(ITE_median)"), 
+       col = c("black", "red"), lwd = 2, cex = 0.5, bty = "n")
+# overall (difference in medians):
 
 
 par(mfrow = c(3,3))
