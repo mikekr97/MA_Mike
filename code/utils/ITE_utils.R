@@ -531,24 +531,24 @@ h_y_inverse <- function(y) {
 
 # --- Example usage of the functions ---
 
-# Example usage of h_y and h_y_inverse functions
-example_x_values <- seq(-4, 4, by = 0.1)  # Example x values for testing
-example_y_values <- h_y(example_x_values)  # Calculate h_y for the example x values
-
-
-# plot to check if it works:
-# par(mfrow = c(1, 2))  
+# # Example usage of h_y and h_y_inverse functions
+# example_x_values <- seq(-4, 4, by = 0.1)  # Example x values for testing
+# example_y_values <- h_y(example_x_values)  # Calculate h_y for the example x values
+# 
+# 
+# # plot to check if it works:
+# par(mfrow = c(1, 2))
 # plot(example_x_values, example_y_values, type = "l", col = "blue", lwd = 2,
 #      main = "Plot of h_y(x)",
 #      xlab = "x", ylab = "h_y(x)",
-#      xlim = c(-6, 6), ylim = c(-10, 10))
+#      xlim = c(-4, 4), ylim = c(-10, 10))
 # plot(example_x_values, example_y_values, type = "l", col = "blue", lwd = 2,
 #      main = "Plot of h_y(x)",
 #      xlab = "x", ylab = "h_y(x)",
 #      xlim = c(-2, 2), ylim = c(-10, 10))
-#
+# 
 # # inverse of y value
-#
+# 
 # example_y_values_inverse <- h_y_inverse(example_y_values)  # Calculate h_y_inverse for the example y values
 # plot(example_x_values, example_y_values_inverse)
 
@@ -1175,6 +1175,78 @@ calc.ATE.Continuous.median <- function(data) {
 }
 
 
+plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.df.val) {
+  bin_centers <- (head(breaks, -1) + tail(breaks, -1)) / 2
+  group_labels <- levels(dev.data$ITE.Group)
+  
+  delta <- 0.03     # Horizontal offset between training and test
+  cap_width <- 0.02 # Width of CI caps
+  
+  # Set up empty plot
+  plot(NULL,
+       xlim = range(bin_centers) + c(-0.15, 0.15),
+       ylim = range(c(dev.data$ATE.lb, val.data$ATE.ub)) + c(-0.1, 0.1),
+       xlab = "ITE Group", ylab = "ATE (Difference in Medians)",
+       xaxt = "n")
+  
+  ### Training CI bars + points
+  x_train <- bin_centers - delta
+  for (i in seq_along(bin_centers)) {
+    arrows(x_train[i], dev.data$ATE.lb[i], x_train[i], dev.data$ATE.ub[i],
+           angle = 90, code = 3, length = cap_width, col = "orange", lwd = 2)
+    points(x_train[i], dev.data$ATE[i], pch = 16, col = "orange")
+  }
+  
+  ### Test CI bars + points
+  x_test <- bin_centers + delta
+  for (i in seq_along(bin_centers)) {
+    arrows(x_test[i], val.data$ATE.lb[i], x_test[i], val.data$ATE.ub[i],
+           angle = 90, code = 3, length = cap_width, col = "#36648B", lwd = 2)
+    points(x_test[i], val.data$ATE[i], pch = 16, col = "#36648B")
+  }
+  
+  # Connect points with lines
+  lines(x_train, dev.data$ATE, col = "orange", lwd = 2)
+  lines(x_test, val.data$ATE, col = "#36648B", lwd = 2)
+  
+  # Reference lines
+  abline(h = 0, lty = "dotted", col = "gray")
+  lines(bin_centers, bin_centers, lty = 3)  # Theoretical
+  
+  # Rug plots (stripchart)
+  stripchart(res.df.train$ITE_median_pred, method = "jitter", at = par("usr")[4],
+             add = TRUE, pch = "|", col = "orange", jitter = 0.002, cex = 0.6)
+  stripchart(res.df.val$ITE_median_pred, method = "jitter", at = par("usr")[3],
+             add = TRUE, pch = "|", col = "#36648B", jitter = 0.002, cex = 0.6)
+  
+  # Custom x-axis
+  # axis(1, at = bin_centers, labels = group_labels)
+  
+  # Custom x-axis
+  axis(1, at = bin_centers, labels = FALSE)  # suppress default labels
+  
+  # Add staggered labels manually
+  for (i in seq_along(bin_centers)) {
+    offset <- ifelse(i %% 2 == 0, -1.5, -2.5)  # stagger in two rows
+    text(x = bin_centers[i], y = par("usr")[3] + offset * strheight("M"),
+         labels = group_labels[i], srt = 0, xpd = TRUE)
+  }
+  
+  
+  # Legend
+  legend("topleft", inset = c(0.02, 0.02),  # move slightly downward
+         legend = c("Training", "Test", "Theoretical Center"),
+         col = c("orange", "#36648B", "black"), 
+         pch = c(16, 16, NA), lty = c(1, 1, 3),
+         bty = "n", cex =0.8, lwd = c(2, 2, 1))
+}
+
+
+
+
+
+########### not used anymore
+
 # Function to create the CATE vs ITE group plot
 plot_CATE_vs_ITE_group_median <- function(dev.data, val.data) {
   data <- rbind(
@@ -1259,8 +1331,5 @@ plot_CATE_vs_ITE_group_median_with_theoretical <- function(dev.data, val.data, b
   
   return(result)
 }
-
-
-
 
 

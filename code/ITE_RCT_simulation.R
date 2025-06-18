@@ -87,7 +87,8 @@ dgp_simulation <- function(n_obs=20000,
                            rho = 0.1, 
                            doX=c(NA, NA, NA, NA, NA, NA, NA),
                            main_effect = TRUE,
-                           interaction_effect = TRUE) {
+                           interaction_effect = TRUE,
+                           samples_potential_outcomes = 10000) {
   
   #n_obs = 1e5 n_obs = 10
   set.seed(SEED)
@@ -258,6 +259,57 @@ dgp_simulation <- function(n_obs=20000,
   
   
   
+  
+  ### ITE with expected values of potential outcomes (sampling)
+  
+  # sample 1000 rlogis for each of n_obs
+  n_samples <- samples_potential_outcomes
+  X7_samples <- matrix(NA, nrow = n_obs, ncol = n_samples)
+  
+  # Fill the matrix with standard logistic samples
+  for (i in 1:n_obs) {
+    X7_samples[i, ] <- rlogis(n_samples)
+  }
+  
+  # dim(X7_samples)
+  # 
+  # # first observation: 1000 latent samples
+  # X7_samples[1,]
+  # 
+  # # first observation: potential outcome for first latent sample (Control)
+  # h_y_inverse(X7_samples[1,1] - logit_X7_ct[1])
+  # 
+  # 
+  # # all observations: potential outcome for first latent sample (Control)
+  # h_y_inverse(X7_samples[,1] - logit_X7_ct)
+  # 
+  # 
+  # # first observations: potential outcome for all latent samples (Control)
+  # h_y_inverse(X7_samples[1,] - logit_X7_ct[1])
+  # 
+  # # Expected value of first observations potential outcome (Control)
+  # mean(h_y_inverse(X7_samples[1,] - logit_X7_ct[1]))
+  # 
+  
+  # Expected potential outcomes for all observations (Control group)
+  expected_outcomes_ct <- sapply(1:n_obs, function(i) {
+    mean(h_y_inverse(X7_samples[i, ] - logit_X7_ct[i]))
+  })
+  
+  # Expected potential outcomes for all observations (Treatment group)
+  expected_outcomes_tx <- sapply(1:n_obs, function(i) {
+    mean(h_y_inverse(X7_samples[i, ] - logit_X7_tx[i]))
+  })
+  
+  # ITE based on expected values
+  ITE_expected <- expected_outcomes_tx - expected_outcomes_ct
+  
+  
+  # plot(ITE_median, ITE_expected)
+  
+  
+  
+  
   # Combine all variables into a single data frame (observed)
   simulated_full_data <- data.frame(X1 = data_X[,1],
                                     X2 = data_X[,2],
@@ -267,7 +319,8 @@ dgp_simulation <- function(n_obs=20000,
                                     X6 = X6,
                                     Y=X7, 
                                     ITE_true = ITE_true, 
-                                    ITE_median = ITE_median)
+                                    ITE_median = ITE_median,
+                                    ITE_expected = ITE_expected)
   
   
   
@@ -325,7 +378,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 2
+scenario <- 3
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -378,7 +431,8 @@ print(paste0("Starting experiment ", fn))
 
 
 train <- dgp_simulation(n_obs = n_obs, SEED = 123, rho = 0.1, doX = c(NA, NA, NA, NA, NA, NA, NA),
-                        main_effect = main_effect, interaction_effect = interaction_effect)
+                        main_effect = main_effect, interaction_effect = interaction_effect,
+                        samples_potential_outcomes = 10000)
 global_min = train$min
 global_max = train$max
 data_type = train$type
@@ -403,6 +457,56 @@ data_type = train$type
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
 #   | Y        | Cardiovascular risk score                      | Continuous | Outcome    |
 #   
+
+
+##### Check ITE based on median vs. based on expected values of potential outcomes:
+
+
+ATE_median <- median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
+  median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
+ATE_median
+
+ATE_mean <- mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
+  mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
+ATE_mean
+
+par(mfrow=c(1,2))
+hist(train$simulated_full_data$ITE_median, main = "ITE Median", xlab = "ITE Median", 
+     breaks = 50) #  , ylim= c(0, 1200)
+abline(v=ATE_median, lwd = 2)
+abline(v=mean(train$simulated_full_data$ITE_median), col = "red", lwd = 2, 
+       lty = 2)
+legend("topright", legend = c("ATE=median(Y|T=1)-median(Y|T=0) ", "ATE=mean(ITE_median)"), 
+       col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
+
+hist(train$simulated_full_data$ITE_expected, main = "ITE Expected", xlab = "ITE Expected", 
+     breaks = 50 )  #, ylim= c(0, 1200))
+abline(v=ATE_mean, lwd= 2)
+abline(v=mean(train$simulated_full_data$ITE_expected), col = "red", lwd = 2,
+       lty = 2)
+legend("topright", legend = c("ATE=mean(Y|T=1)-mean(Y|T=0) ", "ATE=mean(ITE_expected)"),
+       col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
+
+
+
+
+plot(train$simulated_full_data$ITE_median, train$simulated_full_data$ITE_expected, 
+     main = "ITE Median vs ITE Expected", 
+     xlab = "ITE Median", ylab = "ITE Expected",
+     pch = 19)
+abline(0, 1, col = "red", lwd = 2)  # Add a diagonal line for reference
+
+
+
+hist(train$simulated_full_data$Y, main = "Y (X7)", breaks=50, 
+     xlab = "Y (X7)", border = "black")
+
+
+
+
+
+#########################
+
 
 ATE_median <- median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
   median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
@@ -932,7 +1036,6 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 
 
-
 #### Save last plot (X7)
 
 # Set file name
@@ -1262,7 +1365,7 @@ abline(0, 1, col = 'red', lty = 2)
 # STEP 1: Define bin breaks based on training data
 # breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
 
-breaks <- seq(-1, 0.3, by = 0.1)
+breaks <- seq(-2, 0.5, by = 0.5)
 
 
 # STEP 2: Group training data and compute ATE per bin
@@ -1312,13 +1415,17 @@ bin_centers$ITE.Group <- factor(bin_centers$ITE.Group, levels = levels(data.dev.
 plot_CATE_vs_ITE_group_median_with_theoretical(
   dev.data = data.dev.grouped.ATE,
   val.data = data.val.grouped.ATE,
+  res.df.train = res.df.train,
+  res.df.val = res.df.val,
   bin_centers = bin_centers)
 
 
 
 
 
+### Final plot for ITE-ATE (make sure to check breaks first if coverage is good!):
 
+plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
 
 
 ###  Note: as result we get 1) the ITE_median_pred which is uses the median for

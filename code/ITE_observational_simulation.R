@@ -1236,6 +1236,9 @@ plot_CATE_vs_ITE_group_median_with_theoretical(
 
 
 
+### Final plot for ITE-ATE (make sure to check breaks first if coverage is good!):
+
+plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
 
 
 

@@ -298,6 +298,7 @@ NOTE: also add CIs in the table with the ATEs?
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (1), including direct and interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario1_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -306,13 +307,14 @@ NOTE: also add CIs in the table with the ATEs?
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_mean_diff, 3)} \\
-ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$  & NA & NA & \Sexpr{round(rct_scenario1$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario1$val_ATE_observed_Y_median_diff, 3)} \\
 ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario1$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario1$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario1$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario1$val_ITE_median_average, 3)} \\
 ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario1$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario1$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario1$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario1$val_ITE_median_pred_average, 3)} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 
 
 
@@ -390,6 +392,7 @@ Scenario (2) included a direct effect of the treatment on the outcome and coeffi
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (2), including a direct treatment but no interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario2_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -398,8 +401,8 @@ Scenario (2) included a direct effect of the treatment on the outcome and coeffi
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_mean_diff, 3)} \\
-ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$  & NA & NA & \Sexpr{round(rct_scenario2$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario2$val_ATE_observed_Y_median_diff, 3)} \\
 ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario2$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario2$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario2$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario2$val_ITE_median_average, 3)} \\
 ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario2$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario2$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario2$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario2$val_ITE_median_pred_average, 3)} \\
 \bottomrule
@@ -481,6 +484,7 @@ Scenario (3) included no direct effect of the treatment on the outcome but it in
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (3), without direct treatment effect but including interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario3_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -489,8 +493,8 @@ Scenario (3) included no direct effect of the treatment on the outcome but it in
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff, 3)} \\
-ATE as diff. in median outcomes & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_median_diff, 3)} \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_mean_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_mean_diff, 3)} \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & \Sexpr{round(rct_scenario3$dev_ATE_observed_Y_median_diff, 3)} & \Sexpr{round(rct_scenario3$val_ATE_observed_Y_median_diff, 3)} \\
 ATE as mean(ITE$_\text{true}$)  & \Sexpr{round(observ_scenario3$dev_ITE_median_average, 3)} & \Sexpr{round(observ_scenario3$val_ITE_median_average, 3)} & \Sexpr{round(rct_scenario3$dev_ITE_median_average, 3)} & \Sexpr{round(rct_scenario3$val_ITE_median_average, 3)} \\
 ATE as mean(ITE$_\text{estimated}$) & \Sexpr{round(observ_scenario3$dev_ITE_median_pred_average, 3)} & \Sexpr{round(observ_scenario3$val_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario3$dev_ITE_median_pred_average, 3)} & \Sexpr{round(rct_scenario3$val_ITE_median_pred_average, 3)} \\
 \bottomrule
