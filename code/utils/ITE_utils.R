@@ -435,7 +435,7 @@ struct_dag_loss_ITE = function (t_i, h_params, binary_treatment = TRUE){
 
 
 
-
+## ---- Calculate ATE -----
 
 
 ##### ------- MA Mike funcitons for ITE_observatinoal_simulation.R -------------
@@ -1235,7 +1235,7 @@ plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.
   
   # Legend
   legend("topleft", inset = c(0.02, 0.02),  # move slightly downward
-         legend = c("Training", "Test", "Theoretical Center"),
+         legend = c("Training", "Test", "Theoretical ATE"),
          col = c("orange", "#36648B", "black"), 
          pch = c(16, 16, NA), lty = c(1, 1, 3),
          bty = "n", cex =0.8, lwd = c(2, 2, 1))
@@ -1333,3 +1333,781 @@ plot_CATE_vs_ITE_group_median_with_theoretical <- function(dev.data, val.data, b
 }
 
 
+
+
+
+## ---- ITE_simulation.R (different ML methods on different scenarios) -----
+
+
+
+
+# ITE Utils (supporting functions)
+
+
+calc.ATE.Risks <- function(data) {
+  data <- as.data.frame(data)
+  
+  # Calculate proportions
+  p1 <- mean(data$Y[data$Tr ==  1])  # treated risk
+  p0 <- mean(data$Y[data$Tr == 0])  # control risk
+  
+  # Risk difference
+  ATE.RiskDiff <- p1 - p0
+  
+  # Standard error for RD (Wald)
+  n1 <- sum(data$Tr == 1)
+  n0 <- sum(data$Tr == 0)
+  se <- sqrt((p1 * (1 - p1)) / n1 + (p0 * (1 - p0)) / n0)
+  
+  # 95% CI using normal approximation
+  z <- qnorm(0.975)
+  ATE.lb <- ATE.RiskDiff - z * se
+  ATE.ub <- ATE.RiskDiff + z * se
+  
+  return(data.frame(
+    ATE.RiskDiff = ATE.RiskDiff,
+    ATE.lb = ATE.lb,
+    ATE.ub = ATE.ub,
+    n.total = nrow(data),
+    n.tr = n1,
+    n.ct = n0
+  ))
+}
+
+
+
+plot_ATE_ITE_in_group_risks <- function(dev.data = data.dev.rs, val.data = data.val.rs, ylb=0, yub=2){
+  data <- rbind(dev.data %>% mutate(sample = "derivation"), val.data %>%  mutate(sample = "validation"))
+  result <- ggplot(data, aes(x = ITE.Group, y = ATE.RiskDiff)) +
+    geom_line(aes(group = sample, color = sample), linewidth = 1, 
+              position = position_dodge(width = 0.2)) +
+    geom_point(aes(color = sample), size = 1.5, 
+               position = position_dodge(width = 0.2)) +
+    geom_errorbar(aes(ymin = ATE.lb, ymax = ATE.ub, color = sample), width = 0.2,
+                  position = position_dodge(width = 0.2))+
+    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+    scale_color_manual(name = "Group",
+                       labels = c("derivation" = "Training Data", "validation" = "Test Data"),
+                       values = c("orange", "#36648B"))+
+    scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+    ylim(min(dev.data$ATE.lb)-0.1, max(dev.data$ATE.ub)+0.1)+
+    xlab("ITE Group")+
+    ylab("ATE in Risk Difference")+
+    theme_minimal()+
+    theme(
+      legend.position.inside = c(0.9, 0.9),
+      legend.justification = c("right", "top"),
+      legend.box.just = "right",
+      panel.grid.major = element_blank(),  # Removes major grid lines
+      panel.grid.minor = element_blank(),  # Removes minor grid lines
+      panel.background = element_blank(),  # Removes panel background
+      plot.background = element_blank(),
+      text = element_text(size = 14),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+  
+  return(result)
+}
+
+
+
+plot_CATE_vs_ITE_base_risk <- function(model.results = model.results, breaks, 
+                                       delta_horizontal = 0.02) {
+  
+  
+  
+  data.dev.grouped.ATE <- model.results$data.dev.rs %>% 
+    mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+    dplyr::filter(!is.na(ITE.Group)) %>%
+    group_by(ITE.Group) %>% 
+    group_modify(~ calc.ATE.Risks(.x)) %>% ungroup()
+  data.val.grouped.ATE <- model.results$data.val.rs %>% 
+    mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+    dplyr::filter(!is.na(ITE.Group)) %>%
+    group_by(ITE.Group) %>%
+    group_modify(~ calc.ATE.Risks(.x)) %>% ungroup() 
+  
+  dev.data <- data.dev.grouped.ATE
+  val.data <- data.val.grouped.ATE
+  
+  bin_centers <- (head(breaks, -1) + tail(breaks, -1)) / 2
+  group_labels <- levels(dev.data$ITE.Group)
+  
+  delta <- 0.01     # Horizontal offset between training and test
+  cap_width <- 0.02 # Width of CI caps
+  
+  # Set up empty plot
+  plot(NULL,
+       xlim = range(bin_centers) + c(-0.15, 0.15),
+       ylim = range(c(dev.data$ATE.lb, dev.data$ATE.ub)) + c(-0.1, 0.1),
+       xlab = "ITE Group", ylab = "ATE in Risk Difference",
+       xaxt = "n")
+  mtext(expression("Observed ATE per ITE-subgroup: " * pi[treated] - pi[control]),
+        side = 3, line = 0.5, cex = 0.95)
+  
+  
+  ### Training CI bars + points
+  x_train <- bin_centers - delta
+  for (i in seq_along(bin_centers)) {
+    arrows(x_train[i], dev.data$ATE.lb[i], x_train[i], dev.data$ATE.ub[i],
+           angle = 90, code = 3, length = cap_width, col = "orange", lwd = 2)
+    points(x_train[i], dev.data$ATE.RiskDiff[i], pch = 16, col = "orange")
+  }
+  
+  ### Test CI bars + points
+  x_test <- bin_centers + delta
+  for (i in seq_along(bin_centers)) {
+    arrows(x_test[i], val.data$ATE.lb[i], x_test[i], val.data$ATE.ub[i],
+           angle = 90, code = 3, length = cap_width, col = "#36648B", lwd = 2)
+    points(x_test[i], val.data$ATE.RiskDiff[i], pch = 16, col = "#36648B")
+  }
+  
+  # Connect points with lines
+  lines(x_train, dev.data$ATE.RiskDiff, col = "orange", lwd = 2)
+  lines(x_test, val.data$ATE.RiskDiff, col = "#36648B", lwd = 2)
+  
+  # Reference lines
+  abline(h = 0, lty = "dotted", col = "gray")
+  lines(bin_centers, bin_centers, lty = 3)  # Theoretical
+  
+  # Rug plots (stripchart)
+  stripchart(model.results$data.dev.rs$ITE, method = "jitter", at = par("usr")[4],
+             add = TRUE, pch = "|", col = "orange", jitter = 0.002, cex = 0.6)
+  stripchart(model.results$data.val.rs$ITE, method = "jitter", at = par("usr")[3],
+             add = TRUE, pch = "|", col = "#36648B", jitter = 0.002, cex = 0.6)
+  
+  # Custom x-axis
+  # axis(1, at = bin_centers, labels = group_labels)
+  
+  # Custom x-axis
+  axis(1, at = bin_centers, labels = FALSE)  # suppress default labels
+  
+  # Add staggered labels manually
+  for (i in seq_along(bin_centers)) {
+    offset <- ifelse(i %% 2 == 0, -1.5, -3)  # stagger in two rows
+    text(x = bin_centers[i], y = par("usr")[3] + offset * strheight("M"),
+         labels = group_labels[i], srt = 0, xpd = TRUE)
+  }
+  
+  
+  # Legend
+  legend("topleft", inset = c(0.02, 0.02),  # move slightly downward
+         legend = c("Training", "Test", "Theoretical ATE"),
+         col = c("orange", "#36648B", "black"), 
+         pch = c(16, 16, NA), lty = c(1, 1, 3),
+         bty = "n", cex =0.8, lwd = c(2, 2, 1))
+}
+
+
+
+
+
+
+
+library(gridExtra)
+library(ggpubr)
+plot_pred_ite <- function(model.results, ate_ite = FALSE){
+  # train
+  p_dev_plot <- ggplot(model.results$data.dev.rs, aes(x = Y_prob, y = Y_pred, color = Treatment)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0, color = "red") +
+    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob (Train)") +
+    theme_minimal() +
+    theme(legend.position = "top")
+  
+  # test
+  p_val_plot <- ggplot(model.results$data.val.rs, aes(x = Y_prob, y = Y_pred, color = Treatment)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0, color = "red") +
+    labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob (Test)") +
+    theme_minimal() +
+    theme(legend.position = "top")
+  
+  
+  
+  ite_dev_plot <- ggplot(model.results$data.dev.rs, aes(x=ITE_true, y=ITE, color=Y)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0, color = "red") +
+    # add a regression slope in black
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
+    labs(title = "ITE (Train)", x = "True ITE", y = "Estimated ITE") +
+    theme_minimal() +
+    theme(legend.position = "top")
+  
+  ite_val_plot <- ggplot(model.results$data.val.rs, aes(x=ITE_true, y=ITE, color=Y)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0, color = "red") + 
+    # add a regression slope in black
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
+    labs(title = "ITE (Test)", x = "True ITE", y = "Estimated ITE") +
+    theme_minimal() +
+    theme(legend.position = "top")
+  
+  outcome_ITE_plot <- plot_outcome_ITE(data.dev.rs = model.results$data.dev.rs, data.val.rs = model.results$data.val.rs, x_lim = c(-0.9,0.9))
+  
+  
+  # Define layout matrix: 3 columns x 2 rows
+  layout_matrix <- rbind(
+    c(1, 2, 5),
+    c(3, 4, 5)
+  )
+  
+  grid.arrange(
+    p_dev_plot, p_val_plot,
+    ite_dev_plot, ite_val_plot,
+    outcome_ITE_plot,
+    layout_matrix = layout_matrix,
+    widths = c(1, 1, 1.3) 
+  )
+  
+  if (ate_ite){
+    # ATE as risk difference
+    breaks <- round(quantile(model.results$data.dev.rs$ITE, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
+    data.dev.grouped.ATE <- model.results$data.dev.rs %>% 
+      mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+      dplyr::filter(!is.na(ITE.Group)) %>%
+      group_by(ITE.Group) %>% 
+      group_modify(~ calc.ATE.Risks(.x)) %>% ungroup()
+    data.val.grouped.ATE <- model.results$data.val.rs %>% 
+      mutate(ITE.Group = cut(ITE, breaks = breaks, include.lowest = T)) %>%
+      dplyr::filter(!is.na(ITE.Group)) %>%
+      group_by(ITE.Group) %>%
+      group_modify(~ calc.ATE.Risks(.x)) %>% ungroup() 
+    
+    outcome_ATE_ITE_plot <- plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val.grouped.ATE)
+    
+    # Define layout matrix: 3 columns x 2 rows
+    layout_matrix <- rbind(
+      c(1, 2, 5),
+      c(3, 4, 6)
+    )
+    
+    grid.arrange(
+      p_dev_plot, p_val_plot,
+      ite_dev_plot, ite_val_plot,
+      outcome_ATE_ITE_plot,
+      outcome_ITE_plot,
+      layout_matrix = layout_matrix,
+      widths = c(1, 1, 1.3) 
+    )
+  }
+}
+
+
+check_ate <- function(model.results) {
+  dev_ate_est <- mean(model.results$data.dev.rs$ITE)
+  val_ate_est <- mean(model.results$data.val.rs$ITE)
+  
+  dev_ate_obs <- mean(model.results$data.dev.rs[model.results$data.dev.rs$Tr==1,]$Y) - 
+    mean(model.results$data.dev.rs[model.results$data.dev.rs$Tr==0,]$Y)
+  
+  val_ate_obs <- mean(model.results$data.val.rs[model.results$data.val.rs$Tr==1,]$Y) -
+    mean(model.results$data.val.rs[model.results$data.val.rs$Tr==0,]$Y)
+  
+  dev_ate_true <- mean(model.results$data.dev.rs$ITE_true)
+  val_ate_true <- mean(model.results$data.val.rs$ITE_true)
+  
+  # RMSE of ITE
+  dev_rmse <- sqrt(mean((model.results$data.dev.rs$ITE_true - model.results$data.dev.rs$ITE)^2))
+  val_rmse <- sqrt(mean((model.results$data.val.rs$ITE_true - model.results$data.val.rs$ITE)^2))
+  
+  return(round(data.frame(
+    ATE_Estimated = c(dev_ate_est, val_ate_est),
+    ATE_Observed = c(dev_ate_obs, val_ate_obs),
+    ATE_True = c(dev_ate_true, val_ate_true),
+    RMSE = c(dev_rmse, val_rmse),
+    row.names = c("Train (Risk Diff)", "Test (Risk Diff)")
+  ),4))
+}
+
+
+
+
+######### Plot for slides: 2 pred, 2 ite, ite-ate
+
+plot_for_slides <- function(model.results, breaks, delta_horizontal = 0.02) {
+  
+  # # Define layout matrix: 3 rows, 2 columns
+  # layout_matrix <- matrix(c(
+  #   1, 2,
+  #   3, 4,
+  #   5, 5  # ATE plot spans both columns
+  # ), nrow = 3, byrow = TRUE)
+  # 
+  # Define layout matrix: 2 rows, 3 columns
+  layout_matrix <- matrix(c(
+    1, 3, 5, 5, 
+    2, 4, 5, 5  # ATE plot spans both columns
+  ), nrow = 2, byrow = TRUE)
+  
+  layout(mat = layout_matrix, heights = c(1, 1, 1.3))  # Adjust row heights if needed
+  # par(mar = c(4.5, 4.5, 2, 1))  # Set margins for all plots
+  par(mar = c(4.5, 4.5, 2, 1), mgp = c(1.8, 0.6, 0))
+  
+  #### Row 1: Probability scatter plots for train and test sets
+  
+  # Plot 1: Train
+  plot(model.results$data.dev.rs$Y_prob, model.results$data.dev.rs$Y_pred,
+       main = "", xlab = "Probability (True)", ylab = "Probability (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Train: P(Y=1|X,T)", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Train:  P(Y = 1 | X, T)"), side = 3, line = 0.5, cex = 0.95)
+  
+  
+  # Plot 2: Test
+  plot(model.results$data.val.rs$Y_prob, model.results$data.val.rs$Y_pred,
+       main = "", xlab = "Probability (True)", ylab = "Probability (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Test: P(Y=1|X,T)", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Test:  P(Y = 1 | X, T)"), side = 3, line = 0.5, cex = 0.95)
+  
+  
+  #### Row 2: ITE scatter plots for train and test sets
+  
+  # Plot 3: Train ITE
+  plot(model.results$data.dev.rs$ITE_true, model.results$data.dev.rs$ITE,
+       main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Train: ITE", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Train: ITE"), side = 3, line = 0.5, cex = 0.95)
+  
+  # Plot 4: Test ITE
+  plot(model.results$data.val.rs$ITE_true, model.results$data.val.rs$ITE,
+       main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Test: ITE", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Test: ITE"), side = 3, line = 0.5, cex = 0.95)
+  
+  
+  #### Row 3: ATE vs ITE plot
+  
+  # This is assumed to be a base R plotting function
+  
+  par(mgp = c(2.5, 0.6, 0))  ## x label further away
+  
+  plot_CATE_vs_ITE_base_risk(
+    model.results = model.results,
+    breaks = breaks,
+    delta_horizontal = delta_horizontal
+  )
+}
+
+
+
+#################################################
+# Benchmark (GLM T-learner)
+#################################################
+
+# functions for fitting model and plotting results
+
+fit.glm <- function(df) {
+  p <- sum(grepl("^X", colnames(df$data.dev)))
+  variable_names <- paste0("X", 1:p)
+  form <- as.formula(paste("Y ~", paste(variable_names, collapse = " + ")))
+  
+  # Fit GLM for treatment and control groups
+  fit.dev.tx <- glm(form, data = df$data.dev.tx, family = binomial(link = "logit"))
+  fit.dev.ct <- glm(form, data = df$data.dev.ct, family = binomial(link = "logit"))
+  
+  # Predict outcome for observed T and X on derivation sample
+  df$data.dev$Y_pred <- predict(fit.dev.tx, newdata = df$data.dev, type = "response") * 
+    df$data.dev$Tr + 
+    predict(fit.dev.ct, newdata = df$data.dev, type = "response") * 
+    (1 - df$data.dev$Tr)
+  
+  # Predict outcome for observed T and X on validation sample
+  df$data.val$Y_pred <- predict(fit.dev.tx, newdata = df$data.val, type = "response") * 
+    df$data.val$Tr + 
+    predict(fit.dev.ct, newdata = df$data.val, type = "response") * 
+    (1 - df$data.val$Tr)
+  
+  # Predict ITE on derivation sample
+  pred.data.dev <- df$data.dev %>% dplyr::select(variable_names)
+  df$data.dev$Y_pred_tx <- predict(fit.dev.tx, newdata = pred.data.dev, type = "response") 
+  df$data.dev$Y_pred_ct <- predict(fit.dev.ct, newdata = pred.data.dev, type = "response")
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct 
+  
+  
+  # Predict ITE on validation sample
+  pred.data.val <- df$data.val %>% dplyr::select(variable_names)
+  df$data.val$Y_pred_tx <- predict(fit.dev.tx, newdata = pred.data.val, type = "response")
+  df$data.val$Y_pred_ct <- predict(fit.dev.ct, newdata = pred.data.val, type = "response")
+  pred.val <- df$data.val$Y_pred_tx  - df$data.val$Y_pred_ct 
+  
+  # generate data
+  data.dev.rs <- df$data.dev %>% 
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>% 
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  
+  return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs, 
+              model.dev.tx = fit.dev.tx, model.dev.ct = fit.dev.ct))
+  
+}
+
+
+
+#################################################
+# glmnet T-learner (lasso regression)
+#################################################
+
+
+### MODEL WITH LASSO
+library(glmnet)
+fit.glmnet <- function(df) {
+  # Extract predictor matrix (X) and response (Y)
+  X_vars <- grep("^X", names(df$data.dev), value = TRUE)
+  
+  # Training data for treated and control
+  X_tx <- as.matrix(df$data.dev.tx[, X_vars])
+  Y_tx <- df$data.dev.tx$Y
+  
+  X_ct <- as.matrix(df$data.dev.ct[, X_vars])
+  Y_ct <- df$data.dev.ct$Y
+  
+  # Fit Lasso with cross-validation
+  cv_tx <- cv.glmnet(X_tx, Y_tx, family = "binomial", alpha = 1)
+  cv_ct <- cv.glmnet(X_ct, Y_ct, family = "binomial", alpha = 1)
+  
+  # Final models
+  fit.dev.tx <- glmnet(X_tx, Y_tx, family = "binomial", lambda = cv_tx$lambda.min)
+  fit.dev.ct <- glmnet(X_ct, Y_ct, family = "binomial", lambda = cv_ct$lambda.min)
+  
+  # Prediction on dev data
+  X_dev <- as.matrix(df$data.dev[, X_vars])
+  df$data.dev$Y_pred <- predict(fit.dev.tx, newx = X_dev, type = "response") * df$data.dev$Tr +
+    predict(fit.dev.ct, newx = X_dev, type = "response") * (1 - df$data.dev$Tr)
+  
+  # Prediction on val data
+  X_val <- as.matrix(df$data.val[, X_vars])
+  df$data.val$Y_pred <- predict(fit.dev.tx, newx = X_val, type = "response") * df$data.val$Tr +
+    predict(fit.dev.ct, newx = X_val, type = "response") * (1 - df$data.val$Tr)
+  
+  # ITE prediction on dev
+  df$data.dev$Y_pred_tx <- predict(fit.dev.tx, newx = X_dev, type = "response")
+  df$data.dev$Y_pred_ct <- predict(fit.dev.ct, newx = X_dev, type = "response")
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct
+  
+  # ITE prediction on val
+  df$data.val$Y_pred_tx <- predict(fit.dev.tx, newx = X_val, type = "response")
+  df$data.val$Y_pred_ct <- predict(fit.dev.ct, newx = X_val, type = "response")
+  pred.val <- df$data.val$Y_pred_tx - df$data.val$Y_pred_ct
+  
+  # Generate RS labels
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  return(list(
+    data.dev.rs = data.dev.rs,
+    data.val.rs = data.val.rs,
+    model.dev.tx = fit.dev.tx,
+    model.dev.ct = fit.dev.ct
+  ))
+}
+
+
+
+
+#################################################
+# glmnet S-learner (lasso regression with all interactions)
+#################################################
+
+
+#### single model lasso regression with all interactions(S-learner)
+fit.glmnet.slearner <- function(df) {
+  # df <- glmnet.slearner.results1 # debugging
+  
+  # Extract variable names
+  X_vars <- grep("^X", names(df$data.dev), value = TRUE)
+  Tr <- df$data.dev$Tr
+  Y <- df$data.dev$Y
+  
+  # Build interaction terms manually
+  X_main <- as.matrix(df$data.dev[, X_vars])
+  X_interactions <- X_main * Tr  # element-wise multiplication for interactions
+  colnames(X_interactions) <- paste0(X_vars, "_Tr")
+  
+  # Combine into one design matrix: Xs + treatment + interactions
+  X_all <- cbind(X_main, Tr = Tr, X_interactions)
+  
+  # Fit Lasso-penalized logistic regression with cross-validation
+  cv_fit <- cv.glmnet(X_all, Y, family = "binomial", alpha = 1)
+  fit <- glmnet(X_all, Y, family = "binomial", lambda = cv_fit$lambda.min)
+  
+  
+  # Predict with treatment = 1 on derivation data
+  X_dev_main <- as.matrix(df$data.dev[, X_vars])
+  X_dev_tx <- cbind(
+    X_dev_main,
+    Tr = 1,
+    X_dev_main * 1
+  )
+  colnames(X_dev_tx) <- colnames(X_all)
+  
+  # Predict with treatment = 0 on derivation data
+  X_dev_ct <- cbind(
+    X_dev_main,
+    Tr = 0,
+    X_dev_main * 0
+  )
+  colnames(X_dev_ct) <- colnames(X_all)
+  
+  pred_dev_tx <- predict(fit, newx = X_dev_tx, type = "response")
+  pred_dev_ct <- predict(fit, newx = X_dev_ct, type = "response")
+  pred_dev <- pred_dev_tx - pred_dev_ct
+  
+  
+  
+  # Prepare validation data for prediction
+  X_val_main <- as.matrix(df$data.val[, X_vars])
+  
+  # Predict with treatment = 1
+  X_val_tx <- cbind(
+    X_val_main,
+    Tr = 1,
+    X_val_main * 1
+  )
+  colnames(X_val_tx) <- colnames(X_all)
+  
+  # Predict with treatment = 0
+  X_val_ct <- cbind(
+    X_val_main,
+    Tr = 0,
+    X_val_main * 0
+  )
+  colnames(X_val_ct) <- colnames(X_all)
+  
+  # Predict ITE on validation data
+  pred_val_tx <- predict(fit, newx = X_val_tx, type = "response")
+  pred_val_ct <- predict(fit, newx = X_val_ct, type = "response")
+  pred_val <- pred_val_tx - pred_val_ct
+  
+  
+  
+  # Predict observed outcome for derivation sample
+  df$data.dev$Y_pred <- df$data.dev$Tr * pred_dev_tx + (1 - df$data.dev$Tr) * pred_dev_ct
+  df$data.dev$Y_pred_tx <- pred_dev_tx
+  df$data.dev$Y_pred_ct <- pred_dev_ct
+  
+  # Predict observed outcome for validation sample
+  df$data.val$Y_pred <- df$data.val$Tr * pred_val_tx + (1 - df$data.val$Tr) * pred_val_ct
+  df$data.val$Y_pred_tx <- pred_val_tx
+  df$data.val$Y_pred_ct <- pred_val_ct
+  
+  # Generate RS labels
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred_dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred_val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  return(list(
+    data.dev.rs = data.dev.rs,
+    data.val.rs = data.val.rs,
+    model = fit
+  ))
+}
+
+
+
+
+#################################################
+# Complex Model (randomForest)
+#################################################
+
+
+library(randomForest)
+library(dplyr)
+
+fit.rf <- function(df, ntrees = 100) {
+  p <- sum(grepl("^X", colnames(df$data.dev)))
+  variable_names <- paste0("X", 1:p)
+  form <- as.formula(paste("Y ~", paste(variable_names, collapse = " + ")))
+  
+  df$data.dev.tx$Y <- as.factor(df$data.dev.tx$Y)  # Ensure Y is a factor for classification
+  df$data.dev.ct$Y <- as.factor(df$data.dev.ct$Y)  # Ensure Y is a factor for classification
+  
+  # Fit random forest for treatment and control groups
+  fit.dev.tx <- randomForest(form, data = df$data.dev.tx, ntree = ntrees)
+  fit.dev.ct <- randomForest(form, data = df$data.dev.ct, ntree = ntrees)
+  
+  # Predict outcome for observed T and X on derivation sample
+  df$data.dev$Y_pred <- predict(fit.dev.tx, newdata = df$data.dev, type="prob")[,2] * df$data.dev$Tr +
+    predict(fit.dev.ct, newdata = df$data.dev, type="prob")[,2] * (1 - df$data.dev$Tr)
+  
+  # Predict outcome for observed T and X on validation sample
+  df$data.val$Y_pred <- predict(fit.dev.tx, newdata = df$data.val, type="prob")[,2] * df$data.val$Tr +
+    predict(fit.dev.ct, newdata = df$data.val, type="prob")[,2] * (1 - df$data.val$Tr)
+  
+  # Predict ITE on derivation sample
+  pred.data.dev <- df$data.dev %>% dplyr::select(variable_names)
+  df$data.dev$Y_pred_tx <- predict(fit.dev.tx, newdata = pred.data.dev, type="prob")[,2]
+  df$data.dev$Y_pred_ct <- predict(fit.dev.ct, newdata = pred.data.dev, type="prob")[,2]
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct
+  
+  # Predict ITE on validation sample
+  pred.data.val <- df$data.val %>% dplyr::select(variable_names)
+  df$data.val$Y_pred_tx <- predict(fit.dev.tx, newdata = pred.data.val, type="prob")[,2]
+  df$data.val$Y_pred_ct <- predict(fit.dev.ct, newdata = pred.data.val, type="prob")[,2]
+  pred.val <- df$data.val$Y_pred_tx - df$data.val$Y_pred_ct
+  
+  
+  
+  
+  # check binary predictions on the train set
+  train_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.dev.tx, type="response")
+  train_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.dev.ct, type="response")
+  
+  mean(df$data.dev.tx$Y == train_y_pred_tx)
+  mean(df$data.dev.ct$Y == train_y_pred_ct)
+  # combined accuracy (train)
+  acc_train <- mean(c(df$data.dev.tx$Y == train_y_pred_tx, df$data.dev.ct$Y == train_y_pred_ct))
+  
+  
+  # check binary predictions on the validation set
+  val_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.val.tx, type="response")
+  val_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.val.ct, type="response")
+  
+  mean(df$data.val.tx$Y == val_y_pred_tx)
+  mean(df$data.val.ct$Y == val_y_pred_ct)
+  
+  # combined accuracy (validation)
+  acc_test <- mean(c(df$data.val.tx$Y == val_y_pred_tx, df$data.val.ct$Y == val_y_pred_ct))
+  
+  
+  
+  
+  # Generate result sets
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  # Print accuracy directly inside the function
+  cat(paste0("Train Accuracy: ", round(acc_train, 3), 
+             ", Test Accuracy: ", round(acc_test, 3), "\n"))
+  
+  
+  return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs,
+              model.dev.tx = fit.dev.tx, model.dev.ct = fit.dev.ct))
+}
+
+
+
+
+#################################################
+# Complex Model (Random Forest comets package, tuned)
+#################################################
+
+
+library(comets)
+library(dplyr)
+
+# extract the tuned_rf function
+comets_tuned_rf <- comets:::tuned_rf
+# ?comets:::tuned_rf
+fit.tuned_rf <- function(df) {
+  p <- sum(grepl("^X", colnames(df$data.dev)))
+  variable_names <- paste0("X", 1:p)
+  form <- as.formula(paste("Y ~", paste(variable_names, collapse = " + ")))
+  
+  df$data.dev.tx$Y <- as.factor(df$data.dev.tx$Y)  # Ensure Y is a factor for classification
+  df$data.dev.ct$Y <- as.factor(df$data.dev.ct$Y)  # Ensure Y is a factor for classification
+  
+  # Fit random forest for treatment and control groups
+  fit.dev.tx <- comets_tuned_rf(y=as.matrix(df$data.dev.tx$Y), x=as.matrix(df$data.dev.tx %>% dplyr::select(variable_names)))
+  fit.dev.ct <- comets_tuned_rf(y=as.matrix(df$data.dev.ct$Y), x=as.matrix(df$data.dev.ct %>% dplyr::select(variable_names)))
+  
+  # Feature set of derivation sample
+  X_dev <- as.matrix(df$data.dev %>% dplyr::select(variable_names))
+  
+  # Predict probabilities on derivation sample
+  pred_tx_dev <- predict(fit.dev.tx, data = X_dev)
+  pred_ct_dev <- predict(fit.dev.ct, data = X_dev)
+  
+  # Predict outcome for observed T and X on derivation sample
+  df$data.dev$Y_pred <- pred_tx_dev * df$data.dev$Tr + pred_ct_dev * (1 - df$data.dev$Tr)
+  
+  # Predict ITE on derivation sample
+  df$data.dev$Y_pred_tx <- pred_tx_dev
+  df$data.dev$Y_pred_ct <- pred_ct_dev
+  pred.dev <- df$data.dev$Y_pred_tx - df$data.dev$Y_pred_ct
+  
+  
+  # Feature set of validation sample
+  X_val <- as.matrix(df$data.val %>% dplyr::select(variable_names))
+  
+  # Predict probabilities on derivation sample
+  pred_tx_val <- predict(fit.dev.tx, data = X_val)
+  pred_ct_val <- predict(fit.dev.ct, data = X_val)
+  
+  # Predict outcome for observed T and X on validation sample
+  df$data.val$Y_pred <- pred_tx_val * df$data.val$Tr + pred_ct_val * (1 - df$data.val$Tr)
+  
+  # Predict ITE on validation sample
+  df$data.val$Y_pred_tx <- pred_tx_val
+  df$data.val$Y_pred_ct <- pred_ct_val
+  pred.val <- df$data.val$Y_pred_tx - df$data.val$Y_pred_ct
+  
+  
+  
+  
+  # check binary predictions on the train set
+  # train_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.dev.tx, type="response")
+  # train_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.dev.ct, type="response")
+  
+  # mean(df$data.dev.tx$Y == train_y_pred_tx)
+  # mean(df$data.dev.ct$Y == train_y_pred_ct)
+  # # combined accuracy (train)
+  # acc_train <- mean(c(df$data.dev.tx$Y == train_y_pred_tx, df$data.dev.ct$Y == train_y_pred_ct))
+  
+  
+  # check binary predictions on the validation set
+  # val_y_pred_tx <- predict(fit.dev.tx, newdata = df$data.val.tx, type="response")
+  # val_y_pred_ct <- predict(fit.dev.ct, newdata = df$data.val.ct, type="response")
+  # 
+  # mean(df$data.val.tx$Y == val_y_pred_tx)
+  # mean(df$data.val.ct$Y == val_y_pred_ct)
+  # 
+  # combined accuracy (validation)
+  # acc_test <- mean(c(df$data.val.tx$Y == val_y_pred_tx, df$data.val.ct$Y == val_y_pred_ct))
+  
+  
+  
+  
+  # Generate result sets
+  data.dev.rs <- df$data.dev %>%
+    mutate(ITE = pred.dev, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  data.val.rs <- df$data.val %>%
+    mutate(ITE = pred.val, RS = ifelse(ITE < 0, "benefit", "harm")) %>%
+    mutate(RS = as.factor(RS))
+  
+  # Print accuracy directly inside the function
+  # cat(paste0("Train Accuracy: ", round(acc_train, 3), 
+  #            ", Test Accuracy: ", round(acc_test, 3), "\n"))
+  # 
+  
+  return(list(data.dev.rs = data.dev.rs, data.val.rs = data.val.rs,
+              model.dev.tx = fit.dev.tx, model.dev.ct = fit.dev.ct))
+}

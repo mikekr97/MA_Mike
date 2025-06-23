@@ -327,7 +327,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 3
+scenario <- 1
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -386,6 +386,57 @@ data_type = train$type
 
 ## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 
 # where the transformation function is the cut-point representing the probability P(X4)
+
+
+
+# check with colr
+
+library(tram)
+
+# Fit model
+colr_model <- Colr(Y ~ X1 + X2 + X3 + Tr + X2:Tr + X3:Tr, 
+                   data = train$simulated_full_data)
+
+# Predict under treatment (Tr = 1)
+dat_tx <- train$simulated_full_data
+dat_tx$Tr <- 1
+pred_colr_tx <- predict(colr_model, newdata = dat_tx, 
+                        type = "quantile", prob = 0.5)
+
+# Predict under control (Tr = 0)
+dat_ct <- train$simulated_full_data
+dat_ct$Tr <- 0
+pred_colr_ct <- predict(colr_model, newdata = dat_ct, 
+                        type = "quantile", prob = 0.5)
+
+# Calculate ITE: median(Y(1)) - median(Y(0))
+ITE_Colr <- pred_colr_tx - pred_colr_ct
+
+# Plot
+par(mfrow=c(1,1))
+plot(train$simulated_full_data$ITE_median, ITE_Colr,
+     xlab = "True ITE", ylab = "Estimated ITE (Colr)",
+     main = "Colr(Y ~ X1 + X2 + X3 + Tr + X2:Tr + X3:Tr)")
+abline(0, 1, col = "red", lty = 2)
+
+
+# now the same but with t-learner Colr(Y ~ X1 + X2 + X3) on tx and ct groups
+dat_tx <- train$simulated_full_data[train$simulated_full_data$Tr == 1, ]
+dat_ct <- train$simulated_full_data[train$simulated_full_data$Tr == 0, ]
+colr_model_tx <- Colr(Y ~ X1 + X2 + X3, data = dat_tx)
+colr_model_ct <- Colr(Y ~ X1 + X2 + X3, data = dat_ct)
+pred_colr_tx <- predict(colr_model_tx, newdata = train$simulated_full_data, 
+                        type = "quantile", prob = 0.5)
+pred_colr_ct <- predict(colr_model_ct, newdata = train$simulated_full_data,
+                        type = "quantile", prob = 0.5)
+# Calculate ITE: median(Y(1)) - median(Y(0))
+ITE_Colr_tlearner <- pred_colr_tx - pred_colr_ct
+# Plot
+par(mfrow=c(1,1))
+plot(train$simulated_full_data$ITE_median, ITE_Colr_tlearner,
+     xlab = "True ITE", ylab = "Estimated ITE (Colr T-learner)",
+     main = "Colr T-learner(Y ~ X1 + X2 + X3)")
+abline(0, 1, col = "red", lty = 2)
 
 
 ############################
@@ -954,7 +1005,68 @@ abline(0, 1, col = 'red', lty = 2)
 
 sqrt(mean((as.numeric(train$dat.tf[,7]) - as.numeric(predicted_y))^2))
 
-
+# 
+# 
+# true_y <- as.numeric(train$dat.tf[,7])
+# predicted_y <- as.numeric(predicted_y)
+# 
+# 
+# # Create a data frame for ggplot2
+# calibration_data <- data.frame(
+#   true_y = true_y,
+#   predicted_y = predicted_y
+# )
+# 
+# # --- 2. Classical Binned Calibration Plot for Continuous Outcome ---
+# 
+# # Define the number of bins
+# num_bins <- 10
+# 
+# # Create bins for true_y and calculate the mean predicted_y within each bin
+# binned_data <- calibration_data %>%
+#   mutate(
+#     true_y_bin = cut(true_y, breaks = num_bins, include.lowest = TRUE, ordered_result = TRUE),
+#     true_y_midpoint = as.numeric(cut(true_y, breaks = num_bins, include.lowest = TRUE, ordered_result = TRUE, labels = FALSE)) # Get bin index for midpoint calculation
+#   ) %>%
+#   group_by(true_y_bin) %>%
+#   summarise(
+#     mean_true_y = mean(true_y),       # Use the actual mean of true_y in the bin for x-axis
+#     mean_predicted_y = mean(predicted_y),
+#     .groups = 'drop'
+#   )
+# 
+# # Plot the binned calibration curve
+# p_binned <- ggplot(binned_data, aes(x = mean_true_y, y = mean_predicted_y)) +
+#   geom_point(size = 3, color = "darkblue") +
+#   geom_line(color = "darkblue", linetype = "dashed") +
+#   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "solid", size = 1) + # Ideal 45-degree line
+#   labs(
+#     title = "Binned Calibration Plot (Continuous Outcome)",
+#     x = "Mean True Y in Bin",
+#     y = "Mean Predicted Y in Bin"
+#   ) +
+#   theme_minimal() +
+#   coord_fixed(ratio = 1, xlim = range(calibration_data$true_y), ylim = range(calibration_data$predicted_y))
+# 
+# print(p_binned)
+# ggsave("calibration_plot_binned.png", p_binned, width = 8, height = 6, dpi = 300)
+# 
+# 
+# # --- 3. Smooth Calibration Curve with Confidence Band ---
+# 
+# p_smooth <- ggplot(calibration_data, aes(x = true_y, y = predicted_y)) +
+#   geom_point(alpha = 0.6, size = 1.5, color = "gray") + # Show individual data points
+#   geom_smooth(method = "loess", se = TRUE, color = "darkgreen", fill = "lightgreen", formula = y ~ x) + # LOESS smooth with confidence interval
+#   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "solid", size = 1) + # Ideal 45-degree line
+#   labs(
+#     title = "Smooth Calibration Plot (Continuous Outcome) with Confidence Band",
+#     x = "True Y",
+#     y = "Predicted Y"
+#   ) +
+#   theme_minimal() +
+#   coord_fixed(ratio = 1, xlim = range(calibration_data$true_y), ylim = range(calibration_data$predicted_y)) # Ensures 1:1 aspect ratio and consistent limits
+# 
+# print(p_smooth)
 
 
 ############################
@@ -1161,6 +1273,7 @@ dev.off()
 
 
 
+
 ## Check predicted values of Y for original treatment allocation (same as plot above in skript):
 y_sampled <- ifelse(train$simulated_full_data$Tr == 1, 
        results.dev$outcome_tx_median, 
@@ -1177,9 +1290,15 @@ abline(0, 1, col = 'red', lty = 2)
 # ITE (median) vs. cATE plot
 
 # STEP 1: Define bin breaks based on training data
+
+
+
 breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
 
-# breaks <- round(seq(-1, 0.3, length.out = 10), 1)
+
+# breaks <- round(seq(-0.6, 0.2, by = 0.1), 1)
+
+breaks <- round(seq(-1.75, 0.5, by = 0.25), 2)
 
 
 # STEP 2: Group training data and compute ATE per bin
@@ -1237,8 +1356,92 @@ plot_CATE_vs_ITE_group_median_with_theoretical(
 
 
 ### Final plot for ITE-ATE (make sure to check breaks first if coverage is good!):
-
+par(mfrow = c(1,1))
 plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plot_for_slides_final_presentation <- function(delta_horizontal = 0.02) {
+  
+  # # Define layout matrix: 3 rows, 2 columns
+  # layout_matrix <- matrix(c(
+  #   1, 2,
+  #   3, 4,
+  #   5, 5  # ATE plot spans both columns
+  # ), nrow = 3, byrow = TRUE)
+  # 
+  # Define layout matrix: 2 rows, 3 columns
+  layout_matrix <- matrix(c(
+    1, 3, 3, 
+    2, 3, 3  # ATE plot spans both columns
+  ), nrow = 2, byrow = TRUE)
+  
+  layout(mat = layout_matrix, heights = c(1, 1, 1.3))  # Adjust row heights if needed
+  # par(mar = c(4.5, 4.5, 2, 1))  # Set margins for all plots
+  par(mar = c(4.5, 4.5, 2, 1), mgp = c(1.8, 0.6, 0))
+  
+  
+  #### Row 2: ITE scatter plots for train and test sets
+  
+  # Plot 3: Train ITE
+  plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
+       main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Train: ITE", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Train: ITE"), side = 3, line = 0.5, cex = 0.95)
+  
+  # Plot 4: Test ITE
+  plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
+       main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+  abline(0, 1, col = "red", lty = 2, lwd = 2)
+  # mtext("Test: ITE", side = 3, line = 0.5, cex = 1.1)
+  mtext(expression("Test: ITE"), side = 3, line = 0.5, cex = 0.95)
+  
+  
+  #### Row 3: ATE vs ITE plot
+  
+  # This is assumed to be a base R plotting function
+  
+  par(mgp = c(2.5, 0.6, 0))  ## x label further away
+  
+  plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
+  
+}
+
+
+
+
+plot_for_slides_final_presentation(delta_horizontal = 0.02)
+
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_ATE_base.png'))
+
+png(filename = file_name, width = 2600, height = 1600, res = 300)
+
+plot_for_slides_final_presentation(delta_horizontal = 0.02)
+
+# Close PNG device
+dev.off()
+
+
+
+
 
 
 

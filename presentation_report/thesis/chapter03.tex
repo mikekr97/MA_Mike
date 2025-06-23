@@ -6,8 +6,33 @@
 
 
 
+
+
+
+
+
 \chapter{Results}
 
+
+
+% \begin{table}
+% 
+% \caption{Comparison of confidence intervals for the mean differences across scenarios. The first row of each pair corresponds to the confidence interval from the linear model (lm), while the second row corresponds to the bootstrap method.}
+% \centering
+% \begin{tabular}[t]{lrr}
+% \toprule
+%   & Lower Bound & Upper Bound\\
+% \midrule
+% Scenario 1 (lm) & -0.58231 & -0.54359\\
+% Scenario 1 (bootstrap) & -0.58210 & -0.54355\\
+% Scenario 2 (lm) & -0.59118 & -0.55371\\
+% Scenario 2 (bootstrap) & -0.59091 & -0.55405\\
+% Scenario 3 (lm) & -0.06784 & -0.02799\\
+% \addlinespace
+% Scenario 3 (bootstrap) & -0.06784 & -0.02752\\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 
 \section{TRAM-DAGs simple simulation study}
@@ -33,11 +58,48 @@ In this section, we present the performance of different causal ML models for es
 
 The results are presented for all causal ML models per scenario.
 
+In each scenario we present the results of the simple model (glm tlearner, basically dgp) and a complex model (tuned random forest). In the appendix, the results in scenario 1 of a not-tuned random forest are presented as an example that it is crucial to tune the model so that it is appropriate for ITE (and in this case probability calculation) estimation, hence well calibrated.
+
+
 \subsection{Scenario (1): Fully observed, large effects}
 
-\subsection{Scenario (2): Fully observed, small effects}
 
-maybe other scenario
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_glm_tlearner.png}
+\caption{Results with the GLM T-learner when the DAG is fully observed, strong effects.}
+\label{fig:fully_observed_glm_tlearner}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_tuned_rf_tlearner.png}
+\caption{Results with the Tuned Random Forest (comets) T-learner when the DAG is fully observed, strong effects.}
+\label{fig:fully_observed_glm_tlearner}
+\end{figure}
+
+
+
+
+\subsection{Scenario (2): unobserved interaction}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_glm_tlearner.png}
+\caption{Results with the GLM T-learner if the interaction variable is unobserved, strong effects.}
+\label{fig:unobserved_interaction_glm_tlearner}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_tuned_rf_tlearner.png}
+\caption{Results with the Tuned Random Forest (comets) T-learner if the interaction variable is unobserved, strong effects.}
+\label{fig:unobserved_interaction_glm_tlearner}
+\end{figure}
+
 
 \section{ITE estimation with TRAM-DAGs}
 
@@ -54,6 +116,7 @@ NOTE: also add CIs in the table with the ATEs?
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (1), including direct and interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario1_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -62,13 +125,14 @@ NOTE: also add CIs in the table with the ATEs?
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & -0.563 & -0.563 \\
-ATE as diff. in median outcomes & NA & NA & -0.626 & -0.638 \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & -0.563 & -0.563 \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$  & NA & NA & -0.626 & -0.638 \\
 ATE as mean(ITE$_\text{true}$)  & -0.62 & -0.622 & -0.62 & -0.622 \\
 ATE as mean(ITE$_\text{estimated}$) & -0.617 & -0.62 & -0.619 & -0.622 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 
 
 
@@ -146,6 +210,7 @@ Scenario (2) included a direct effect of the treatment on the outcome and coeffi
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (2), including a direct treatment but no interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario2_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -154,8 +219,8 @@ Scenario (2) included a direct effect of the treatment on the outcome and coeffi
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & -0.569 & -0.572 \\
-ATE as diff. in median outcomes & NA & NA & -0.629 & -0.639 \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & -0.569 & -0.572 \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$  & NA & NA & -0.629 & -0.639 \\
 ATE as mean(ITE$_\text{true}$)  & -0.633 & -0.633 & -0.633 & -0.633 \\
 ATE as mean(ITE$_\text{estimated}$) & -0.645 & -0.644 & -0.587 & -0.586 \\
 \bottomrule
@@ -237,6 +302,7 @@ Scenario (3) included no direct effect of the treatment on the outcome but it in
 
 \begin{table}[htbp]
 \centering
+\small
 \caption{Scenario (3), without direct treatment effect but including interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.}
 \label{tab:scenario3_ate_comparison}
 \begin{tabular}{l c c c c}
@@ -245,8 +311,8 @@ Scenario (3) included no direct effect of the treatment on the outcome but it in
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & \textbf{Train} & \textbf{Test} & \textbf{Train} & \textbf{Test} \\
 \midrule
-ATE as diff. in mean outcomes & NA & NA & -0.048 & -0.048 \\
-ATE as diff. in median outcomes & NA & NA & -0.048 & -0.059 \\
+ATE as $\text{mean}(\text{Y}_\text{observed}^{(1)}) - \text{mean}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & -0.048 & -0.048 \\
+ATE as $\text{median}(\text{Y}_\text{observed}^{(1)}) - \text{median}(\text{Y}_\text{observed}^{(0)})$ & NA & NA & -0.048 & -0.059 \\
 ATE as mean(ITE$_\text{true}$)  & -0.065 & -0.068 & -0.065 & -0.068 \\
 ATE as mean(ITE$_\text{estimated}$) & -0.059 & -0.061 & -0.051 & -0.053 \\
 \bottomrule

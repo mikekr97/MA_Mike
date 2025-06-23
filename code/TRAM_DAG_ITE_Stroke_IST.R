@@ -1095,6 +1095,15 @@ plot_ATE_ITE_in_group_risks(dev.data = data.dev.grouped.ATE, val.data = data.val
 ### Check calibration on the training set:
 
 
+# calibration plot
+par(mfrow=c(1,1), pty="s")
+library("CalibrationCurves")
+# train
+res <- val.prob.ci.2(tuned_rf.results$data.dev.rs$Y_pred, as.numeric(tuned_rf.results$data.dev.rs$OUTCOME6M-1), dostats=FALSE)
+
+
+# or manually
+
 
 Y_prob_tuned_rf <- tuned_rf.results$data.dev.rs$Y_pred
 
@@ -1321,6 +1330,12 @@ dat.train.tf <- tf$gather(dat.train.tf, train_idx_tf)
 
 fnh5 = paste0(fn, '_E', num_epochs, 'early_stopping_CI.h5')   # 'CI.h5'
 fnRdata = paste0(fn, '_E', num_epochs, 'early_stopping_CI.RData')   # 'CI.RData'
+
+
+# num_epochs <- 400
+# fnh5 = paste0(fn, '_E', num_epochs, 'ModelCIDropout0.1.h5')   # 'CI.h5'
+# fnRdata = paste0(fn, '_E', num_epochs, 'ModelCIDropout0.1.RData')   # 'CI.RData'
+
 
 if (file.exists(fnh5)) {
   param_model$load_weights(fnh5)

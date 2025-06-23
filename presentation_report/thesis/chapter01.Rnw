@@ -15,6 +15,8 @@ opts_chunk$set(
 
 \chapter{Introduction}
 
+\section{Motivation}
+
 % Why, what and how\dots
 
 The important questions that studies want to answer are usually not associational but causal \citep{pearl2009}. For example, these are questions that ask for effects when making a certain intervention, like the effect of a treatment. They can ask for reasons that lead to the observed outcome, like which disease caused the given symptoms. Or what would have been different if another action was taken, like what would the GDP have been, if the interest rates were incereased only by 25 instead of 75 Bps. To answer such questions, a causal reasoning must be applied that aims to understand the underlying data genearting mechanism, sole associational reasoning directly from the data is not sufficient. 
@@ -22,9 +24,6 @@ The important questions that studies want to answer are usually not associationa
 
 % https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
 % One of the main reasons for this is thatML methods are particularly good at learning about the status quofrom existing data to ultimately make outcome predictions thatare exactly in line with the current distribution of data character-istics, but usually not designed for tasks that involve the need toreason about interventions on the data generating distributionsleading to counterfactual scenarios,
-
-
-\textbf{Importance of Causal Inference on Observational Data}
 
 
 The gold standard to measure causal relationships between an intervention and an outcome is the randomized controlled trial (RCT) \citep{hariton2018}. The key concept of this prospective study design, is that the participants are randomly allocated due either the treatment or control group. Due to this randomization, the influence of potential confounding variables is eliminated and study groups are balanced with respect to baseline characteristics allowing for an unbiased cause-effect estimation.
@@ -35,7 +34,7 @@ Another central limitation of RCTs is that in many scenarios they can not be con
 Therefore, much of the research aims to make causal inference from observational data in a non-experimental or quasi-experimental design. In an observational setting, there are usually confounding variables that make it challenging to measure the effect between exposure and outcome. Methods for causal infreence on observational data for example aims to correctly adjust or control for confounders. \citet{sick2025} proposed the framework of TRAM-DAGs to estimate the causal relationships in an observational setting and make subsequent queries. The aim of this thesis is to further analyze this method and apply it in a real-world scenario.
 
 
-\textbf{General Causality review (DAG, SCM, Pearls ladder, rubins rules?)}
+\textbf{Background on causality}
 
 Causal relationships can be represented by a directed acyclic graph (DAG) as, for example, shown in Figure \ref{fig:pearl_levels}(a). The variables, or nodes, are connected by directed edges which indicate the path of causal dependence.
 
@@ -117,10 +116,14 @@ The framework of TRAM-DAGs proposed by \citet{sick2025} builds a bridge between 
 
 
 
-The first goal of this thesis is to further analyze and extend TRAM-DAGs. This includes the application of TRAM-DAGs in different scenarios, such as different datatypes, level of complexity or Neural Network structures (activation function, batchnormalization, dropout). Most analyses are performed in simulation studies, but the model was also applied on real-world climate data.
-
+\section{Background on Individualized Treatment Effects (ITE)}
 
 An application where causal inference is of particular importance is the estimation of individualized treatment effects (ITE) or also referred to conditional average treatment effect (cATE) or uplift modelling often in a marketing context. They can be understood in the difference in outcomes under different treatments, on an individual or subgroup level. The idea is that they can be used for example in personnalized medicine or for targeted direct marketing campaigns. Each individual patient might respond differently to a specific treatment, depending on his unique characteristics. RCTs traditionally are used to estimate an average treatment effect (ATE) which might indicate the trend in the analyzed population, but the ITEs might be very different for individual patients. In the marketing context this individual effect is of high interest because marketing campaings can be executed very specific and individualized. For example, in the assessment wheter a certain customers should receive a push notification (treatment) or not. Here each customer could be attributed to one of 4 categories, the persuadables (if receiving a notification, they will buy a product or service), the sure thing (they will buy the product either way), the lost causes (they will not buy, regardless of receiving a notification or not), or the sleeping dogs (they will eventually buy, but not if they were treated). Therefore it is crucial to know for each (potential) customer, how he might respond to the treatment, the persuadables should definetely be treated so that we gain them as a customer and the sleeping dogs shall not receive one as we would loos them as customers. There exists many approaches and methods to estimate these individualized treatment effects. However, this is more difficult compared to sole predictive modelling. \citet{chen2025} showed that all causal machine learning models that were trained on a train set failed to generalize to a test set. 
+
+
+\section{Goals of this thesis}
+
+The first goal of this thesis is to further analyze and extend TRAM-DAGs. This includes the application of TRAM-DAGs in different scenarios, such as different datatypes, level of complexity or Neural Network structures (activation function, batchnormalization, dropout). Most analyses are performed in simulation studies, but the model was also applied on real-world climate data.
 
 Analyzing what could be the reason for this behaviour and potential solutions constitute the second goal of this thesis. With the help of simulaition studies we evalueate scenarios when the estimation of ITE fails. Furthermore we show that TRAM-DAGs can be used to estimate the ITE, also in a non-RCT setting, as long as the data can be described by a fully observed DAG.
 

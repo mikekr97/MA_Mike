@@ -378,7 +378,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 3
+scenario <- 1
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -441,6 +441,37 @@ data_type = train$type
 # where the transformation function is the cut-point representing the probability P(X4)
 
 
+
+library(tram)
+
+# Fit model
+colr_model <- Colr(Y ~ X1 + X2 + X3 + Tr + X2:Tr + X3:Tr , 
+                   data = train$simulated_full_data)
+
+# Predict under treatment (Tr = 1)
+dat_tx <- train$simulated_full_data
+dat_tx$Tr <- 1
+pred_colr_tx <- predict(colr_model, newdata = dat_tx, 
+                        type = "quantile", prob = 0.5)
+
+# Predict under control (Tr = 0)
+dat_ct <- train$simulated_full_data
+dat_ct$Tr <- 0
+pred_colr_ct <- predict(colr_model, newdata = dat_ct, 
+                        type = "quantile", prob = 0.5)
+
+# Calculate ITE: median(Y(1)) - median(Y(0))
+ITE_Colr <- pred_colr_tx - pred_colr_ct
+
+# Plot
+plot(train$simulated_full_data$ITE_true, ITE_Colr,
+     xlab = "True ITE", ylab = "Estimated ITE (Colr)",
+     main = "ITE Estimation via Median Quantile")
+abline(0, 1, col = "red", lty = 2)
+
+
+
+
 ############################
 # Check simulated Train Data
 ############################
@@ -457,6 +488,8 @@ data_type = train$type
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
 #   | Y        | Cardiovascular risk score                      | Continuous | Outcome    |
 #   
+
+
 
 
 ##### Check ITE based on median vs. based on expected values of potential outcomes:

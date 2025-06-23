@@ -1,0 +1,60 @@
+\ProvidesPackage{uzhsetup}
+
+\RequirePackage{ifthen}
+\RequirePackage{calc}
+\RequirePackage{tikz}
+\RequirePackage[english,ngerman]{babel}
+% \RequirePackage[provide=*,english,ngerman]{babel}
+\RequirePackage{varwidth}
+
+\def\uzh@de{de}
+\def\uzh@en{en}
+\let\uzh@language\uzh@en
+
+\newcommand{\uzh@uzh}{%
+  \ifx\uzh@language\uzh@de Universität Zürich%
+  \else University of Zurich\fi%
+}
+
+\newlength{\uzh@oW}
+\newlength{\uzh@oH}
+\newlength{\uzh@rW}
+\newlength{\uzh@rH}
+\newlength{\uzh@cWH}
+\newcommand\fillimage[4][]{% width, height, image
+  \settototalheight{\uzh@oH}{\includegraphics{#4}}%
+  \settowidth{\uzh@oW}{\includegraphics{#4}}%
+  \setlength{\uzh@rW}{\uzh@oW * \ratio{#3}{\uzh@oH}}%
+  \ifthenelse{\lengthtest{\uzh@rW < #2}}{%
+    % image too high -> clip height
+    \setlength{\uzh@rH}{\uzh@oH * \ratio{#2}{\uzh@oW}}%
+    \setlength{\uzh@cWH}{(\uzh@rH-#3) * \ratio{\uzh@oW}{#2} * \ratio{1cm}{2cm}}%
+    \includegraphics[width=#2,clip,trim=0 \uzh@cWH{} 0 \uzh@cWH{},#1]{#4}%
+  }{%
+    % image too wide -> clip width
+    \setlength{\uzh@cWH}{(\uzh@rW-#2) * \ratio{\uzh@oH}{#3} * \ratio{1cm}{2cm}}%
+    \includegraphics[height=#3,clip,trim=\uzh@cWH{} 0 \uzh@cWH{} 0,#1]{#4}%
+  }%
+}
+
+\newcommand{\imagecard}[4][2cm]{% [height], image, title, subtitle
+  \fillimage{\textwidth}{#1}{#2}
+  \scriptsize
+  \strut\textbf{#3} \\
+  \strut#4%
+  \vskip0.19cm%
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% included because i want to use caption without "Figure:"
+\usepackage{caption}
+\captionsetup[figure]{labelformat=empty}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newlength{\uzh@innertextwidth}
+\newlength{\uzh@innertextheight}
+\newcommand{\numberoverlay}[1]{% content
+  \setlength{\uzh@innertextwidth}{\textwidth-0.0cm}
+  \setlength{\uzh@innertextheight}{\textheight-0.4cm}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west,outer sep=0.4cm,inner xsep=0cm,inner ysep=0.2cm,fill=uzh@blue,text=uzh@blue3,text width=\uzh@innertextwidth,text height=\uzh@innertextheight,align=right] at (current page.north west) {\fontsize{200}{200}\textbf{#1}};
+  \end{tikzpicture}
+}

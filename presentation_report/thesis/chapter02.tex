@@ -367,6 +367,7 @@ Shrinkage methods should provide better predictive perfomance on average (cite a
 Explain tuning of random forest, with depth number of trees and mtry (ranger?)
 
 
+TRAM-DAGs with complex shifts or compmlex intercepts can capture heterogeneity. See appendix XXX for an example of ITE estimation with a complex shift.
 
 Use of instrumental variables (IV) to also estimate CATE in presence of unobserved confounders \citep{nichols2007}, \citep{hartford2017}. \citet{frauen2023} propose a model based on IV that is said to also be applicable on observational data. % check more details, they also have an example DAG, however it is not yet accepted and still under review
 
@@ -387,7 +388,8 @@ Use of instrumental variables (IV) to also estimate CATE in presence of unobserv
 
 Show easy simulation with 3 variables and in the results the plots of the loss function, the coefficient learning, intercepts, shifts, and the sampling results. The sampling results should show that the sampled data matches the DGP very well. Also show the estimated parameters of the linear shifts and the intercepts. The complex shift can be shown by plotting the transformation function of X3 with respect to X2. also some queries for observational, interventional and counterfactual.
 
-- ideally an experiment with ordinal predictor, and with interpretability and a complex shift and 4 variables.
+- take simple example from intermediate presentation. Make counterfactual analysis on continuous X2.
+(- ideally an experiment with ordinal predictor, and with interpretability and a complex shift and 4 variables.)
 
 
 
@@ -505,6 +507,7 @@ Once the model is fitted, we obtained the estimated (inverse) transformation fun
 
 Maybe visualize the potential outcome transformation funcitons (both funcitons in one plot) and then show that the median Latent value 0 creates the two potential median outcomes on the x axis.
 
+NOTE: in both, the RCT and in the Observational setting, also other models could be applied instead of TRAM-DAG. As long as all confounders are included in the model, we controll for the confounders and can get unbiased results. For example a T-learner Colr($Y \sim X_1 + X_2 + X_3$) (because Colr is basically what we did in the DGP) fitted on both treatment groups separately could be used to estimate the ITE in our proposed experiment. This might only be possible so easily as long as we do not assume additional interactions between the treatment and the mediators $X_5$ and $X_6$. If we would assume such interactions, we would have to include these in the model as well, which would make it more complex and possibliy requires to fit and apply multiple models. If there are no interactions with the mediators, they can be omitted, since we are interested in the total treatment effects and not in separating the effect (mediation analysis). But again, we can only omit if these variables do not contain additional information about treatment effect heterogeneity. The reasoning is because to estimate the total effect one should not control for mediators. (check if really true!!!)  However, the TRAM-DAG framework is well suited to also deal with mediators and calculate counterfactuals, therefore we think it is a good example to show its capabilities.
 
 
 \begin{algorithm}
