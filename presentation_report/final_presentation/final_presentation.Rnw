@@ -345,12 +345,79 @@ Results with T-learner Random Forest (comets):
 
 
 
+\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
 
-\begin{frame}{Simulation Case 2: Unobserved Interaction III}
+\begin{columns}
+
+% Left column: Text
+\begin{column}{0.52\textwidth}
+
+\vspace{-0.5em}
+\textbf{Setup:}
+\begin{itemize}\setlength\itemsep{0.4em}
+  \item $n = 20{,}000$
+  \item $T \sim \text{Bernoulli}(0.5)$
+  \item $\mathbf{X} = (X_1, \dots, X_5)^\top \sim \mathcal{N}(\mathbf{0}, \Sigma)$\\
+  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interaction}
+\end{itemize}
+
+
+\end{column}
+
+% Right column: DAG image
+\begin{column}{0.42\textwidth}
+    \includegraphics[width=\textwidth]{img/simulation_small_effects.png}
+\end{column}
+
+\end{columns}
+
+
+\vspace{0.3em}
+\textbf{Outcome model:}
+\[
+\mathbb{P}(Y = 1 \mid \mathbf{X}, T) = \text{logit}^{-1} \left(
+\beta_0 + \beta_T T + \boldsymbol{\beta}_X^\top \mathbf{X}
++ \textcolor{red}{T \cdot \boldsymbol{\beta}_{TX}^\top \mathbf{X_{TX}}}
+\right)
+\]
+
+\textbf{Note:} Same DGP, but weak treatment effects!
+
+
+\end{frame}
+
+
+
+
+
+\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
+
+Results with T-learner logistic regression (glm):
+
+% Below: image
+\includegraphics[width=\textwidth]{img/small_interaction_glm_tlearner.png}
+
+\end{frame}
+
+
+\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
+
+Results with T-learner Random Forest (comets package):
+
+% Below: image
+\includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}
+
+\end{frame}
+
+
+
+
+
+\begin{frame}{ITE simulation: Interpretation}
 
 \textbf{My interpretation:} 
 \begin{itemize}
-    \item When a high predicted treatment effect (ITE) corresponds to a high observed effect in the train set (strong discrimination), but not in the test set, it might be due to unobserved interaction variables.
+    \item When a high predicted treatment effect (ITE) corresponds to a high observed effect in the train set (strong discrimination), but not in the test set, it might be due to \textbf{unobserved interaction variables} or \textbf{weak treatment effects}.
     \item This is more likely to occur with complex models, as they tend to overfit when the interaction is not observed.
     % as they tend to predict a wider range of ITEs than simpler models
 \end{itemize}
@@ -443,8 +510,8 @@ $X_i = h_i^{-1}(Z_i, \text{pa}(X_i)) = f_i(Z_i, \text{pa}(X_i))$ \\
 \textbf{DGP:}
 \begin{itemize}
     \item $X5 = h_5^{-1}(\epsilon - 0.8 \, X4 )$ \hspace{1em} $\rightarrow$ (depends on treatment)
-    \item $X6 = h_5^{-1}(\epsilon + 0.5 \, X5)$ \hspace{1em} $\rightarrow$ (depends on treatment through X5)
-    \item $Y = h_6^{-1}(\epsilon - \beta_1 X1 - \beta_2 X2 - \beta_3 X3 - \beta_4 X4 - \beta_5 X5 - \beta_6 X6 - \textcolor{red}{Tr \cdot (\beta_{2Tr} X2 + \beta_{3Tr} X3)})$
+    \item $X6 = h_6^{-1}(\epsilon + 0.5 \, X5)$ \hspace{1em} $\rightarrow$ (depends on treatment through X5)
+    \item $Y = h_7^{-1}(\epsilon - \beta_1 X1 - \beta_2 X2 - \beta_3 X3 - \beta_4 X4 - \beta_5 X5 - \beta_6 X6 - \textcolor{red}{Tr \cdot (\beta_{2Tr} X2 + \beta_{3Tr} X3)})$
 \end{itemize}
 
 \end{frame}
@@ -486,11 +553,22 @@ $X_i = h_i^{-1}(Z_i, \text{pa}(X_i)) = f_i(Z_i, \text{pa}(X_i))$ \\
 
 
 
-\begin{frame}{TRAM-DAGs: Estimate Potential Outcomes II}
+\begin{frame}{TRAM-DAGs: Estimate Potential Outcomes}
+
+If we observe a $X5$ under $Tr=0$, we can determine the counterfactual $X5$ under $Tr=1$ with the observed latent value $z_j$:
+
+\centering
+\includegraphics[width=0.7\textwidth]{img/counterfactual_X5.png}
+
+\end{frame}
+
+
+
+\begin{frame}{TRAM-DAGs: Estimate Potential Outcomes}
 
 
 \begin{enumerate}
-    \item Estimate each $h_i(X_i \mid \text{pa}(X_i)$ fully flexible (deep-NN / complex intercept)
+    \item Estimate each $h_i(X_i \mid \text{pa}(X_i))$ fully flexible (deep-NN / complex intercept)
     \item Take the train set or a test set
     \item $Z_i = h(X_i \mid pa(X_i))$ gives us the (observed) latent variable for each $X_i$
     \item Determine counterfactuals for X5 and X6 with the (observed) latent variables $Z_i$
