@@ -190,6 +190,31 @@ rm(results.dev, results.val)
 observ_scenario1 <- evaluate_scenario(obs_scenario1_data)
 
 
+
+## bootstrap CI for mean(ITE_median_pred_obs_scen1) 
+# Vector of median ITEs
+z <- obs_scenario1_data$val$data$simulated_full_data$ITE_median_pred
+
+
+
+# Number of bootstrap samples
+B <- 10000
+
+bootstrap_means <- numeric(B)
+# Bootstrap resampling: compute mean for each resample
+set.seed(123)  # for reproducibility
+for (i in 1:B) {
+  # Resample with replacement
+  resample <- sample(z, length(z), replace = TRUE)
+  
+  # Store the mean of the resample
+  bootstrap_means[i] <- mean(resample)
+}
+
+ci_lower <- quantile(bootstrap_means, 0.025)
+ci_upper <- quantile(bootstrap_means, 0.975)
+
+
 #### Scenario 1: RCT
 
 # load RData
@@ -211,9 +236,34 @@ rct_scenario1 <- evaluate_scenario(rct_scenario1_data)
 
 results_ci_scenario1_rct_val <- calculate_median_diff_ci(
   data = rct_scenario1_data$val$data$simulated_full_data,
-  n_bootstraps = 5000,
+  n_bootstraps = 10000,
   confidence_level = 0.95
 )
+
+
+## bootstrap CI for mean(ITE_median_pred_obs_scen1) 
+# Vector of median ITEs
+z <- rct_scenario1_data$val$data$simulated_full_data$ITE_median_pred
+
+
+
+# Number of bootstrap samples
+B <- 10000
+
+bootstrap_means <- numeric(B)
+# Bootstrap resampling: compute mean for each resample
+set.seed(123)  # for reproducibility
+for (i in 1:B) {
+  # Resample with replacement
+  resample <- sample(z, length(z), replace = TRUE)
+  
+  # Store the mean of the resample
+  bootstrap_means[i] <- mean(resample)
+}
+
+ci_lower <- quantile(bootstrap_means, 0.025)
+ci_upper <- quantile(bootstrap_means, 0.975)
+
 
 
 #### Scenario 2: Observational
@@ -401,23 +451,32 @@ Complex shift (Interaction example) to show what is also possible:
 Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
 And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
 
+\clearpage
 
-\section{ITE simulation study - when do causal ML models fail?}
+ 
+\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)} \label{sec:results_experiment3}
 
-In this section, we present the performance of different causal ML models for estimating the ITE under different scenarios. Starting with a favourable scenario where everything is assumed to be known and effect sizes are large, we will sequentially introduce more complexity and uncertainty into the data generating process (DGP) to see how the models perform under less favourable conditions. The scenarios are designed to reflect different real-world situations, such as the presence of (confounding variables - maybe not include, since ITE estimation must assume no unobserved confounding?), interaction effects, and varying treatment effects across individuals and unobserved variables.
+In this section, we present the performance of two causal ML models for estimating the ITE under different scenarios. Scenario 1 represents the ideal case where all variables are observed and treatment effects and heterogeneity are large. Scenario 2 uses the same DGP as in scenario 1 but removes the covariate $X_1$, which has a strong interaction effect with the treatment, from the dataset and treat it as unobserved. Finally, for scenario 3 the coefficients for the direct and interaction treatment effects are weakened, so that heterogeneity is low. All variables are observed again in the last scenario. In each scenario, we applied the T-learner logistic regression and the T-learner tuned random forest. The results of the models on the three scenarios are presented in Figures \ref{fig:fully_observed_glm_tlearner} to \ref{fig:small_interaction_tuned_rf_tlearner}.
 
-The results are presented for all causal ML models per scenario.
 
-In each scenario we present the results of the simple model (glm tlearner, basically dgp) and a complex model (tuned random forest). In the appendix, the results in scenario 1 of a not-tuned random forest are presented as an example that it is crucial to tune the model so that it is appropriate for ITE (and in this case probability calculation) estimation, hence well calibrated.
-
+\clearpage
 
 \subsection{Scenario (1): Fully observed, large effects}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_observed.png}
+\caption{DAG for scenario (1), where all variables are observed and there are strong treatment and interaction effects. The numbers indicate the coefficients on the log-odds-scale. Red: interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\label{fig:fully_observed_dag}
+\end{figure}
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_glm_tlearner.png}
-\caption{Results with the GLM T-learner when the DAG is fully observed, strong effects.}
+\caption{Results with the T-learner logistic regression in scenario (1) when the DAG is fully observed and there are strong treatment and interaction effects. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:fully_observed_glm_tlearner}
 \end{figure}
 
@@ -425,30 +484,76 @@ In each scenario we present the results of the simple model (glm tlearner, basic
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_tuned_rf_tlearner.png}
-\caption{Results with the Tuned Random Forest (comets) T-learner when the DAG is fully observed, strong effects.}
-\label{fig:fully_observed_glm_tlearner}
+\caption{Results with the T-learner tuned random forest in scenario (1) when the DAG is fully observed, strong effects. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\label{fig:fully_tuned_rf_tlearner}
 \end{figure}
 
+
+\clearpage
 
 
 
 \subsection{Scenario (2): unobserved interaction}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_unobserved.png}
+\caption{DAG for scenario (2), where there are strong treatment and interaction effects, but variable $X1$ is not observed. The numbers indicate the coefficients on the log-odds-scale. Red: interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\label{fig:unobserved_interaction_dag}
+\end{figure}
+
+
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_glm_tlearner.png}
-\caption{Results with the GLM T-learner if the interaction variable is unobserved, strong effects.}
+\caption{Results with the T-learner logistic regression in scenario (2) when there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:unobserved_interaction_glm_tlearner}
 \end{figure}
+
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_tuned_rf_tlearner.png}
-\caption{Results with the Tuned Random Forest (comets) T-learner if the interaction variable is unobserved, strong effects.}
-\label{fig:unobserved_interaction_glm_tlearner}
+\caption{Results with the T-learner tuned random forest in scenario (2) when there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\label{fig:unobserved_interaction_tuned_rf_tlearner}
 \end{figure}
+
+
+\clearpage
+
+\subsection{Scenario (3): Fully observed, small effects}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_small_effects.png}
+\caption{DAG for scenario (3), where all variables are observed and there are weak treatment and interaction effects. The numbers indicate the coefficients on the log-odds-scale. Red: interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\label{fig:small_interaction_dag}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/small_interaction_glm_tlearner.png}
+\caption{Results with the T-learner logistic regression in scenario (3) when the DAG is fully observed and there are weak treatment and interaction effects. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\label{fig:small_interaction_glm_tlearner}
+\end{figure}
+
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearner.png}
+\caption{Results with the T-learner tuned random forest in scenario (3) when the DAG is fully observed and there are weak treatment and interaction effects. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\label{fig:small_interaction_tuned_rf_tlearner}
+\end{figure}
+
+
+\clearpage
 
 
 \section{ITE estimation with TRAM-DAGs}
@@ -456,7 +561,7 @@ In each scenario we present the results of the simple model (glm tlearner, basic
 First, we present the results for scenario (1) with a direct and interaction effect. Then, we present the results for scenario (2) with a direct effect but no interaction effects, and finally, scenario (3) with interaction effects but no direct effect of the treatment. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounders. We also compare the average treatment effect (ATE), which can directly be calculated in the RCT, with the ATE based on the estimated individualized treatment effects. If the estimated ITEs are unbiased, they should be a good estimate of the ATE. All ITEs presented in this section are technically quantile treatment effects (QTEs) based on the 0.5-quantile of the potential outcomes. For simplicity we will refer to them as ITEs in the following.
 
 
-\subsection{Scenario (1): Direct and interaction effects}
+\subsection{Scenario (1): Direct and interaction effects} 
 
 Scenario (1) included a direct effect of the treatment on the outcome and an additional interaction effect of the treatment with the covariates X2 and X3. A train and test set were generated with 20'000 observations each. In the observational setting, the treatment allocation was confounded by the covariates X1 and X2.  In the train set, $\Sexpr{round(observ_scenario1$dev_treatment_allocation[1]*100, 1)}$\% of patients were in the control group and $\Sexpr{round(observ_scenario1$dev_treatment_allocation[2]*100, 1)}$\% were in the treatment group. This ratio was similar in the test set. In the RCT setting treatment allocation was randomized. In the train set $\Sexpr{round(rct_scenario1$dev_treatment_allocation[1]*100, 1)}$\% individuals were in the control group and $\Sexpr{round(rct_scenario1$dev_treatment_allocation[2]*100, 1)}$\% in the treatment group. In the test set $\Sexpr{round(rct_scenario1$val_treatment_allocation[1]*100, 1)}$\% were in the control group and $\Sexpr{round(rct_scenario1$val_treatment_allocation[2]*100, 1)}$\% in the treatment group. Figure \ref{fig:scenario1_ite_distribution_dgp} illustrates the true ITE distribution that resulted from the DGP. Due to the interaction effects, there is some heterogeneity in the ITE distribution. Figure \ref{fig:scenario1_sampling_distributions_vertical} shows the marginal distributions of all variables according to the DGP and the estimates of the fitted TRAM-DAG. Figure \ref{fig:scenario1_outcome_distributions} shows the distribution of the outcome under the do(Tr=0) and do(Tr=1) interventions. The fitted model was applied to estimate the ITEs in terms of the difference in medians of the potential outcomes. The resulting density of the estimated ITEs compared to the true ITEs according to the DGP is shown in Figure \ref{fig:scenario1_ite_densities_train_test}. Across both settings, the densities of the estimated ITEs are close to the true densities in both the training and test datasets. Figure \ref{fig:scenario1_ite_scatter_train_test} shows the scatterplots of true against estimated ITEs. Finally, Figure \ref{fig:scenario1_ite_cATE} displays the ITE-ATE plot where the ATE is computed as the difference in medians of the observed outcome under the treatments within the respective ITE-subgroups The trends observed in the training and test sets are consistent.
 

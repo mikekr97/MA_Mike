@@ -331,6 +331,11 @@ can be used to balance treatment groups and reduce confounding rosenbaum1983cent
 % 
 % 
 
+If ITEs are correct, they should give on average the ATE: E(ITE) = ATE, (cite a paper, maybe Alicia Curth or Hoogland?). However, we can not say that the ITEs must be correct, if they give the ATE on average. (because they could for example also be much more spread than the true ITEs but still give the correct ATE on average!)
+
+
+Check Hooglands paper (guide) again, he should also say something about benefits of RCT that might be relevant for my subjects.
+
 
 Rubins potential outcomes framework.
 
@@ -342,7 +347,7 @@ Quantile Treatment effect
 - also talk about propensity score Rubin(2007) to basically estimate an RCT...and overcome the problem of confounding. but this might work for ATE but not really for ITE, direct modelling of the outcome is necessary % https://pmc.ncbi.nlm.nih.gov/articles/PMC5920646/
 
 
-\textbf{Models for ITE Estimation}
+\textbf{Models for ITE Estimation} \label{sec:ite_models}
 
 
 
@@ -361,6 +366,7 @@ The ITE for a binary endpoint is estimated as the difference of two probabilitie
 Logistic regression, penalized logistic regression (shrinkage, lasso
 Shrinkage methods should provide better predictive perfomance on average (cite articles). \citet{calster2020} analyzed different regression shrinkage methods with a binary outcome in a simulation study. They concluded, although the calibration slope improved on average, shrinkage often worked poorly on individual datasets. With small sample size and low number of events per variable the performance of most of these methods were highly variable and should be used with caution in such settings. \citet{riley2021} obtained to similar results in their simulation study. Problems occur, because tuning parameters are often estimated with large uncertainty on the training data and fail to generalize. In both studies the autors pointed out that these penalization methods are more unreliable when needed most, that is when the risk of overfitting may be large.
 
+When using a Random Forest based method as an S-learner (where Treatment is given as input variable) one has to make sure that the treatment variable is realli used in the forests and not left out by mtry (not all variables are used for splits because decorrelating and reducing overfit.)
 
 (Shrinkage shrinks the coefficients so that the calibration slope is improved on a test set. The shrinkage factor can for example be found with n-fold cross validation, as e.g. done by lasso with L1 penalization)
 
@@ -382,18 +388,40 @@ Use of instrumental variables (IV) to also estimate CATE in presence of unobserv
 % Explain the kinds of validation measures & plots so that i dont have to explain them again in the next sections (experiments)
 
 
-\section{Experiments}
+Talk about that interaction variables are also referred to effect modifiers, they are no confounders (not necessarily) and also no mediators.  An example could be the psychological condition of a patient which might also affect how the treatment works, this is not a confounder but an effect modifier, and i would assume that this variable is rarely recorede or measured.
 
-\subsection{TRAM-DAG simulation}
+In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
+
+
+% simulation studies
+%  "The setup was such that development and test sets were generated from the same data generating mechanism. In practice, there may be differences between these two settings that are not captured by the models, and the uncertainty that accompanies these unknowns may overshadow relatively small gains realized by more complex models."
+%  % https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/#sim9154-bib-0065
+ 
+ "This could include the analysis of individual patient data from multiple randomized trials, or even the use of nonrandomized studies for the estimation of outcome risk under a control condition." this motivates the need for observational modeling.
+
+
+Problems with ITE: (in an RCT setting)
+- to estimate the ITE we must assume un-confoundedness. Does this also apply to itneractions (effect modifiers)? Check how this is handled in the literature.
+% https://journals.lww.com/epidem/fulltext/2007/09000/four_types_of_effect_modification__a.6.aspx talks about different types of effect modifiers (not sure if this really contributes to the thesis)
+
+% - another point is the effect of the correlation of the variables. If the X's are strongly correlated, and one X with interaction effect is dropped, can the info then still be retreived from the other variables? maybe the effect is then attributed to another correlated variable. --> check with simulations and or theroretical proof.
+
+
+-- somewhere, explain how Confidence intervals (based on bootstrap or wald CI ) were computed, for ITE-ATE plot or other things.
+
+
+
+
+\section{Experiment 1: TRAM-DAG simulation}
 
 Show easy simulation with 3 variables and in the results the plots of the loss function, the coefficient learning, intercepts, shifts, and the sampling results. The sampling results should show that the sampled data matches the DGP very well. Also show the estimated parameters of the linear shifts and the intercepts. The complex shift can be shown by plotting the transformation function of X3 with respect to X2. also some queries for observational, interventional and counterfactual.
 
 - take simple example from intermediate presentation. Make counterfactual analysis on continuous X2.
 (- ideally an experiment with ordinal predictor, and with interpretability and a complex shift and 4 variables.)
 
+in results show all plots that help to understand what the model does and trafo etc.
 
-
-\subsection{ITE real data}
+\subsection{Experiment 2: ITE real data} \label{sec:methods_experiment2}
 
 We also want to check if we end up with similar results as \citet{chen2025} in their ITE estimation on the IST stroke trial. We will use the same data preprocessing and apply the TRAM-DAG framework as well as a tuned random forest (comets) to estimate the ITE. Both models are trained on a training set and validated on a hold-out test set. For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we will predict the potential outcomes (potentially with the re-calibrated models) to estimate the ITE on the train and test set. For visual validation, we will use ITE-ATE plots and ITE-outcome plots. Due to the binary outcome, the ATE is defined as the risk-difference of the individuals in the respective ITE subgroup (bin $j$) $ATE_j = \mathbb{E}[Y(1) - Y(0) \mid ITE \in bin_j]$.
 
@@ -422,51 +450,113 @@ show results of different models including tram dag.
 
 
 
-\subsection{ITE simulations (RCT) - assess when estimations fail}
+\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)}
 
-In this section, we will perform a simulation study to estimate the ITE with different models in an RCT setting under different szenarios. The aim is to identify, in which circumstances the ITE estimation fails and if failure is model agnostic, meaning that the reason for failure lies in external factors like (unobserved variables, sample size, effect size) and not the models itself. It should give potential explanations, why modeles for estimating the ITE failed in a real world application as \citet{chen2025} showed. The simulation is based on the data generating process (DGP) that should resemble an RCT. We assume a binary outcome and a set of covariates that influence the treatment effect. There further potentially exist treatment covariate interacitons that are responsible for heterogeneity of treatment effect. The Szenarios are laid out in (Table XX)
-
-table with szenarios:
+In this section, we will perform a simulation study to estimate the ITE with different models in an RCT setting under different scenarios. The aim is to identify conditions under which ITE estimation fails and whether such failure is model-agnostic -- i.e., driven by external factors such as unobserved covariates or treatment effect magnitude, rather than by the model class itself. It may provide insight into why ITE estimation can fail in a real-world application as, for example, demonstrated by \citet{chen2025} on the IST stroke trial and replicated in our own work in Section \ref{sec:methods_experiment2}. The simulation is based on a data generating process (DGP) that should resemble an RCT. We assume a binary outcome and a set of covariates that influence the treatment effect. There may also be treatment-covariate interactions that are responsible for heterogeneity of treatment effect. 
 
 
-
-table with models:
-
-logistic t-learner, lasso t-learner, lasso s-learner, random forest, tuned random forest (comets), (TRAM-dag was not applied here due to time reasons, it further would not add much value since we want to mainly get a feeling of the bahaviour of ML models in general under different scenarios)
+\textbf{Data generating process: } The data is generated similarly as proposed by \citet{hoogland2021}. The binary treatment (T) was sampled from a Bernoulli distribution with probability 0.5. The 5 covariates ($\mathbf{X}$) represent patient specific characteristics at baseline and were drawn from a multivariate standard normal distribution with a compound symmetric covariance matrix ($\rho=0.1$). The binary outcome (Y) is sampled from a Bernoulli distribution with probability $\text{P}(Y_i = 1 \mid  \mathbf{X_i} = \mathbf{x_i}, T_i = t_i) = \text{logit}^{-1} \left(\beta_0 + \beta_T t_i + \boldsymbol{\beta}_X^\top \mathbf{x_i} + t \cdot \boldsymbol{\beta}_{TX}^\top \mathbf{x_{TX,i}} \right)$, where $i$ denotes the patient indicator and $\mathbf{x}_{TX,i}$ denotes the subset of covariates that interact with the treatment. The data is generated for three scenarios, where the coefficients are set to different values or not all variables are observed. In scenario 1, the covariates are set as follows: $\beta_0 = 0.45$ (intercept), $\beta_T = -0.85$ (direct treatment effect), $\boldsymbol{\beta}_X = (-0.5, 0.8, 0.2, 0.6, -0.4)$ (direct covariate effects), and $\boldsymbol{\beta}_{TX} = (0.9, 0.1)$ (interaction effects between treatment and covariates $X_1$ and $X_2$ on the outcome). In scenario 2, the same coefficients are used but the covariate $X_1$, which is responsible for a large portion of the heterogeneity, is not observed in the final dataset. This is expected to cause difficulties in estimating the ITE. In scenario 3, the coefficients for the direct treatment and interaction effects are set to $\beta_T = -0.05$ and $\boldsymbol{\beta}_{TX} = (-0.01, 0.03)$ to represent a weak treatment effect and low heterogeneity, all other coefficients stay unchanged and all variables are observed. The DAGs of the three scenarios are presented in Figure \ref{fig:simulation_dags}.
 
 
-With these scenarios we want to show, what must be fulfilled that ITE estimation works and what implication this has on non-randomized settings.
+% here include 3 figures side by side 
+% /img/results_ITE_simulation/simulation_observed.png
+% simulation_unobserved.png
+% simulation_small_effects.png
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_observed.png}
+\includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_unobserved.png}
+\includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_small_effects.png}
+\caption{Data generating process (DGP) for the three scenarios in the ITE simulation study (RCT). Interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$) are shown in red. Left: DGP for scenario 1, where all covariates are observed and there is a strong treatment effect and heterogeneity; Middle: DGP for scenario 2, with same DGP as in scenario 1, but where the covariate $X_1$ is not observed; Right: DGP for scenario 3, where the treatment effect and heterogeneity is weak and all covariates are observed.}
+\label{fig:simulation_dags}
+\end{figure}
+
+
+
+
+% The data is generated for three different scenarios, where the coefficients are set to different values to represent different treatment effects and interaction effects and by removing the covariate $X1$ from the final dataset in scenario 2, hence making it unobserved. The scenarios are summarized in Table \ref{tab:simulation_scenarios}.
+
+
+% Table with szenarios:
+
+% Szenario 1: 
+% description: strong direct and interaction effect of treatment, fully observed
+% coefficients: \beta_0 = 0.45, \beta_T = -0.85,  \boldsymbol{\beta}_X = c(-0.5, 0.8, 0.2, 0.6, -0.4), \boldsymbol{\beta}_{TX} = c(0.9, 0.1)
+% motivation: this scenario should represent the ideal case where there is high heterogeneity and all variables are observed, hence the ITE estimation is assumed to work well.
+
+% Szenario 2:
+% description: strong direct and interaction effect of treatment, but covariate X1 not observed
+% coefficients: \beta_0 = 0.45, \beta_T = -0.85,  \boldsymbol{\beta}_X = c(-0.5, 0.8, 0.2, 0.6, -0.4), \boldsymbol{\beta}_{TX} = c(0.9, 0.1)
+% motivation: removing the covariate X1, which is responsible for much of the heterogeneity, should cause difficulties in ITE estimation because the heterogeneity can not be attributed to the right covariate.
+
+% Szenario 3:
+% description: weak direct and interaction effect of treatment, fully observed
+% coefficients: \beta_0 = 0.45, \beta_T = -0.05,  \boldsymbol{\beta}_X = c(-0.5, 0.8, 0.2, 0.6, -0.4), \boldsymbol{\beta}_{TX} = c(-0.01, 0.03)
+% motivation: this scenario should represent the case where the treatment effect is weak and heterogeneity is low, hence the model should estimate only small range of ITE.
+
+
+
+
+
+% \subsubsection*{Scenario 1: Strong effects, all covariates observed}
+% 
+% This scenario represents an ideal case in which the treatment has a strong direct and interaction effect. All covariates are observed, supposedly enabling effective ITE estimation. The coefficients are set as follows:
+% 
+% 
+% 
+% % X1 and X2 interact with treatment
+% \begin{align*}
+%     \beta_0 &= 0.45,\quad \beta_T = -0.85, \\
+%     \boldsymbol{\beta}_X &= (-0.5,\ 0.8,\ 0.2,\ 0.6,\ -0.4), \\
+%     \boldsymbol{\beta}_{TX} &= (0.9,\ 0.1) , X_1 \text{ and } X_2 \text{ interact with treatment}
+% \end{align*}
+% 
+% \vspace{0.5em}
+% 
+% \subsubsection*{Scenario 2: Strong effects, covariate \boldmath$X_1$ unobserved}
+% 
+% This scenario uses the same coefficients as Scenario 1, but with covariate $X_1$ removed from the dataset. As $X_1$ drives a large portion of the treatment effect heterogeneity, the estimation of the ITE is expected to be biased or incomplete when $X_1$ is not observed.
+% 
+% 
+% \begin{align*}
+%     \beta_0 &= 0.45,\quad \beta_T = -0.85, \\
+%     \boldsymbol{\beta}_X &= (-0.5,\ 0.8,\ 0.2,\ 0.6,\ -0.4), \\
+%     \boldsymbol{\beta}_{TX} &= (0.9,\ 0.1) , X_1 \text{ and } X_2 \text{ interact with treatment}
+% \end{align*}
+% \textit{Note: $X_1$ is not included in the final dataset.}
+% 
+% \vspace{0.5em}
+% 
+% \subsubsection*{Scenario 3: Weak Effects, All Covariates Observed}
+% 
+% This scenario illustrates a setting with minimal treatment effect and weak treatment-covariate interaction. While all covariates are observed, the model is expected to recover only low-variance ITEs due to limited signal.
+% 
+% \begin{align*}
+%     \beta_0 &= 0.45,\quad \beta_T = -0.05, \\
+%     \boldsymbol{\beta}_X &= (-0.5,\ 0.8,\ 0.2,\ 0.6,\ -0.4), \\
+%     \boldsymbol{\beta}_{TX} &= (-0.01,\ 0.03), X_1 \text{ and } X_2 \text{ (weakly) interact with treatment}
+% \end{align*}
+
+
+
+\textbf{Models for ITE estimation: } The datasets generated from the DGP under the three scenarios are used to estimate the ITE with different models. We applied the following models: T-learner logistic regression (\texttt{stats}-package), T-learner logistic lasso regression (\texttt{glmnet}-package \citep{friedman2010}, regularization parameter lambda estimated with 10-fold cross-validation), S-learner logistic lasso regression (same as T-learner), T-learner random forest (\texttt{randomForest}-package \citep{breiman2001}, 100 trees), T-learner tuned random forest (\texttt{comets}-package, tunes the number of variables to possibly split at in each node (mtry) and the maximal tree depth (max.depth) parameters out-of-bag, 500 trees). While all models were applied, we will present only the results of the T-learner logistic regression as benchmark (same model as used in the data generating process), and the tuned random forest as representation of a complex non-parametric model. In the Appendix \ref{sec:default_rf_ite} we further present the results for a default random forest evaluated on scenario 1, to show the importance of tuning the model, which means to prevent overfitting and ensure accurate calibration. All models were trained on a training set and evaluated on a test set with 10'000 samples each, generated from the same DGP. TRAM-DAGs would also be well suited for ITE estimation in this setting, but we chose not to apply it in this experiment, since the main objective is to assess behavioral differences between complex and simple models under different scenarios. TRAM-DAGs are applied in the other experiments in this thesis. 
+
+
+\textbf{Model evaluation: } The model results are evaluated visually for the training and test dataset. For the predictive performance, we present the true vs. predicted probabilities P(Y=1$\mid$ X, T) which should give an impression on how well the model is calibrated. Plots of the true vs. predicted ITE show how close the model predictions are to the true effects. The true probabilities and ITEs are known by design in this simulation, allowing for direct assessment of calibration, which would not be available in a real world-application. Finally, we present the ITE-ATE plot, which shows whether the estimated ITEs correspond to the actual observed outcomes, and the discrepancy between training and test set. The observed ATE in terms of risk difference $\text{ATE} = \text{P}(Y=1|T=1) - \text{P}(Y=1|T=0)$ is calculated and plotted for each ITE subgroup. Because the ITE is defined here as the difference between the predicted outcome probabilities under treatment and control, it is also expressed on the risk-difference scale. Following, the ITE-ATE plot can be understood as a calibration plot, where an ideal model should represent the identity line. 
+
+Whether the estimated ITEs correspond to the actual observed outcomes, and the discrepancy between training and test set, is assessed with the ITE-outcome plot.
+These simulation scenarios allow us to assess how ITE estimation performance behaves under challenging conditions such as omitted variables and weak effect size. The subsequent results reveal which models are robust to such violations and provide insight into real-world estimation failures.
+
+
+
+
+
+
+\section{Experiment 4: ITE estimation in observational data}
+
 
 % # DGP for simulation similarly done as: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/ (although, this was RCT setting), maybe also refer to the observational data ITE with RF paper
-
-
-
-In this thesis , I will apply Lasso regression on the IST stroke trial and simulation studies, where the sample size is relatively large.
-
-
-simulation studies
- "The setup was such that development and test sets were generated from the same data generating mechanism. In practice, there may be differences between these two settings that are not captured by the models, and the uncertainty that accompanies these unknowns may overshadow relatively small gains realized by more complex models."
- % https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/#sim9154-bib-0065
- 
- "This could include the analysis of individual patient data from multiple randomized trials, or even the use of nonrandomized studies for the estimation of outcome risk under a control condition." this motivates the need for observational modeling.
-
-
-Problems with ITE: (in an RCT setting)
-- to estimate the ITE we must assume un-confoundedness. Does this also apply to itneractions (effect modifiers)? Check how this is handled in the literature.
-% https://journals.lww.com/epidem/fulltext/2007/09000/four_types_of_effect_modification__a.6.aspx talks about different types of effect modifiers (not sure if this really contributes to the thesis)
-- when there are treatment covariate interactions and these covariates are in the DGP but dropped from the dataset (so unobserved), then the ITE Estimation failed in the simulations. At least when there is only 1 strongly interacting variable and we drop this one. An example could be the psychological condition of a patient which might also affect how the treatment works, this is not a confounder but an effect modifier, and i would assume that this variable is rarely recorede or measured.
-
-- Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
-
-- question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-ATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-ATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
-
-- another point is the effect of the correlation of the variables. If the X's are strongly correlated, and one X with interaction effect is dropped, can the info then still be retreived from the other variables? maybe the effect is then attributed to another correlated variable. --> check with simulations and or theroretical proof.
-
-
-
-% Plot mit Regression line: durch die regression line lässt sich die differenz zwischen train und test plots rechts auch nicht erklären. Grund ist vermutlich, dass beim ITE nur die probabilities modelliert werden und beim plot rechts die observed outcomes Y=1 oder Y=0 (was ja die optimierungsgrösse im modell fitting war).
-
-\subsection{ITE estimation in observational data}
 
 We claim that if the assumptions for ITE estimation (identifiability, (unobserved) unconfoundedness etc.) are fulfilled and the DAG is fully known, with the TRAM-DAG framework, the ITE can be estimated under observational data just like with RCT data. We aim to proof this with the DAG as displayed in Figure \ref{fig:ite_dag_observational}. The binary treatment (X4) is the intervention variable and we want to estimate the ITE for the continuous outcome Y. 
 
@@ -503,6 +593,8 @@ where $h_I(y)$ is the intercept function, $\mathbf{X}$ is the covariate vector i
 
 
 Once the model is fitted, we obtained the estimated (inverse) transformation functions $X_i = h^{-1}(Z_i \mid pa(X_i))$ that represent the equations $X_i = f(Z_i, pa(X_i))$ in the structural causal model. The process for the ITE estimation is outlined in \ref{alg:ite_qte}. In a first step to estimate the ITE, we determine the latent values $z_{ij}$ in all observed samples $j$ for the explanatory nodes $i$ - X1, X2, X3, X5 and X6. The latent values are the values of the transformation functions at the observed value of the variable given the observed values of its parents $z_{ij} = h_i(x_{ij} \mid pa(x_{ij}))$. In a second step, these latent values $z_{ij}$ are used to sequentially sample from the two interventional distributions when setting the treatment X4 to either 0 or 1. For each individual, these interventions impact the mediator nodes X5 and X6 as well as the outcome Y. The source nodes X1, X2 and X3 are the same under both treatments. The treatment X4 is the variable which we fix by the do-intervention. X5 and X6 will change according to the treatment. Finally, for each set of samples $j$ (meaning for each individual) we get two distributions for the outcome, one under treatment and one under control. In contrast to the potential outcomes framework, where the potential outcomes are defined as the expected value of the outcome under treatment, we define the potential outcomes as the median of the outcome distribution under treatment - the quantile treatment effect (QTE). For simplicity, we will further refer to the individual treatment effect as ITE even though technically, the QTE is meant. Determining the potential outcomes in terms of the expected values would also be possible, but would require us to repeatedly sample from each resulting potential outcome distribution for each individual and average the results. This was computationally too time consuming and therefore we decided to estimate the QTE instead. In the ITE estimation in the previous examples with binary outcome, this was not necessary, since the potential outcomes were defined as the probabilities of the outcome under treatment and control, hence a single number that represents the expected value.
+
+Notes after Meeting 24.06.25: Depending on the problem, CATE in terms of expected values of potential outcomes might be more appropriate than QTE, but also QTE could be better. Depends. If we wanted the potential outcomes based on the expected values, we have two options. either sample latent values and evaluate inverse tranformation functions. from those two sample distributions calculate the means to get the expected potential outcomes. Lucas suggested that we could also use numerical integreation instead, then we would not have to sample.
 
 
 Maybe visualize the potential outcome transformation funcitons (both funcitons in one plot) and then show that the median Latent value 0 creates the two potential median outcomes on the x axis.
@@ -547,8 +639,7 @@ The results are displayed by densities of the estimated ITE, the scatterplots of
 
 \section{Software}
 
-All code was done in R wiht packages xx ussed for yy.
-
+check report, how i cited the packages. calibration plot, all packages for tram dags, ite, plotting
 
 
 

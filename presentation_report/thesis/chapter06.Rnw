@@ -13,6 +13,14 @@ opts_chunk$set(
 \chapter{Appendix}
 
 
+To do:
+
+- include results of ITE estimation with not tuned RF for scenario 1 (fully observed,strong effects) to show the importance that models should be well calibrated (in this case tuned) to yield good results
+
+- inlcude Example of ITE simulation with tram dags with complex shift: $theta + LS(X2) + CS(T, X1)$ to show how tram dags can model interactions. Maybe just refer in the methods for the CS of tram dags, or alternatively in the ITE with tram dags (where i used CI, but to show that CS is also possible to allow for specific interactions)
+
+
+
 
 \section{Negative Log Likelihood}
 
@@ -315,4 +323,41 @@ Therefore, the full derivative is:
 \end{equation}
 
 This expression can be evaluated efficiently and is used both in the likelihood computation (e.g., via change-of-variables) and for constructing tail extrapolations with matching slopes.
+
+
+\section{Default Random Forest for ITE Estimation} \label{sec:default_rf_ite}
+
+In Section \ref{sec:ite_models} we pointed out the importance of calibration of models when estimating individual treatment effects. In this section we show the results of the default random forest model without tuning for scenario (1), illustrated in Figure \ref{fig:fully_observed_dag_rf_appendix} where all variables are observed and there are strong treatment and interaction effects. The results are shown in Figure \ref{fig:fully_observed_glm_rf}. In the scatterplot of true vs. predicted probabilities for $\text{P}(Y_i = 1 \mid  \mathbf{X_i} = \mathbf{x_i}, T_i = t_i)$ in the train set, it is visible that the model does not predict the probabilities accurately, hence is not well calibrated. This poor calibration also translates to the estimated ITEs. In comparison, the results of the tuned random forest in Figure \ref{fig:fully_tuned_rf_tlearner} show that the model is better calibrated and the estimated ITEs are close to the true ITEs. This illustrates the importance of tuning models for ITE estimation, as poor calibration can lead to biased estimates of individualized treatment effects.
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_observed.png}
+\caption{DAG for scenario (1), where all variables are observed and there are strong treatment and interaction effects. The numbers indicate the coefficients on the log-odds-scale. Red: interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\label{fig:fully_observed_dag_rf_appendix}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_rf_tlearner.png}
+\caption{Results with the default random forest in scenario (1) when the DAG is fully observed and there are strong treatment and interaction effects. Left: true vs. predicted probabilities for $\text{P}(Y=1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\label{fig:fully_observed_glm_rf}
+\end{figure}
+
+
+
+
+\section{Calibration differences for complex model: Experiment 3} \label{sec:calibration_tuned_rf}
+
+Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest for scenario (3) with weak direct and interaction treatment effects. This is in contrast to the prediction plots presented in Section \ref{sec:results_experiment3} where we presented the true probabilities of the event $\text{P}(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to better generalization it leads to a better calibration on the test set.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearnertrain_calibration_plot.png}
+\includegraphics[width=0.45\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearnertest_calibration_plot.png}
+\caption{Calibration plot for the T-learner tuned random forest for scenario (3) with weak direct and interaction treatmetn effects. It shows the predicted risks against the the observed proportions of the event. Left: training dataset; Right: test dataset.}
+\label{fig:calibration_tuned_rf}
+\end{figure}
+
 

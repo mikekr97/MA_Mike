@@ -161,8 +161,9 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
 # Scenario 2: unobserved interaction, strong main & interaction effect
 # Scenario 3: unobserved interaction, strong main & interaction effect & 4 unobserved variables
 # Scenario 4: other setting, results look similar as in IST trial
+# Scenario 5: fully observed, weak main & interaction effect (same as scenario 1 but small effects) 
 
-scenario <- 4
+scenario <- 6
 
 
 
@@ -203,15 +204,37 @@ if (scenario == 1) {
   data <- dgp_simulation(n_obs=20000, SEED=123,
                                        rho=0.1,
                                        beta_0 = 0.45,
-                                       beta_t = 0.02,        # small main effect
+                                       beta_t = 0.02,        # small direct effect
                                        beta_X = c(-0.5, 0.1, 0.2, -0.7, -0.15, 0.3, 0.05, -0.2), # other covariate effects
                                        beta_TX = c(-0.5, 0.04, 0.001),   # medium interaction effect
                                        p0 = 4, 
                                        confounder=FALSE, 
                                        drop=c("X1"))  # X1 is not observed
-  }  else {
+  } else if (scenario == 5) {
+    data <- dgp_simulation(n_obs=20000, SEED=123,
+                           rho=0.1,
+                           beta_0 = 0.45,
+                           beta_t = -0.05,  # small direct effect
+                           beta_X = c(-0.5, 0.8, 0.2, 0.6, -0.4),
+                           beta_TX = c(-0.01, 0.03),   # small interaction effect
+                           p0 = 0, 
+                           confounder=FALSE, 
+                           drop=FALSE)
+  } else if (scenario == 6) {
+    data <-dgp_simulation(n_obs=20000, SEED=123,
+                          rho=0,   # uncorrelated
+                          beta_0 = 0.45,
+                          beta_t = -0.85,
+                          beta_X = c(-0.5, 0.8, 0.2, 0.6, -0.4),
+                          beta_TX = c(0.9, -0.5),   # changed sign and value of present interaction 
+                          p0 = 0, 
+                          confounder=FALSE, 
+                          drop=c("X1"))      # X1 is not observed
+  } else {
   stop("Invalid scenario selected")
 }
+
+
 
 
 
@@ -224,6 +247,12 @@ if (scenario == 1) {
   scenario_name <- 'unobserved_interaction_4unnecessary'
 } else if (scenario == 4) {
   scenario_name <- 'similar_IST_trial'
+} else if (scenario == 5) {
+  scenario_name <- 'small_interaction'
+} else if (scenario == 6) {
+  scenario_name <- 'changed_sign_interaction'
+} else {
+  stop("Invalid scenario number selected")
 }
 
 DIR_szenario <- file.path(DIR, scenario_name)
@@ -267,7 +296,7 @@ if (model_nr == 1) {
 
 #### fit model ####
 
-set.seed(34) # for reproducibility
+set.seed(123) # for reproducibility
 
 if (model_nr == 1) {
   model.results <- fit.glm(data$test.compl.data)
@@ -303,17 +332,50 @@ check_ate(model.results)
 
 # plot results (adjust breaks according to ITE range)
 # breaks <- round(seq(-0.8, 0.6, by = 0.2), 1)
-# breaks <- round(seq(-0.5, 0.2, by = 0.1), 1)
-# breaks <- round(seq(-0.4, 0.1, by = 0.1), 1)
-# breaks <- round(seq(-0.35, 0.0, by = 0.05), 2)
-breaks <- round(seq(-0.1, 0.1, by = 0.05), 2)
+breaks <- round(seq(-0.5, 0.2, by = 0.1), 1)
+# breaks <- round(seq(-0.2, 0.2, by = 0.1), 1)
+# breaks <- round(seq(-0.3, 0, by = 0.05), 2)
+# breaks <- round(seq(-0.04, 0.04, by = 0.02), 2)
 
+
+                
 plot_for_slides(model.results = model.results, 
                 breaks = breaks, 
-                delta_horizontal = 0.02)
+                delta_horizontal = 0.002,
+                ylim_delta = 0.1)
+
+
+### check number of positive ITE_true and ITE in train and test set
+sum(model.results$data.dev.rs$ITE_true > 0)
+sum(model.results$data.dev.rs$ITE > 0)
+
+sum(model.results$data.val.rs$ITE_true > 0)
+sum(model.results$data.val.rs$ITE > 0)
 
 
 
+
+# ATE in the high ITE group as P(Y=1|ITE_true>0.2 T=1) - P(Y=1|ITE_true>0.2 T=0)
+dat_0.2 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]
+mean(dat_0.2[dat_0.2$Tr == 1,]$Y) - mean(dat_0.2[dat_0.2$Tr == 0,]$Y)
+
+# ATE in the low ITE group as P(Y=1|ITE_true<-0.5 T=1) - P(Y=1|ITE_true<-0.5 T=0)
+dat_0.5 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true < -0.5,]
+mean(dat_0.5[dat_0.5$Tr == 1,]$Y) - mean(dat_0.5[dat_0.5$Tr == 0,]$Y)
+
+
+# proportion of positive outcomes when the true ITE was positive (56%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,])
+
+# proportion of positive outcomes when the true ITE was negative (48%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,])
+
+
+# proportion of positive outcomes when the true ITE was > 0.2 (55%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,])
+
+# proportion of positive outcomes when the true ITE was <0.2 (48%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,])
 
 
 #### save results ####
@@ -325,7 +387,8 @@ png(filename = file_name, width = 2350, height = 1150, res = 300)
 
 plot_for_slides(model.results = model.results, 
                 breaks = breaks, 
-                delta_horizontal = 0.02)
+                delta_horizontal = 0.002,
+                ylim_delta = 0.1)
 # Close PNG device
 dev.off()
 
@@ -360,20 +423,29 @@ plot_pred_ite(model.results, ate_ite = FALSE)
 par(mfrow=c(1,1), pty="s")
 library("CalibrationCurves")
 # train
-res <- val.prob.ci.2(model.results$data.dev.rs$Y_pred, model.results$data.dev.rs$Y, dostats=FALSE)
+res <- val.prob.ci.2(model.results$data.dev.rs$Y_pred, model.results$data.dev.rs$Y)
 # test
-res <- val.prob.ci.2(model.results$data.val.rs$Y_pred, model.results$data.val.rs$Y, dostats=FALSE)
+res <- val.prob.ci.2(model.results$data.val.rs$Y_pred, model.results$data.val.rs$Y)
 
 
 
-file_name <- file.path(DIR_szenario, paste0(scenario_name, "_", model_name, 'calibration_plot.png'))
-png(filename = file_name, width = 1500, height = 1500, res = 300)
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name, "_", model_name, 'train_calibration_plot.png'))
+png(filename = file_name, width = 1600, height = 1600, res = 300)
 # train
-res <- val.prob.ci.2(model.results$data.dev.rs$Y_pred, model.results$data.dev.rs$Y, dostats=FALSE)
+res <- val.prob.ci.2(model.results$data.dev.rs$Y_pred, model.results$data.dev.rs$Y)
 
 # Close PNG device
 dev.off()
 
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name, "_", model_name, 'test_calibration_plot.png'))
+png(filename = file_name, width = 1600, height = 1600, res = 300)
+# train
+res <- val.prob.ci.2(model.results$data.val.rs$Y_pred, model.results$data.val.rs$Y)
+
+# Close PNG device
+dev.off()
 
 
 
