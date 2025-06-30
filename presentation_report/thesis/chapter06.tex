@@ -318,6 +318,42 @@ Therefore, the full derivative is:
 This expression can be evaluated efficiently and is used both in the likelihood computation (e.g., via change-of-variables) and for constructing tail extrapolations with matching slopes.
 
 
+
+
+\section{Calibration plots: Experiment 2} \label{sec:calibrations_experiment2}
+
+Figure \ref{fig:calibration_IST_glm} - \ref{fig:calibration_IST_TRAM_DAG} show the calibration plots in terms of the predicted risks against the the observed proportions for the models applied in experiment 2 (International Stroke Trial (IST)). 
+% It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to better generalization it leads to a better calibration on the test set.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results_IST/glm_tlearner_train_calibration_plot.png}
+\includegraphics[width=0.45\textwidth]{img/results_IST/glm_tlearner_test_calibration_plot.png}
+\caption{Calibration plot for the T-learner logistic regression applied on the International Stroke Trial (IST) in experiment 2. It shows the predicted risks against the the observed proportions of the event. Left: training dataset; Right: test dataset.}
+\label{fig:calibration_IST_glm}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results_IST/IST_tuned_rf_tlearner_train_calibration_plot.png}
+\includegraphics[width=0.45\textwidth]{img/results_IST/IST_tuned_rf_tlearner_test_calibration_plot.png}
+\caption{Calibration plot for the T-learner tuned random forest applied on the International Stroke Trial (IST) in experiment 2. It shows the predicted risks against the the observed proportions of the event. Left: training dataset; Right: test dataset.}
+\label{fig:calibration_IST_tuned_rf}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.45\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_train_calibration_plot.png}
+\includegraphics[width=0.45\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_test_calibration_plot.png}
+\caption{Calibration plot for the S-learner TRAM-DAG applied on the International Stroke Trial (IST) in experiment 2. It shows the predicted risks against the the observed proportions of the event. Left: training dataset; Right: test dataset.}
+\label{fig:calibration_IST_TRAM_DAG}
+\end{figure}
+
+
+
+
 \section{Default Random Forest for ITE Estimation} \label{sec:default_rf_ite}
 
 In Section \ref{sec:ite_models} we pointed out the importance of calibration of models when estimating individual treatment effects. In this section we show the results of the default random forest model without tuning for scenario (1), illustrated in Figure \ref{fig:fully_observed_dag_rf_appendix} where all variables are observed and there are strong treatment and interaction effects. The results are shown in Figure \ref{fig:fully_observed_glm_rf}. In the scatterplot of true vs. predicted probabilities for $\text{P}(Y_i = 1 \mid  \mathbf{X_i} = \mathbf{x_i}, T_i = t_i)$ in the train set, it is visible that the model does not predict the probabilities accurately, hence is not well calibrated. This poor calibration also translates to the estimated ITEs. In comparison, the results of the tuned random forest in Figure \ref{fig:fully_tuned_rf_tlearner} show that the model is better calibrated and the estimated ITEs are close to the true ITEs. This illustrates the importance of tuning models for ITE estimation, as poor calibration can lead to biased estimates of individualized treatment effects.

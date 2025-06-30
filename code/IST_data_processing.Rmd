@@ -1,0 +1,229 @@
+---
+title: "IST Trial Data Processing"
+author: "Mike Krähenbühl"
+date: "2025-06-29"
+output: html_document
+---
+
+
+# Introduction
+
+The code for data processing is taken from (https://gitlab.uzh.ch/hongruyu.chen/causal_ml-for-ite). The aim is to use the same pre-processed data and apply our models to evaluate wheter we come to the same conclusions as Chen et al. (2025).
+
+The individual patient data was downloaded from (https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101#Sec8) and saved in the file IST_dataset_2011.csv. In this script this raw file is processed to create the dataset for the ITE estimation.
+
+
+# Set Up
+
+```{r Setup}
+library("here")
+library("tidyverse")
+library("broom")
+library("progress")
+library("CalibrationCurves")
+library("gtools")
+```
+
+
+
+# Load Raw Data
+
+Variables names and comments can be found at <https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101/tables/2>.
+
+```{r load data}
+
+# load csv data as data frame
+IST.dataset <- read_csv(here("data", "IST_dataset_2011.csv")) %>% 
+  as_tibble()
+```
+
+# Data Overview
+
+```{r data overview}
+str(IST.dataset)
+head(IST.dataset)
+dim(IST.dataset)
+```
+
+
+# Quality Check
+
+```{r check data consistency and quality}
+# check aspirin given within 14 days
+IST.dataset %>% select(RXASP, DASP14) %>% filter(RXASP != DASP14) %>% filter(RXASP == "N" & DASP14 == "Y")
+
+# check time on trial treatment
+IST.dataset %>% select(RXASP, ONDRUG) %>% summary()
+
+
+# check baseline characteristics
+summary(IST.dataset$RDELAY)
+summary(IST.dataset$AGE)
+summary(IST.dataset$RSBP)
+table(IST.dataset$SEX, useNA = "always")
+table(IST.dataset$RCT, useNA = "always")
+table(IST.dataset$RVISINF, useNA = "always")
+table(IST.dataset$RATRIAL, useNA = "always")
+table(IST.dataset$RASP3, useNA = "always")
+table(IST.dataset$RDEF1, useNA = "always")
+table(IST.dataset$RDEF2, useNA = "always")
+table(IST.dataset$RDEF3, useNA = "always")
+table(IST.dataset$RDEF4, useNA = "always")
+table(IST.dataset$RDEF5, useNA = "always")
+table(IST.dataset$RDEF6, useNA = "always")
+table(IST.dataset$RDEF7, useNA = "always")
+table(IST.dataset$RDEF8, useNA = "always")
+table(IST.dataset$RCONSC, useNA = "always")
+table(IST.dataset$STYPE, useNA = "always")
+table(IST.dataset$RXASP, useNA = "always")
+
+# check non-trial treatments
+IST.dataset %>% select(DAP, DOAC, DTHROMB, DGORM, DSTER, DCAA) %>% mutate_if(is.character, as.factor) %>% summary() # most patients don't have these treatments
+
+# check final diagnosis at 14 days
+IST.dataset %>% select(DDIAGISC, DDIAGHA, DDIAGUN, DNOSTRK) %>% mutate_if(is.character, as.factor) %>% summary() 
+
+# check death within 14 days
+IST.dataset %>% select(DDEAD) %>% mutate_if(is.character, as.factor) %>% summary() 
+table(IST.dataset$DDEAD, IST.dataset$DPLACE, useNA = "always")
+
+# check restroke within 14 days
+table(IST.dataset$DRSISC, useNA = "always")
+table(IST.dataset$DRSH, useNA = "always")
+table(IST.dataset$DRSUNK, useNA = "always")
+IST.dataset %>% select(DRSISC, DRSH, DRSUNK) %>% 
+  mutate(DRESTROKE = if_else(DRSISC == "Y" | DRSH == "Y" | DRSUNK == "Y", 1, NA)) %>%
+  mutate(DRESTROKE = if_else(DRSISC == "N" & DRSH == "N" & DRSUNK == "N", 0, DRESTROKE)) %>%
+  mutate(DRESTROKE = as.factor(DRESTROKE)) %>% select(DRESTROKE) %>% summary()
+table(IST.dataset$STRK14, useNA = "always") # estimated by IST group
+
+# check outcome at 6 months
+# check death/dependence at 6 months
+IST.dataset %>% select(FDEAD, FDENNIS) %>% mutate_if(is.character, as.factor) %>% summary() 
+
+# use %in% can pass NA to next if_else condition check; use == can't pass NA to next condition check and will directly return NA
+test <- IST.dataset %>% 
+  mutate(FDEAD = if_else(FDEAD %in% "U", NA, FDEAD),
+         FDENNIS = if_else(FDENNIS %in% "U", NA, FDENNIS)) %>% 
+  mutate(OUTCOME6M = if_else(FDEAD %in% "Y" | FDENNIS %in% "Y", 1, if_else((FDEAD %in% "N" | is.na(FDEAD)) & is.na(FDENNIS), NA, 0))) %>% 
+  select(DDEAD,FDEAD, FDENNIS, OCCODE, FRECOVER, OUTCOME6M) %>% 
+  mutate(across(, as.factor))
+
+summary(test)
+
+(test %>% 
+  filter(OCCODE %in% c(1,2) & (OUTCOME6M == 0 | is.na(OUTCOME6M)) ))
+
+(test %>% 
+  filter(FDEAD %in% c("N"), is.na(FDENNIS)))
+
+(test %>% 
+  filter(FRECOVER == "Y" & OUTCOME6M == 1))
+
+(test %>% filter(FDEAD=="Y", FDENNIS == "N")) # can keep it since the outcome is correct
+
+(test %>% filter(DDEAD=="Y", FDEAD=="N")) # can keep it since the outcome is correct
+
+(test %>% filter(FDEAD=="Y"))
+```
+
+# Data Complete
+
+```{r create region and outcomes variable}
+# create region variable as a factor based on country
+IST.dataset.new <- IST.dataset %>% 
+  mutate(REGION = if_else(CNTRYNUM %in% c(43,2,3,4,7,8,9,10,11,12,31,36,14,39,15,17,18,19,33,44,20,22,24,25,27), "Europe", 
+                         if_else(CNTRYNUM %in% c(29,42,6), "South America",
+                                if_else(CNTRYNUM %in% c(5,28), "North America",
+                                       if_else(CNTRYNUM %in% c(37,23), "South Asia",
+                                              if_else(CNTRYNUM %in% c(30,41,38,40,34,26), "East Asia",
+                                                     if_else(CNTRYNUM %in% c(32,13,35), "Middle East",
+                                                            if_else(CNTRYNUM %in% c(1,16), "Oceania",
+                                                                   if_else(CNTRYNUM %in% c(21), "Africa", "Other"))))))))) %>%
+  mutate(REGION = as.factor(REGION)) %>% 
+  # death within 14 days
+  mutate(DDEAD = if_else(DDEAD %in% "U", NA, DDEAD)) %>% 
+  # restroke within 14 days
+  mutate(DRESTROKE = if_else(DRSISC == "Y" | DRSH == "Y" | DRSUNK == "Y", 1, NA)) %>%
+  mutate(DRESTROKE = if_else(DRSISC == "N" & DRSH == "N" & DRSUNK == "N", 0, DRESTROKE)) %>% 
+  # death / dependence at 6 months
+  mutate(FDEAD = if_else(FDEAD %in% "U", NA, FDEAD),
+         FDENNIS = if_else(FDENNIS %in% "U", NA, FDENNIS)) %>% 
+  mutate(OUTCOME6M = if_else(FDEAD %in% "Y" | FDENNIS %in% "Y", 1, if_else((FDEAD %in% "N" | is.na(FDEAD)) & is.na(FDENNIS), NA, 0))) 
+  
+
+summary(IST.dataset.new$REGION)
+summary(IST.dataset.new$OUTCOME6M)
+```
+
+```{r create dataset with 6 months outcome}
+IST.dataset.clean.6m <- IST.dataset.new %>% 
+  select(RXASP, AGE, RDELAY, RSBP, SEX, RCT, RVISINF, RATRIAL, RASP3, 
+         RDEF1, RDEF2, RDEF3, RDEF4, RDEF5, RDEF6, RDEF7, RDEF8, RCONSC, 
+         STYPE, REGION, OUTCOME6M) 
+
+factor_cols = c("RXASP", "SEX", "RCT", "RVISINF", "RATRIAL", "RASP3", 
+                "RDEF1", "RDEF2", "RDEF3", "RDEF4", "RDEF5", "RDEF6", "RDEF7", 
+                "RDEF8", "RCONSC", "STYPE", "REGION")
+
+IST.dataset.clean.6m <- IST.dataset.clean.6m %>% 
+  mutate(across(all_of(factor_cols), factor))
+
+head(IST.dataset.clean.6m)
+```
+
+```{r create dataset with 14 days outcome - death}
+IST.dataset.clean.14d <- IST.dataset.new %>% 
+  select(RXASP, AGE, RDELAY, RSBP, SEX, RCT, RVISINF, RATRIAL, RASP3, 
+         RDEF1, RDEF2, RDEF3, RDEF4, RDEF5, RDEF6, RDEF7, RDEF8, RCONSC, 
+         STYPE, REGION, DDEAD) %>% 
+  mutate(DDEAD = ifelse(DDEAD %in% "Y", 1 , ifelse(DDEAD %in% "N", 0, DDEAD))) %>% 
+  mutate(DDEAD= as.numeric(DDEAD)) %>%
+  rename(OUTCOME14D = DDEAD)
+
+factor_cols = c("RXASP", "SEX", "RCT", "RVISINF", "RATRIAL", "RASP3", 
+                "RDEF1", "RDEF2", "RDEF3", "RDEF4", "RDEF5", "RDEF6", "RDEF7", 
+                "RDEF8", "RCONSC", "STYPE", "REGION")
+
+IST.dataset.clean.14d <- IST.dataset.clean.14d %>% 
+  mutate(across(all_of(factor_cols), factor))
+
+head(IST.dataset.clean.14d)
+```
+
+
+```{r create dataset with 14 days outcome - death or restroke}
+IST.dataset.clean.14d.dr <- IST.dataset.new %>% 
+  select(RXASP, AGE, RDELAY, RSBP, SEX, RCT, RVISINF, RATRIAL, RASP3, 
+         RDEF1, RDEF2, RDEF3, RDEF4, RDEF5, RDEF6, RDEF7, RDEF8, RCONSC, 
+         STYPE, REGION, DDEAD, DRESTROKE) %>% 
+  mutate(DDEAD = ifelse(DDEAD %in% "Y", 1 , ifelse(DDEAD %in% "N", 0, DDEAD))) %>% 
+  mutate(OUTCOME14D = if_else(DDEAD == 1 | DRESTROKE == 1, 1, NA)) %>% 
+  mutate(OUTCOME14D = if_else(DDEAD == 0 & DRESTROKE == 0, 0, OUTCOME14D)) %>%
+  mutate(OUTCOME14D = as.numeric(OUTCOME14D)) %>%
+  select(-DDEAD, -DRESTROKE)
+
+factor_cols = c("RXASP", "SEX", "RCT", "RVISINF", "RATRIAL", "RASP3", 
+                "RDEF1", "RDEF2", "RDEF3", "RDEF4", "RDEF5", "RDEF6", "RDEF7", 
+                "RDEF8", "RCONSC", "STYPE", "REGION")
+
+IST.dataset.clean.14d.dr <- IST.dataset.clean.14d.dr %>% 
+  mutate(across(all_of(factor_cols), factor))
+
+head(IST.dataset.clean.14d.dr)
+```
+
+# Save the Processed Data
+
+```{r save data}
+# save data as R data
+save(IST.dataset.clean.6m, IST.dataset.clean.14d, IST.dataset.clean.14d.dr, file = here("data","IST_model_data.RData"))
+```
+
+
+
+# End
+
+```{r record session info}
+sessionInfo()
+```

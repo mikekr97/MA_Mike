@@ -5,11 +5,12 @@
 
 \chapter{Methods} 
 
-In this section I will explain the necessary background needed to understand the TRAM-DAGs. Once the framework of tram dags is explained, I will present how the experiments of the simulation, the application on real data and the ITE estimation are conducted. Following research questions are addressed:
+In this chapter I will explain the necessary background needed to understand the TRAM-DAGs. Once the framework of tram dags is explained, I will present how the experiments of the simulation, the application on real data and the ITE estimation are conducted. Following research questions are addressed, and we try to answer them with the four experminets that are laid out at the end of this chapter:
 
 \begin{itemize}
 
 \item How can TRAM-DAGs be applied under different scenarios (datatypes, DAG structure, complexity, scaled varaibles) and how does this influence the interpretation of parameters?
+\item Do we obtain similar results on the IST trial when estimating the ITE as \citet{chen2025}.
 \item Why does the estimation of Individualized Treatment Effects (ITE) fail in some cases for most causal ML methods when validating them out of sample? 
 \item How can TRAM-DAGs be used to estimate the Individualized Treatment Effect (ITE) in a RCT and in a observational setting with confounding and mediating variables?
 
@@ -19,7 +20,7 @@ In this section I will explain the necessary background needed to understand the
 
 The goal of TRAM-DAGs is to estimate the structural equations according to the causal order in a given DAG in a flexible and possibly still interpretable way in order to sample observational and interventional distributions and to make counterfactual statements. The estimation requires data and a DAG that describes the causal structure. It must be assumed that there are no hidden confounders. TRAM-DAGs estimate for each variable $X_i$ a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ is the noise value and $pa(X_i)$ are the causal parents of $X_i$. The important part here is that we can rearrange this equation to $X_i = h_i^{-1}(Z_i \mid pa(x_i))$ to get to the structural equation. The transformation functions $h$ are monotonically increasing functions that are a representation of the conditional distribution of $X_i$ on a latent scale. They are based on the idea of transformation models as introduced by \citet{hothorn2014} but were extended to deep trams by \citet{sick2020}. In the following sections I review the most important ideas of these methods as they are the essential components of TRAM-DAGs.
 
-\section{Transformation Models}
+\subsection{Transformation Models}
 
 
 Transformation models are a flexible distributional regression method for various data types. They can be for example specified as ordinary linear regression, logistic regression or proportional odds logistic regression. But Transformation models further allow to model conditional outcome distributions that do not even need to belong to a known distribution family of distributions by model it in parts flexibly. This reduces the strength of the assumptions that have to be made.
@@ -77,7 +78,7 @@ where $l_i(\boldsymbol{\beta}, \boldsymbol{\vartheta})$ is the log-likelihood of
 For the remainder of this thesis, I rely on the idea of these transformation models to model the conditional distribution functions represented by the transformation functions of the respective variables. The standard logistic distribution is used as $F_Z$, which results in a logistic transformation model.
 
 
-\section{Deep TRAMs} \label{sec:deep_trams}
+\subsection{Deep TRAMs} \label{sec:deep_trams}
 
 The transformation models as discussed before were extended to deep TRAMs using a modular neural network \citep{sick2020}. The goal is to get a parametrized transformation function of the form \ref{eq:deep_tram.}.Each part, the intercept $h_I(X_i)$, the linear shift $\mathbf{x}_L^\top \boldsymbol{\beta}_L$ and the complex shift $f_C(\mathbf{x}_C)$ are assembled by the outputs of the individual neural networks. The user can specify the level of complexity the parents $pa(X_i)$ have on the transformaiton funciton. Figure \ref{fig:deep_tram} illustrates the case for a SI-LS-CS model.
 
@@ -116,7 +117,7 @@ The estimated distribution function is invariant with respect to the choice of t
 
 
 
-\section{TRAM-DAGs}
+\subsection{TRAM-DAGs: Deep TRAMS applied in a causal setting}
 
 
 
@@ -276,7 +277,7 @@ In contrast to the mean-based estimands above, the \textit{quantile treatment ef
 \end{equation}
 where $Q_{Y(t) \mid X = x}(q)$ denotes the $q$-th quantile of the potential outcome under treatment $t$. QTEs are particularly relevant when treatment effects are not symmetrically distributed or when tail behavior is of interest. We will later perform a simulation study using the median for the QTE estimation.
 
-\section{Assumptions for Identifiability}
+\subsection{Assumptions for Identifiability}
 
 To identify treatment effects from observational data, several key assumptions are required. \textit{Consistency} ensures that the observed outcome equals the potential outcome under the received treatment. The \textit{Stable Unit Treatment Value Assumption (SUTVA)} assumes no interference between units and that treatments are well-defined. The most critical assumption is \textit{ignorability} (or unconfoundedness), which posits that, conditional on covariates $X$, the treatment assignment is independent of the potential outcomes:
 \begin{equation}
@@ -289,7 +290,7 @@ In addition, the \textit{positivity} assumption requires that the probability of
 \end{equation}
 These assumptions are untestable but are necessary for identifying causal effects from non-randomized data.
 
-\section{Propensity Score Adjustment in Observational Settings}
+\subsection{Propensity Score Adjustment in Observational Settings}
 
 In the absence of randomization, the \textit{propensity score}, defined as the probability of receiving treatment conditional on covariates $X$,
 \begin{equation}
@@ -421,9 +422,44 @@ Show easy simulation with 3 variables and in the results the plots of the loss f
 
 in results show all plots that help to understand what the model does and trafo etc.
 
-\subsection{Experiment 2: ITE real data} \label{sec:methods_experiment2}
+\section{Experiment 2: ITE real data} \label{sec:methods_experiment2}
 
-We also want to check if we end up with similar results as \citet{chen2025} in their ITE estimation on the IST stroke trial. We will use the same data preprocessing and apply the TRAM-DAG framework as well as a tuned random forest (comets) to estimate the ITE. Both models are trained on a training set and validated on a hold-out test set. For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we will predict the potential outcomes (potentially with the re-calibrated models) to estimate the ITE on the train and test set. For visual validation, we will use ITE-ATE plots and ITE-outcome plots. Due to the binary outcome, the ATE is defined as the risk-difference of the individuals in the respective ITE subgroup (bin $j$) $ATE_j = \mathbb{E}[Y(1) - Y(0) \mid ITE \in bin_j]$.
+
+\citet{chen2025} evaluated multiple causal ML methods on the International Stroke Trial (IST), to estimate the individualized treatment effects. They demonstrated that none of the applied ML methods generalized well, as performance on the test data differed significantly from the training data on the chosen evaluation metrics. 
+In this experiment will also apply two causal ML methods for ITE estimation to investigate if we obtain similar results as the authors. 
+
+% describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
+% Results on IST trial with the interpretation in the discussion part.
+
+%  here the authors made the IST database available and described the trial, we downloaded the CSV
+% https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101 
+
+
+\textbf{Data: }  The IST was a large randomized controlled trial that compared antithrombotic therapy versus control in acute ischaemic stroke, and was conducted in the 1990s and included 19,435 patients with acute stroke, with a follow-up rate of 99\% \citep{IST1997}. The trial did not include thrombolytic therapy, which was not available at that time.
+\citet{sandercock2011} made the individual patient data from the IST available. The dataset included 19'435 patients, with 99\% completed follow-up . Besides the covariates assessed at randomization, the data includes the outcome at 6 months after randomization. Table XXX shows the baseline patient characteristics and the outcome at 6 months.
+We use the same data and data pre-processing as \citet{chen2025} to make our results comparable. Additionally we standardized the numerical variables.
+
+% Results: The IST dataset includes data on 19 435 patients with acute stroke, with 99% complete follow-up. Over 26.4% patients were aged over 80 years at study entry. Background stroke care was limited and none of the patients received thrombolytic therapy.
+
+
+\textbf{Data:} The International Stroke Trial was a large, randomized controlled trial conducted in the 1990s to assess the efficacy and safety of early antithrombotic treatment in patients with acute ischemic stroke \citep{IST1997}. Using a 2x2 factorial design, 19'435 patients across 36 countries were randomized within 48 hours of symptom onset to receive aspirin, subcutaneous heparin, both, or neither. Patients allocated to aspirin (300 mg daily for 14 days) had a 6-month death or dependency rate of 62.2\%, compared to 63.5\% in the control group not receiving aspirin, corresponding to a statistically significant absolute risk reduction after adjustment for baseline prognosis (1.4\%, p = 0.03) \citep{IST1997}. The authors stated that there was no interaction between aspirin and heparin in the main outcomes. In this thesis, we focus exclusively on the aspirin vs. no aspirin comparison and the outcome of death or dependency at 6 months after stroke. 
+
+The dataset used in this experiment was made publicly available by \citet{sandercock2011} and contains individual-level data, including baseline covariates assessed at randomization (e.g., age, sex, delay between stroke and randomization in hours, and neurological deficits), treatment allocation, and outcomes at 6 months. The follow-up rate was 99\%.
+
+We use the same subset and preprocessing steps as \citet{chen2025} to ensure comparability of results. we use 2/3 for training and 1/3 for evaluation (test set)
+
+5.97% of individuals had incomplete data for the 6-month death or dependency outcome a
+
+- should i include a table one of all all 21 variables? would be quite big with all factor variables?
+
+
+\textbf{Models for ITE estimation: } The aim is to estimate the ITE based on the baseline characteristics. As benchmark we will apply a T-leraner logistic regression (with splines for the numeric variables).
+
+We will apply the TRAM-DAG framework as well as a tuned random forest (comets) to estimate the ITE. Both models are trained on a training set and validated on a hold-out test set.  The Random Forest is specified accoring to the default version of the comets package.
+
+For tram dag  Additionally, all numerical covariates were scaled (mean subtracted and devided by standard deviation) prior to model training. as well as changed from factor- to dummy encoding to allow suitable format and scale for tram dags. 
+
+\textbf{Model evaluation: } For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we will predict the potential outcomes (potentially with the re-calibrated models) to estimate the ITE on the train and test set. For visual validation, we will use ITE-ATE plots and ITE-outcome plots. Due to the binary outcome, the ATE is defined as the risk-difference of the individuals in the respective ITE subgroup (bin $j$) $ATE_j = \mathbb{E}[Y(1) - Y(0) \mid ITE \in bin_j]$.
 
 The cATE is defined as:
 
@@ -433,17 +469,10 @@ cATE = \mathbb{E}[Y \mid T = 1] - \mathbb{E}[Y \mid T = 0]
 
 Since the IST stroke trial is a randomized controlled trial, the full potential of TRAM-DAGs is not needed, since only the outcome has to be modelled as a function of the baseline patient characteristics. Nevertheless, this is not a reason not to apply it. The TRAM-DAG is specified so that only the loss for the outcome node is optimized, the distributions of the other nodes are not estimated. The transformation function for the outcome is modelled by a complex intercept model $h(Y \mid X) = CI(X)$, with 4 hidden layers of shape (20, 10, 10, 2). The numerical values are further standardized and dropout (0.1) is used to prevent severe overfitting (and batchnorm?). The model is trained for..
 
-The Random Forest is specified accoring to the default version of the comets package.
 
-As benchmark, we also fit a t-learner logistic regression.
 
-% describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
-Results on IST trial with the interpretation in the discussion part.
 
-%  here the authors made the IST database available and described the trial, refer tho it
-% https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101 
 
-show results of different models including tram dag.
 
 - maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
 

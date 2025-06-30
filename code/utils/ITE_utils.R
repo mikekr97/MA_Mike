@@ -1,4 +1,5 @@
 
+#### ---- Functions form Chen et. al (2025) ----
 
 ## ---- Data Preparation ------
 
@@ -26,7 +27,7 @@ remove_NA_data <- function(data){
               data.dev = data.dev, data.val = data.val))
 }
 
-## ---- Models ------
+## ---- Models for simulation ------
 
 logis.ITE <- function(data, p){
   variable_names <- paste0("X", 1:p)
@@ -103,6 +104,10 @@ logis.ITE.simple <- function(data, p){
 
 
 
+## ---- Models for IST stroke trial ------
+
+
+
 
 ## ---- Calculate ATE -----
 calc.ATE <- function(data){
@@ -145,8 +150,10 @@ calc.ATE.RR <- function(data){
 
 
 
-
 ## ---- Outcome-ITE plot --------
+
+
+# for simulation study
 plot_outcome_ITE <- function(data.dev.rs, data.val.rs , x_lim = c(-0.5,0.5)){
   
   x_lim_lower <- min(c(data.dev.rs$ITE, data.val.rs$ITE), na.rm = TRUE)-0.05
@@ -610,7 +617,7 @@ calculate_ITE_median <- function(data){
   # 
   # # generate samples for target node under T=0 and T=1 with the observed latent value for Y
   # ts_ct = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed = h_obs$h_combined,
-                                                    # doX = c(NA, NA, NA, 0, NA, NA, NA), i, parents=outcome_ct)
+  # doX = c(NA, NA, NA, 0, NA, NA, NA), i, parents=outcome_ct)
   # ts_tx = sample_from_target_MAF_struct_ITE_obs_sim(param_model,  latent_observed = h_obs,
   #                                                   doX = c(NA, NA, NA, 1, NA, NA, NA), i, parents=outcome_tx)
   # 
@@ -634,9 +641,9 @@ calculate_ITE_median <- function(data){
   
   # generate samples for target node under T=0 and T=1 with the median latent value for Y
   outcome_ct_median = sample_from_target_MAF_struct_ITE_obs_sim(param_model, latent_observed = h_obs_y_median, 
-                                                    doX = c(NA, NA, NA, 0, NA, NA, NA), node=i, parents=outcome_ct)
+                                                                doX = c(NA, NA, NA, 0, NA, NA, NA), node=i, parents=outcome_ct)
   outcome_tx_median = sample_from_target_MAF_struct_ITE_obs_sim(param_model,  latent_observed = h_obs_y_median,
-                                                    doX = c(NA, NA, NA, 1, NA, NA, NA), node=i, parents=outcome_tx)
+                                                                doX = c(NA, NA, NA, 1, NA, NA, NA), node=i, parents=outcome_tx)
   
   ITE_median_pred <- as.numeric(outcome_tx_median) - as.numeric(outcome_ct_median)
   
@@ -921,9 +928,9 @@ sample_from_target_MAF_struct_ITE_obs_sim = function(param_model, latent_observe
     #   latent_sample = tf$zeros(shape = c(B, 1L), dtype = tf$float32) # median of logistic distribution
     # }
     
-
+    
     latent_sample = latent_observed    #[, node, drop=FALSE]
-
+    
     
     
     
@@ -943,27 +950,27 @@ sample_from_target_MAF_struct_ITE_obs_sim = function(param_model, latent_observe
     #summary(wtfness)
     
     
-  
-
+    
+    
     # Manuly calculating the inverse for the extrapolated samples
     ## smaller than h_0
     l = latent_sample#tf$expand_dims(latent_sample, -1L)
-
+    
     # check if the latent sample would be below h_0 (needs extrapolation)
     mask <- tf$math$less_equal(l, h_0)
     #cat(paste0('~~~ sample_from_target  Fraction of extrapolated samples < 0 : %f \n', tf$reduce_mean(tf$cast(mask, tf$float32))))
     #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
     slope0 <- h_dag_dash(L_START, theta)#tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L)
-
+    
     target_sample = tf$where(mask,
                              ((l-h_0)/slope0)*(k_max - k_min) + k_min
                              ,target_sample)
-
+    
     ## larger than h_1
     mask <- tf$math$greater_equal(l, h_1)
     #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
     slope1<- h_dag_dash(R_START, theta)
-
+    
     target_sample = tf$where(mask,
                              (((l-h_1)/slope1) + 1.0)*(k_max - k_min) + k_min,
                              target_sample)
@@ -1003,30 +1010,30 @@ predict_outcome = function(param_model, data){
   # h_dag returns the intercept h (single value) at 0 and 1
   h_0 =  h_LS + h_CS + h_dag(L_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(L_START, theta), axis=-1L)
   h_1 =  h_LS + h_CS + h_dag(R_START, theta) #tf$expand_dims(h_LS + h_CS + h_dag(R_START, theta), axis=-1L)
-
+  
   latent_sample = tf$zeros(shape = c(B, 1L), dtype = tf$float32) # median of logistic distribution
-      
-
+  
+  
   object_fkt = function(t_i){
     return(h_dag_extra_struc(t_i, theta, shift = h_LS + h_CS, k_min, k_max) - latent_sample)
   }
-
-
+  
+  
   target_sample = tfp$math$find_root_chandrupatla(object_fkt)$estimated_root
-    
+  
   # Manualy calculating the inverse for the extrapolated samples
   ## smaller than h_0
   l = latent_sample#tf$expand_dims(latent_sample, -1L)
-    
+  
   # check if the latent sample would be below h_0 (needs extrapolation)
   mask <- tf$math$less_equal(l, h_0)
-
+  
   slope0 <- h_dag_dash(L_START, theta)#tf$expand_dims(h_dag_dash(L_START, theta), axis=-1L)
   
   target_sample = tf$where(mask,
                            ((l-h_0)/slope0)*(k_max - k_min) + k_min
                            ,target_sample)
-    
+  
   ## larger than h_1
   mask <- tf$math$greater_equal(l, h_1)
   #tf$where(mask, beta_dist_h$prob(y_i)* theta_im, h)
@@ -1148,7 +1155,7 @@ calc.ATE.Continuous.median <- function(data) {
   n1 <- sum(data$Tr == 1)
   n0 <- sum(data$Tr == 0)
   
-
+  
   # Set number of bootstrap iterations
   n_boot <- 10000
   
@@ -1184,7 +1191,7 @@ plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.
   
   # Set up empty plot
   plot(NULL,
-       xlim = range(bin_centers) + c(-0.15, 0.15),
+       xlim = range(bin_centers) + c(-0.1, 0.1),
        ylim = range(c(dev.data$ATE.lb, val.data$ATE.ub)) + c(-0.1, 0.1),
        xlab = "ITE Group", ylab = "ATE (Difference in Medians)",
        xaxt = "n")
@@ -1413,7 +1420,8 @@ plot_ATE_ITE_in_group_risks <- function(dev.data = data.dev.rs, val.data = data.
 
 
 plot_CATE_vs_ITE_base_risk <- function(model.results = model.results, breaks, 
-                                       delta_horizontal = 0.02) {
+                                       delta_horizontal = 0.02, 
+                                       ylim_delta = 0.1) {
   
   
   
@@ -1434,13 +1442,13 @@ plot_CATE_vs_ITE_base_risk <- function(model.results = model.results, breaks,
   bin_centers <- (head(breaks, -1) + tail(breaks, -1)) / 2
   group_labels <- levels(dev.data$ITE.Group)
   
-  delta <- 0.01     # Horizontal offset between training and test
+  delta <- delta_horizontal     # Horizontal offset between training and test
   cap_width <- 0.02 # Width of CI caps
   
   # Set up empty plot
   plot(NULL,
-       xlim = range(bin_centers) + c(-0.15, 0.15),
-       ylim = range(c(dev.data$ATE.lb, dev.data$ATE.ub)) + c(-0.1, 0.1),
+       xlim = range(bin_centers) + c(-0.05, 0.05),
+       ylim = range(c(dev.data$ATE.lb, dev.data$ATE.ub)) + c(-ylim_delta, ylim_delta),
        xlab = "ITE Group", ylab = "ATE in Risk Difference",
        xaxt = "n")
   mtext(expression("Observed ATE per ITE-subgroup: " * pi[treated] - pi[control]),
@@ -1626,7 +1634,8 @@ check_ate <- function(model.results) {
 
 ######### Plot for slides: 2 pred, 2 ite, ite-ate
 
-plot_for_slides <- function(model.results, breaks, delta_horizontal = 0.02) {
+plot_for_slides <- function(model.results, breaks, delta_horizontal = 0.02,
+                            ylim_delta = 0.1) {
   
   # # Define layout matrix: 3 rows, 2 columns
   # layout_matrix <- matrix(c(
@@ -1648,39 +1657,46 @@ plot_for_slides <- function(model.results, breaks, delta_horizontal = 0.02) {
   #### Row 1: Probability scatter plots for train and test sets
   
   # Plot 1: Train
+  lims <- range(c(model.results$data.dev.rs$Y_prob, model.results$data.dev.rs$Y_pred), na.rm = TRUE)
   plot(model.results$data.dev.rs$Y_prob, model.results$data.dev.rs$Y_pred,
        main = "", xlab = "Probability (True)", ylab = "Probability (Predicted)",
-       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+       xlim = lims, ylim = lims)
   abline(0, 1, col = "red", lty = 2, lwd = 2)
-  # mtext("Train: P(Y=1|X,T)", side = 3, line = 0.5, cex = 1.1)
   mtext(expression("Train:  P(Y = 1 | X, T)"), side = 3, line = 0.5, cex = 0.95)
   
   
+  
   # Plot 2: Test
+  lims <- range(c(model.results$data.val.rs$Y_prob, model.results$data.val.rs$Y_pred), na.rm = TRUE)
   plot(model.results$data.val.rs$Y_prob, model.results$data.val.rs$Y_pred,
        main = "", xlab = "Probability (True)", ylab = "Probability (Predicted)",
-       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+       xlim = lims, ylim = lims)
   abline(0, 1, col = "red", lty = 2, lwd = 2)
-  # mtext("Test: P(Y=1|X,T)", side = 3, line = 0.5, cex = 1.1)
   mtext(expression("Test:  P(Y = 1 | X, T)"), side = 3, line = 0.5, cex = 0.95)
+  
   
   
   #### Row 2: ITE scatter plots for train and test sets
   
   # Plot 3: Train ITE
+  lims <- range(c(model.results$data.dev.rs$ITE_true, model.results$data.dev.rs$ITE), na.rm = TRUE)
   plot(model.results$data.dev.rs$ITE_true, model.results$data.dev.rs$ITE,
        main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+       xlim = lims, ylim = lims)
   abline(0, 1, col = "red", lty = 2, lwd = 2)
-  # mtext("Train: ITE", side = 3, line = 0.5, cex = 1.1)
   mtext(expression("Train: ITE"), side = 3, line = 0.5, cex = 0.95)
   
+  
   # Plot 4: Test ITE
+  lims <- range(c(model.results$data.val.rs$ITE_true, model.results$data.val.rs$ITE), na.rm = TRUE)
   plot(model.results$data.val.rs$ITE_true, model.results$data.val.rs$ITE,
        main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+       pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+       xlim = lims, ylim = lims)
   abline(0, 1, col = "red", lty = 2, lwd = 2)
-  # mtext("Test: ITE", side = 3, line = 0.5, cex = 1.1)
   mtext(expression("Test: ITE"), side = 3, line = 0.5, cex = 0.95)
   
   
@@ -1693,7 +1709,8 @@ plot_for_slides <- function(model.results, breaks, delta_horizontal = 0.02) {
   plot_CATE_vs_ITE_base_risk(
     model.results = model.results,
     breaks = breaks,
-    delta_horizontal = delta_horizontal
+    delta_horizontal = delta_horizontal,
+    ylim_delta = ylim_delta
   )
 }
 

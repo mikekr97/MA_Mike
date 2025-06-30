@@ -752,6 +752,63 @@ struct_dag_loss_ITE_observational = function (t_i, h_params){
 
 
 
+# For IST Stroke trial: calculate Prob Y=1 given tensor X
+
+do_probability_IST = function (h_params){
+  
+  # h_params <- h_params_orig
+  
+  
+  ### construct conditional transformation functions
+  
+  # complex shifts for each observation
+  h_cs <- h_params[,,1, drop = FALSE]
+  
+  # linear shifts for each observation
+  h_ls <- h_params[,,2, drop = FALSE]
+  #LS
+  h_LS = tf$squeeze(h_ls, axis=-1L) # throw away last dimension
+  #CS
+  h_CS = tf$squeeze(h_cs, axis=-1L)
+  theta_tilde <- h_params[,,3:dim(h_params)[3], drop = FALSE]
+  #Thetas for intercept (bernstein polynomials?) -> to_theta3 to make them increasing
+  theta = to_theta3(theta_tilde)
+  
+  if (!exists('data_type')){ #Defaulting to all continuous 
+    cont_dims = 1:dim(theta_tilde)[2]
+    cont_ord = c()
+  } else{ 
+    cont_dims = which(data_type == 'c')
+    cont_ord = which(data_type == 'o')
+  }
+  if (len_theta == -1){ 
+    len_theta = dim(theta_tilde)[3]
+  }
+  
+  ### determine the probability for Y=Case depending on X 
+  
+  ### Ordinal dimensions
+  if (length(cont_ord) != 0){
+    B = dim(h_params)[1]
+    for (col in cont_ord){
+      # col= 39
+      nol = 1 # Number of cut-points in respective dimension
+      theta_ord = theta[,col,1:nol,drop=TRUE] # Intercept (2 values per observation if 2 cutpoints)
+      
+      
+      h = theta_ord + h_LS[,col, drop=FALSE] + h_CS[,col, drop=FALSE]
+      
+      cdf_cut <- logistic_cdf(h)
+      prob_Y1_X <- 1- cdf_cut
+    }
+  }
+  
+  return (prob_Y1_X)
+}
+
+
+
+
 ########### Interventions ######
 #### Helper ####
 is_upper_triangular <- function(mat) {
