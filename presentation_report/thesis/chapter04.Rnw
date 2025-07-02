@@ -18,15 +18,16 @@ Discuss all of the following subjects also include literature and reasoning and 
 Check all of the following again when including the final Experiment results in section 3 (here written just from memory):
 
 
-\section{Experiment 1: TRAM-DAG simulation}
+\section{Experiment 1: TRAM-DAG (simulation study)}
 
 The tram dag can accurately estimate the causal dependencies with interpretable coefficients.
 
+The results demonstrate that the TRAM-DAG model is able to learn the true parameters and shifts from the data, and subsequently be used as generative model to predict interventions and counterfactuals.
 
-\section{Experiment 2: ITE estimation - IST stroke trial}
 
-We used the same data as was used by \ref{chen2025}. Both models, the tuned RF and the TRAM-DAG did not generalize to the test set. The results are very similar to the ones of the original paper. Calibration seemed to be not bad in both cases...Possible reasons could be small true heterogeneity, low effect size of the treatment, missing important variables (e.g. effect modifiers/interaction variables with treatment). In the the next section (discussion for experiment 3) we are looking into those cases in a simulation study.
+\section{Experiment 2: ITE on International Stroke Trial (IST)}
 
+We observed similar results as reported by \citet{chen2025} across all three models: the T-learner logistic regression, T-learner tuned random forest and the S-learner TRAM-DAG. The logistic model shows moderate discrimination in the training set, which did not generalize to the test set, as illustrated in the ITE-ATE plot in Figure \ref{fig:IST_density_ITE_ATE_glm_tlearner}. The tuned random forest model showed a stronger discrimination in the training set, but also failed to generalize to the test set (Figure \ref{fig:IST_density_ITE_ATE_tuned_rf}). In contrast, the TRAM-DAG S-learner estimates less heterogeneity as the other two models, as shown in the density plot in Figure \ref{fig:IST_density_ITE_ATE_TRAM_DAG}, resulting in a weak discrimination in both the training and test set. For all three models, the confidence intervals for the ITE-ATEs plots in the test set include the zero-line, suggesting no significant effect in any of the estimated ITE subgroup. Poor calibration does not appear to cause the limited ITE performance, as shown in the Appendix \ref{sec:calibrations_experiment2}, Figures (\ref{fig:calibration_IST_glm} - \ref{fig:calibration_IST_TRAM_DAG}). However, since the ground truth is unknown, it remains unclear whether the models fail to capture true treatment effect heterogeneity, or if, for example, the underlying heterogeneity is too small, or influenced by unobserved effect modifiers. We explore this further in Experiment 3 (ITE Simulation Study).
 
 
 
@@ -76,7 +77,7 @@ In this experiment we showed that even though causal ML models for ITE estimatio
 % - question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-ATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-ATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
 
 
-\section{Experiment 4: TRAM-DAGs in Observational vs. RCT setting  (ITE simulation study)}
+\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)}
 
 We analyzed ITE estimation under an observational setting (confounded) and under an RCT setting (randomized treatment allocation) in three different scenarios - direct and interaciton treatment effect, only direct but no interaction effect, and no direct but with interaction effect. We noticed that in the first scenario with 
 

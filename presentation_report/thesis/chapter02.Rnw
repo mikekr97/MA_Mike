@@ -172,7 +172,7 @@ Once the input variables are prepared and the structure is defined by the adjace
 
 
 
-\subsection{Sampling from TRAM-DAGs}
+\subsection{Sampling from TRAM-DAGs} \label{methods:sampling}
 
 \textbf{Observational sampling} Once the TRAM-DAG is fitted on data, it can be used to sample from the observational or interventional distribution or to make counterfactual queries. 
 The structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the inverse of the conditional transformation functions $h^{-1}(Z_i \mid \text{pa}(X_i))$ because $Z_i = h(X_i \mid \text{pa}(X_i))$. The sampling process from the observational distribution for one iteration (one observation of all variables in the DAG) is described in the pseudocode \ref{alg:sampling} and illustrated in Figure~\ref{fig:sampling}. The process is repeated for the desired number of samples. 
@@ -421,20 +421,84 @@ Problems with ITE: (in an RCT setting)
 
 
 
-\section{Experiment 1: TRAM-DAG simulation}
-
-Show easy simulation with 3 variables and in the results the plots of the loss function, the coefficient learning, intercepts, shifts, and the sampling results. The sampling results should show that the sampled data matches the DGP very well. Also show the estimated parameters of the linear shifts and the intercepts. The complex shift can be shown by plotting the transformation function of X3 with respect to X2. also some queries for observational, interventional and counterfactual.
-
-- take simple example from intermediate presentation. Make counterfactual analysis on continuous X2.
-(- ideally an experiment with ordinal predictor, and with interpretability and a complex shift and 4 variables.)
-
-in results show all plots that help to understand what the model does and trafo etc.
-
-\section{Experiment 2: ITE real data} \label{sec:methods_experiment2}
 
 
-\citet{chen2025} evaluated multiple causal ML methods on the International Stroke Trial (IST), to estimate the individualized treatment effects. They demonstrated that none of the applied ML methods generalized well, as performance on the test data differed significantly from the training data on the chosen evaluation metrics. 
-In this experiment will also apply two causal ML methods for ITE estimation to investigate if we obtain similar results as the authors. 
+
+
+
+\section{Experiment 1: TRAM-DAG (simulation study)}
+
+In this experiment, we demonstrate the application of TRAM-DAGs on a synthetic dataset, using the same illustrative DAG shown previously in Figure~\ref{fig:tram_dag}. The aim is to show how TRAM-DAGs can learn structural equations from observational data, by fitting a model to the joint distribution that resulted from the underlying causal structure. We visualize the model fitting in terms of the training loss, and subsequently show and interpret the learned components of the transformation functions, such as intercepts, linear and complex shifts. Finally, we draw samples from the estimated distributions to get observational and interventional distributions. We also conduct counterfactual queries on the learned model.
+
+\textbf{Data generating process: } We simulate a dataset consisting of three variables, \(X_1\), \(X_2\), and \(X_3\), following the structure of the DAG and its associated meta-adjacency matrix as shown in Figure~\ref{fig:dag_and_matrix}. The matrix describes the functional dependencies between the variables, where LS indicates a linear shift and CS a complex shift. Rows denote the source of effect, and columns the target.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[baseline={(current bounding box.center)}]
+  \node (img) at (0, 0) {\includegraphics[width=0.28\textwidth]{img/exp1_DAG_MA.png}};
+  \node (matrix) at (5, 0) {
+    $\mathbf{MA} =
+    \begin{bmatrix}
+      0 & \text{LS} & \text{LS} \\
+      0 & 0  & \text{CS} \\
+      0 & 0  & 0
+    \end{bmatrix}$
+  };
+  \draw[->, thick] (img.east) -- (matrix.west);
+\end{tikzpicture}
+\caption{Causal graph (left) and meta-adjacency matrix (right) for experiment 1. The transformation function of $X_2$ depends on $X_1$ by a linear shift (LS). The transformation function for $X_3$ depends on $X_1$ by a linear shift (LS) and on $X_2$ by a complex shift (CS).}
+\label{fig:dag_and_matrix}
+\end{figure}
+
+The variable \(X_1\) is continuous and bimodally distributed, and acts as a source node in the DAG, i.e., it is not influenced by any other variable:
+
+\[
+X_1 = 
+\begin{cases}
+\mathcal{N}(0.25,\, 0.1^2) & \text{with probability } 0.5, \\
+\mathcal{N}(0.73,\, 0.05^2) & \text{with probability } 0.5
+\end{cases}
+\]
+
+
+    
+The second variable, \(X_2\), is continuous and linearly dependent on \(X_1\) on the log odds scale, with a true coefficient of \(\beta_{12} = 2\). Its transformation function is given by  
+\[
+h(X_2 \mid X_1) = h_I(X_2) + \beta_{12} X_1,
+\]
+where the baseseline transformation of \(X_2\) is \(h_I(X_2) = 5 X_2\).
+
+The third variable, \(X_3\), is ordinal and depends on both \(X_1\) (LS) and \(X_2\) (CS). We define the complex functional shift by \(X_2\) as \(f(X_2) = 0.5 \cdot \exp(X_2)\), and the linear shift by \(X_1\) as \(\beta_{13} = 0.2\). The transformation for category \(k\) of the ordinal variable \(X_3\) with 4 levels ($K$) is thus defined by 
+\[
+h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \beta_{13} X_1 + f(X_2),
+\]
+with cut-points \(\vartheta_k \in \{-2,\, 0.42,\, 1.02\}\) defining the thresholds of the ordinal variable. The samples for $X_2$ and $X_3$ are generated as described in Section \ref{methods:sampling}, by first sampling a latent value from the standard logistic distribution, and then determining the corresponding observation according to the transformation function.
+
+This simulation allows us to assess whether the TRAM-DAG model can correctly recover the underlying structural dependencies and parameters (linear and complex). 
+
+
+\textbf{Model:} Given the adjacency matrix and the simulated observations, we construct a modular neural network based on the TRAM-DAG framework. The complex shift from $X_2$ to $X_3$ is modeled by a neural network with 4 hidden layers with 2 nodes each, as illustrated in Figure \ref{fig:exp1_CS}. 20'000 samples are generated according to the defined DGP for fitting the model. The model is trained for 400 epochs with the Adam optimizer \citep{kingma2015} and a learning rate of 0.005. 
+
+
+% include the figure for CS
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{img/exp1_CS.pdf}
+\caption{Neural network architecture for the complex shift on \( X_3 \) from \( X_2 \). The complex shift is modelled by a neural network with 4 hidden layers of shape (2, 2, 2, 2).}
+\label{fig:exp1_CS}
+\end{figure}
+
+
+
+
+\textbf{Evaluation: } We compare the estimated intercepts, learned coefficients and the complex shift to the true values used in the DGP. We compare the sampled observational and interventional distributions to the true distributions. For the counterfactual queries, we show the estimated counterfactual values for \(X_2\) when intervening on \(X_1\) at a specific value, and compare them to the true counterfactual values.
+
+
+
+
+\section{Experiment 2: ITE on International Stroke Trial (IST)} \label{sec:methods_experiment2}
+
 
 % describe the data of stroke trial https://pubmed.ncbi.nlm.nih.gov/9174558/
 % Results on IST trial with the interpretation in the discussion part.
@@ -443,46 +507,28 @@ In this experiment will also apply two causal ML methods for ITE estimation to i
 % https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101 
 
 
-\textbf{Data: }  The IST was a large randomized controlled trial that compared antithrombotic therapy versus control in acute ischaemic stroke, and was conducted in the 1990s and included 19,435 patients with acute stroke, with a follow-up rate of 99\% \citep{IST1997}. The trial did not include thrombolytic therapy, which was not available at that time.
-\citet{sandercock2011} made the individual patient data from the IST available. The dataset included 19'435 patients, with 99\% completed follow-up . Besides the covariates assessed at randomization, the data includes the outcome at 6 months after randomization. Table XXX shows the baseline patient characteristics and the outcome at 6 months.
-We use the same data and data pre-processing as \citet{chen2025} to make our results comparable. Additionally we standardized the numerical variables.
-
 % Results: The IST dataset includes data on 19 435 patients with acute stroke, with 99% complete follow-up. Over 26.4% patients were aged over 80 years at study entry. Background stroke care was limited and none of the patients received thrombolytic therapy.
+% 
+% 
+\citet{chen2025} evaluated multiple causal ML methods on the International Stroke Trial (IST), to estimate the individualized treatment effects. They demonstrated that none of the applied ML methods generalized well, as performance on the test data differed significantly from the training data on the chosen evaluation metrics.
+In this experiment, we replicate the analysis on the same data by applying three causal ML methods for ITE estimation, to investigate whether we obtain similar results as the authors.
 
 
-\textbf{Data:} The International Stroke Trial was a large, randomized controlled trial conducted in the 1990s to assess the efficacy and safety of early antithrombotic treatment in patients with acute ischemic stroke \citep{IST1997}. Using a 2x2 factorial design, 19'435 patients across 36 countries were randomized within 48 hours of symptom onset to receive aspirin, subcutaneous heparin, both, or neither. Patients allocated to aspirin (300 mg daily for 14 days) had a 6-month death or dependency rate of 62.2\%, compared to 63.5\% in the control group not receiving aspirin, corresponding to a statistically significant absolute risk reduction after adjustment for baseline prognosis (1.4\%, p = 0.03) \citep{IST1997}. The authors stated that there was no interaction between aspirin and heparin in the main outcomes. In this thesis, we focus exclusively on the aspirin vs. no aspirin comparison and the outcome of death or dependency at 6 months after stroke. 
+\textbf{Data:} The International Stroke Trial was a large, randomized controlled trial conducted in the 1990s to assess the efficacy and safety of early antithrombotic treatment in patients with acute ischemic stroke \citep{IST1997}. Using a 2x2 factorial design, 19'435 patients across 36 countries were randomized within 48 hours of symptom onset to receive aspirin, subcutaneous heparin, both, or neither. Patients allocated to aspirin (300 mg daily for 14 days) had a 6-month death or dependency rate of 62.2\%, compared to 63.5\% in the control group not receiving aspirin, corresponding to a statistically significant absolute risk reduction after adjustment for baseline prognosis (1.4\%, p = 0.03). The authors stated that there was no interaction between aspirin and heparin in the main outcomes. In this thesis, we focus exclusively on the aspirin vs. no aspirin comparison and the outcome of death or dependency at 6 months after stroke.
 
-The dataset used in this experiment was made publicly available by \citet{sandercock2011} and contains individual-level data, including baseline covariates assessed at randomization (e.g., age, sex, delay between stroke and randomization in hours, and neurological deficits), treatment allocation, and outcomes at 6 months. The follow-up rate was 99\%.
+The dataset used in this experiment was made publicly available by \citet{sandercock2011} and contains individual-level data, including baseline covariates assessed at randomization, treatment allocation, and 6-month outcomes, with a follow-up rate of 99\%.
 
-We use the same subset and preprocessing steps as \citet{chen2025} to ensure comparability of results. we use 2/3 for training and 1/3 for evaluation (test set)
-
-5.97% of individuals had incomplete data for the 6-month death or dependency outcome a
-
-- should i include a table one of all all 21 variables? would be quite big with all factor variables?
+We use the same data pre-processing steps as \citet{chen2025} to ensure comparability of results. 5.9\% of individuals had incomplete data and were removed from the dataset. We use 2/3 of the data for fitting the models and 1/3 as a hold out test set. The final dataset included 21 baseline variables recorded at randomization: aspirin allocation (treatment), age, delay between stroke and randomization (in hours), systolic blood pressure, sex, CT performed before randomization, visible infarct on CT, atrial fibrillation, aspirin use within 3 days prior to randomization, and presence or absence of neurological deficits (including face, arm/hand, leg/foot deficits, dysphasia, hemianopia, visuospatial disorder, brainstem or cerebellar signs, and other neurological deficits), as well as consciousness level, stroke subtype, and geographical region. The outcome variable was death or dependence at 6 months.
 
 
-\textbf{Models for ITE estimation: } The aim is to estimate the ITE based on the baseline characteristics. As benchmark we will apply a T-leraner logistic regression (with splines for the numeric variables).
+\textbf{Models for ITE estimation: } The aim is to estimate the ITE based on the baseline characteristics. As benchmark, we apply a T-learner logistic regression (as in \citet{chen2025}). As a representation of a more complex model we apply a T-learner tuned random forest (comets) and finally a S-learner TRAM-DAG. For the random forest and TRAM-DAG based methods, we additionally scale numerical and dummy encode categorical covariates prior to model training. The transformation for the outcome is modelled by a complex intercept $h(Y \mid T, X) = CI(T, X)$, with 4 hidden layers of shape (20, 10, 10, 2). This architecture allows for interaction between the treatment and covariates. Furthermore, batch normalization, ReLU activation, and dropout (0.1) are applied to prevent overfitting and stabilize learning. A validation set comprising 20\% of the training data is used to select the model with the lowest out-of-sample negative log-likelihood (NLL), while the test set remains untouched for final evaluation. Since the IST stroke trial is a randomized controlled trial, the full potential of TRAM-DAGs (that lies in the observational setting) is not needed, as only the outcome has to be modelled as a function of the baseline patient characteristics. Nevertheless, this is not a reason not to apply it.
 
-We will apply the TRAM-DAG framework as well as a tuned random forest (comets) to estimate the ITE. Both models are trained on a training set and validated on a hold-out test set.  The Random Forest is specified accoring to the default version of the comets package.
-
-For tram dag  Additionally, all numerical covariates were scaled (mean subtracted and devided by standard deviation) prior to model training. as well as changed from factor- to dummy encoding to allow suitable format and scale for tram dags. 
-
-\textbf{Model evaluation: } For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we will predict the potential outcomes (potentially with the re-calibrated models) to estimate the ITE on the train and test set. For visual validation, we will use ITE-ATE plots and ITE-outcome plots. Due to the binary outcome, the ATE is defined as the risk-difference of the individuals in the respective ITE subgroup (bin $j$) $ATE_j = \mathbb{E}[Y(1) - Y(0) \mid ITE \in bin_j]$.
-
-The cATE is defined as:
-
-\begin{equation}
-cATE = \mathbb{E}[Y \mid T = 1] - \mathbb{E}[Y \mid T = 0]
-\end{equation}
-
-Since the IST stroke trial is a randomized controlled trial, the full potential of TRAM-DAGs is not needed, since only the outcome has to be modelled as a function of the baseline patient characteristics. Nevertheless, this is not a reason not to apply it. The TRAM-DAG is specified so that only the loss for the outcome node is optimized, the distributions of the other nodes are not estimated. The transformation function for the outcome is modelled by a complex intercept model $h(Y \mid X) = CI(X)$, with 4 hidden layers of shape (20, 10, 10, 2). The numerical values are further standardized and dropout (0.1) is used to prevent severe overfitting (and batchnorm?). The model is trained for..
+\textbf{Model evaluation: } For validation, since the ground truth is not known, we first rely on calibration plots to assess the general prediction power for the probabilities. Second, we predict the potential outcomes with the trained models to estimate the ITE on the training and test set in terms of the risk difference $\text{ITE}_i = \text{P}(Y_i=1|T=1, X_i) - \text{P}(Y_i=1|T=0, X_i)$. For visual validation, we will show the densities of the estimated ITEs on both datasets and the ITE-ATE plots to assess whether the estimated ITEs align with the actually observed treatment effects
 
 
 
 
 
-
-- maybe also make propensity score estimation on IST stroke trial to check if possibly confounded.
 
 
 
@@ -590,7 +636,7 @@ These simulation scenarios allow us to assess how ITE estimation performance beh
 
 
 
-\section{Experiment 4: ITE estimation in observational data}
+\section{ITE estimation with TRAM-DAGs (simulation study)}
 
 
 % # DGP for simulation similarly done as: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/ (although, this was RCT setting), maybe also refer to the observational data ITE with RF paper
@@ -600,7 +646,7 @@ We claim that if the assumptions for ITE estimation (identifiability, (unobserve
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth]{img/dag_ITE_observational.png}
+\includegraphics[width=0.6\textwidth]{img/dag_ITE_observational.png}
 \caption{DAG used for the experiment to estimate the ITE. DGP: the source nodes X1, X2 and X3 come from a multivariate standard normal distribution with 0.1 correlation. In the observational setting the binary treatment X4 depends on the parents X1 and X2, in the RCT Setting, this dependency is omitted due to randomization. X5 depends on the treatment X4. X6 depends on X5. The outcome Y depends on all variables with additional interaction effects between the treatment and the variables X2 and X3. All variables except the treatment X4 are continuous.}
 \label{fig:ite_dag_observational}
 \end{figure}
@@ -682,65 +728,65 @@ check report, how i cited the packages. calibration plot, all packages for tram 
 
 Maybe it is the methods section. Here however, we give a couple hints.
 Note that you can wisely use \rr{preamble}-chunks. Minimal, is likely:
-
-
-\bigskip
-
-\hrule
-<<echo=TRUE>>=
-library(knitr)
-opts_chunk$set(
-    fig.path='figure/ch02_fig',
-    self.contained=FALSE,
-    cache=TRUE
-)
-@
-\hrule
-
-\bigskip
-
-Defining figure options is very helpful:
-
-
-\bigskip
-
-
-\hrule
-<<echo=TRUE,cache=FALSE>>=
-library(knitr)
-opts_chunk$set(fig.path='figure/ch02_fig',
-               echo=TRUE, message=FALSE,
-               fig.width=8, fig.height=2.5,
-               out.width='\\textwidth-3cm',
-               message=FALSE, fig.align='center',
-               background="gray98", tidy=FALSE, #tidy.opts=list(width.cutoff=60),
-               cache=TRUE
-)
-options(width=74)
-@
-\hrule
-
-\bigskip
-
-This options are best placed in the main document at the beginning. Otherwise a \verb+cache=FALSE+ as knitr option is necessary to overrule a possible  \verb+cache=TRUE+ flag.
-
-\bigskip
-
-Notice how in Figure~\ref{f02:1} everything is properly scaled.
-
-\begin{figure}
-<<echo=FALSE>>=
-par(mai=c(.8,.8,.1,.1))
-set.seed(12)
-plot( runif(30), type='l')
-@
-  \caption{Test figure to illustrate figure options used by knitr.}
-  \label{f02:1}
-\end{figure}
-
-
-\section{Citations}
-
-Recall the difference between \verb+\citet{}+ (e.g., \citet{Chu:Geor:99}), \verb+\citep{}+ (e.g., \citep{Chu:Geor:99}) and \verb+\citealp{}+ (e.g., \citealp{Chu:Geor:99}).
-For simplicity, we include here all references in the file \verb+biblio.bib+ with the command \verb+\nocite{*}+.\nocite{*}
+% 
+% 
+% \bigskip
+% 
+% \hrule
+% <<echo=TRUE>>=
+% library(knitr)
+% opts_chunk$set(
+%     fig.path='figure/ch02_fig',
+%     self.contained=FALSE,
+%     cache=TRUE
+% )
+% @
+% \hrule
+% 
+% \bigskip
+% 
+% Defining figure options is very helpful:
+% 
+% 
+% \bigskip
+% 
+% 
+% \hrule
+% <<echo=TRUE,cache=FALSE>>=
+% library(knitr)
+% opts_chunk$set(fig.path='figure/ch02_fig',
+%                echo=TRUE, message=FALSE,
+%                fig.width=8, fig.height=2.5,
+%                out.width='\\textwidth-3cm',
+%                message=FALSE, fig.align='center',
+%                background="gray98", tidy=FALSE, #tidy.opts=list(width.cutoff=60),
+%                cache=TRUE
+% )
+% options(width=74)
+% @
+% \hrule
+% 
+% \bigskip
+% 
+% This options are best placed in the main document at the beginning. Otherwise a \verb+cache=FALSE+ as knitr option is necessary to overrule a possible  \verb+cache=TRUE+ flag.
+% 
+% \bigskip
+% 
+% Notice how in Figure~\ref{f02:1} everything is properly scaled.
+% 
+% \begin{figure}
+% <<echo=FALSE>>=
+% par(mai=c(.8,.8,.1,.1))
+% set.seed(12)
+% plot( runif(30), type='l')
+% @
+%   \caption{Test figure to illustrate figure options used by knitr.}
+%   \label{f02:1}
+% \end{figure}
+% 
+% 
+% \section{Citations}
+% 
+% Recall the difference between \verb+\citet{}+ (e.g., \citet{Chu:Geor:99}), \verb+\citep{}+ (e.g., \citep{Chu:Geor:99}) and \verb+\citealp{}+ (e.g., \citealp{Chu:Geor:99}).
+% For simplicity, we include here all references in the file \verb+biblio.bib+ with the command \verb+\nocite{*}+.\nocite{*}
 

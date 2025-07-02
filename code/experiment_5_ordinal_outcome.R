@@ -250,7 +250,10 @@ ggplot(train$df_R, aes(x = x3)) +
 
 MA
 
-param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS)
+param_model = create_param_model(MA, hidden_features_I=hidden_features_I, 
+                                 len_theta=len_theta, 
+                                 hidden_features_CS=hidden_features_CS,
+                                 activation = "sigmoid")
 optimizer = optimizer_adam(learning_rate = 0.005)
 param_model$compile(optimizer, loss=struct_dag_loss)
 param_model$evaluate(x = train$df_orig, y=train$df_orig, batch_size = 7L)

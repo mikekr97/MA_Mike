@@ -218,8 +218,108 @@ head(IST.dataset.clean.14d.dr)
 ```{r save data}
 # save data as R data
 save(IST.dataset.clean.6m, IST.dataset.clean.14d, IST.dataset.clean.14d.dr, file = here("data","IST_model_data.RData"))
+
+print(colnames(IST.dataset.clean.6m))
+
+# print a vector but without quotes
+cat("IST.dataset.clean.6m contains the following variables:\n")
+cat(paste0(colnames(IST.dataset.clean.6m), collapse = ", "), "\n")
 ```
 
+
+
+# Table 1 for thesis (6m)
+
+
+```{r}
+# 1. Load necessary libraries (already done, but reiterating for completeness)
+library(tableone)
+library(Hmisc) # For applying labels to variables
+library(knitr) # For kable()
+library(kableExtra) # For advanced LaTeX table customization
+
+# Assuming IST.dataset.clean.6m is already loaded in your environment
+# and 'factorVars' and 'labels' are defined as before.
+
+# --- Re-run the data preparation and tableone object creation to be safe ---
+
+# Make a copy of your dataset if you don't want to modify the original directly
+IST.dataset.for.table <- IST.dataset.clean.6m
+
+# Apply labels to the variables in your data frame using Hmisc::label()
+# This ensures your "nice labels" are attached to the data
+for (var_name in names(labels)) {
+  if (var_name %in% names(IST.dataset.for.table)) {
+    Hmisc::label(IST.dataset.for.table[[var_name]]) <- labels[var_name]
+  }
+}
+
+# Generate Table 1 using the labeled dataset
+table1_obj <- CreateTableOne(
+  vars = names(labels)[names(labels) != "RXASP"],
+  strata = "RXASP",
+  data = IST.dataset.for.table, # Use the dataset with Hmisc labels
+  factorVars = factorVars,
+  includeNA = TRUE,
+  addOverall = TRUE,
+  test = FALSE
+)
+
+# Verify that tableone picked up your nice labels (optional, but good for debugging)
+# print(table1_obj) # Look at the row names to ensure they are your custom labels
+
+# 6. Convert the tableone object to a data frame for kableExtra
+table1_df <- print(table1_obj,
+                   exact = TRUE,      # Ensure exact numbers for summary statistics
+                   quote = FALSE,     # Don't put quotes around values
+                   noSpaces = TRUE,   # Remove extra spaces for cleaner output
+                   printToggle = FALSE) # Do not print to console, return as data frame
+
+# --- Prepare the data frame for kable and custom column names ---
+
+# The Hmisc labels are stored as row names. Convert them to a proper column.
+table1_df <- cbind(Variable = rownames(table1_df), table1_df)
+rownames(table1_df) <- NULL # Remove row names after moving them to a column
+
+# Dynamically create meaningful column names for the LaTeX table
+# Get the original stratification variable levels and their counts
+strata_levels <- levels(factor(IST.dataset.for.table$RXASP))
+strata_counts <- table(IST.dataset.for.table$RXASP)
+overall_count <- nrow(IST.dataset.for.table)
+
+# Create the new column names including counts (e.g., "Group 0 (N=100)")
+# The first column is "Variable".
+# Then for each stratum level, combine its name with its count.
+# Finally, add the "Overall" column with its count.
+new_col_names <- c("Variable",
+                   paste0(strata_levels, " (N=", strata_counts, ")"),
+                   paste0("Overall (N=", overall_count, ")"))
+
+# 7. Generate the LaTeX table using kable and kableExtra
+latex_table <- table1_df %>%
+  kbl(
+    format = "latex",
+    booktabs = TRUE, # For nicer horizontal lines
+    # FIX: Corrected string concatenation for alignment
+    align = paste0("l", paste(rep("c", ncol(table1_df) - 1), collapse = "")),
+    caption = "Table 1. Baseline Characteristics by Aspirin Allocation",
+    col.names = new_col_names # Use our dynamically generated descriptive column names
+  ) %>%
+  kable_styling(
+    latex_options = c("striped", "hold_position", "scale_down"), # Add styling options
+    full_width = FALSE # Adjust width
+  ) %>%
+  # Add a main header spanning the groups (optional, but nice for presentation)
+  # This assumes 'Variable' is 1 column, and the rest are your groups + Overall
+  add_header_above(c(" " = 1, "Aspirin Allocation" = ncol(table1_df) - 1))
+
+# Print the LaTeX code
+cat(latex_table)
+
+# Optional: You can save this LaTeX code to a .tex file
+# writeLines(latex_table, "table1.tex")
+
+```
 
 
 # End

@@ -19,7 +19,10 @@ To do:
 
 - inlcude Example of ITE simulation with tram dags with complex shift: $theta + LS(X2) + CS(T, X1)$ to show how tram dags can model interactions. Maybe just refer in the methods for the CS of tram dags, or alternatively in the ITE with tram dags (where i used CI, but to show that CS is also possible to allow for specific interactions)
 
+Complex shift (Interaction example) to show what is also possible:
 
+Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
+And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
 
 
 \section{Negative Log Likelihood}

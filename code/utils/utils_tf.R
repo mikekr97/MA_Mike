@@ -181,7 +181,7 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30,
     h_I = create_param_net(len_param = len_theta, input_layer=input_layer, 
                            layer_sizes = layer_sizes_I, masks_I, 
                            last_layer_bias=TRUE,
-                           dropout = FALSE, batchnorm = FALSE, activation = "relu")
+                           ...) # for passing dropout, batchnorm and activation
     #dag_maf_plot(masks_I, layer_sizes_I)
     #model_ci = keras_model(inputs = input_layer, h_I)
   } else { # Adding simple intercepts
@@ -190,7 +190,7 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30,
     h_I = create_param_net(len_param = len_theta, input_layer=input_layer, 
                            layer_sizes = layer_sizes_I, masks_I, 
                            last_layer_bias=TRUE,
-                           dropout = FALSE, batchnorm = FALSE, activation = "relu")
+                           ...) # for passing dropout, batchnorm and activation
     #dag_maf_plot(masks_I, layer_sizes_I)
   }
   
@@ -201,7 +201,7 @@ create_param_model = function(MA, hidden_features_I = c(2,2), len_theta=30,
     h_CS = create_param_net(len_param = 1, input_layer=input_layer, 
                             layer_sizes = layer_sizes_CS, masks_CS, 
                             last_layer_bias=FALSE,
-                            dropout = FALSE, batchnorm = FALSE, activation = "relu")
+                            ...) # for passing dropout, batchnorm and activation
     #dag_maf_plot(masks_CS, layer_sizes_CS)
     #dag_maf_plot_new(masks_CS, layer_sizes_CS)
     # model_cs = keras_model(inputs = input_layer, h_CS)
@@ -960,7 +960,7 @@ dag_maf_plot_new <- function(layer_masks, layer_sizes) {
       x <- (i - 1) * layer_spacing
       y <- layer_top * node_spacing + j * node_spacing
       if (i == 1 || i == length(layer_sizes)) {
-        label <- paste("x_", j, sep = "")
+        label <- paste("X", j, sep = "")
       } else {
         label <- ""
       }
@@ -1022,4 +1022,7 @@ dag_maf_plot_new <- function(layer_masks, layer_sizes) {
 }
 
 # dag_maf_plot_new(masks_CS, layer_sizes_CS)
+# 
+# ggsave("network_plot.pdf", dag_maf_plot_new(masks_CS, layer_sizes_CS), 
+       # width = 4.5, height = 4)
 
