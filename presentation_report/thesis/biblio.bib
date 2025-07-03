@@ -88,6 +88,21 @@ doi = {10.1214/09-SS057},
 URL = {https://doi.org/10.1214/09-SS057}
 }
 
+@article{dawid2000,
+ ISSN = {01621459, 1537274X},
+ URL = {http://www.jstor.org/stable/2669377},
+ abstract = {A popular approach to the framing and answering of causal questions relies on the idea of counterfactuals: outcomes that would have been observed had the world developed differently; for example, if the patient had received a different treatment. By definition, one can never observe such quantities, nor assess empirically the validity of any modeling assumptions made about them, even though one's conclusions may be sensitive to these assumptions. Here I argue that for making inference about the likely effects of applied causes, counterfactual arguments are unnecessary and potentially misleading. An alternative approach, based on Bayesian decision analysis, is presented. Properties of counterfactuals are relevant to inference about the likely causes of observed effects, but close attention then must be given to the nature and context of the query, as well as to what conclusions can and cannot be supported empirically. In particular, even in the absence of statistical uncertainty, such inferences may be subject to an irreducible degree of ambiguity.},
+ author = {A. P. Dawid},
+ journal = {Journal of the American Statistical Association},
+ number = {450},
+ pages = {407--424},
+ publisher = {[American Statistical Association, Taylor & Francis, Ltd.]},
+ title = {Causal Inference Without Counterfactuals},
+ urldate = {2025-07-03},
+ volume = {95},
+ year = {2000}
+}
+
 
 @article{hariton2018,
 author = {Hariton, Eduardo and Locascio, Joseph J},
@@ -141,6 +156,34 @@ abstract = { Problems with inferring causal relationships from nonexperimental d
 
 
 
+
+@InProceedings{gutierrez2017,
+  title = 	 {Causal Inference and Uplift Modelling: A Review of the Literature},
+  author = {Pierre Gutierrez and Jean-Yves G{\'e}rardy},
+
+  booktitle = 	 {Proceedings of The 3rd International Conference on Predictive Applications and APIs},
+  pages = 	 {1--13},
+  year = 	 {2017},
+  editor = 	 {Hardgrove, Claire and Dorard, Louis and Thompson, Keiran and Douetteau, Florian},
+  volume = 	 {67},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {11--12 Oct},
+  publisher =    {PMLR},
+  pdf = 	 {http://proceedings.mlr.press/v67/gutierrez17a/gutierrez17a.pdf},
+  url = 	 {https://proceedings.mlr.press/v67/gutierrez17a.html},
+  abstract = 	 {Uplift modeling refers to the set of techniques used to model the incremental impact of an action or treatment on a customer outcome. Uplift modeling is therefore both a Causal Inference problem and a Machine Learning one. The literature on uplift is split into 3 main approaches - the Two-Model approach, the Class Transformation approach and modeling uplift directly. Unfortunately, in the absence of a common framework of causal inference and notation, it can be quite difficult to assess those three methods. In this paper, we use the Rubin (1974) model of causal inference and its modern “econometrics” notation to provide a clear comparison of the three approaches and generalize one of them. To our knowledge, this is the first paper that provides a unified review of the uplift literature. Moreover, our paper contributes to the literature by showing that, in the limit, minimizing the Mean Square Error (MSE) formula with respect to a causal effect estimator is equivalent to minimizing the MSE in which the unobserved treatment effect is replaced by a modified target variable. Finally, we hope that our paper will be of use to researchers interested in applying Machine Learning techniques to causal inference problems in a business context as well as in other fields: medicine, sociology or economics.}
+}
+
+@misc{zhao2020,
+      title={Uplift Modeling for Multiple Treatments with Cost Optimization}, 
+      author={Zhenyu Zhao and Totte Harinen},
+      year={2020},
+      eprint={1908.05372},
+      archivePrefix={arXiv},
+      primaryClass={stat.ML},
+      url={https://arxiv.org/abs/1908.05372}, 
+}
+
 @misc{sick2025,
   author       = {Beate Sick and Oliver D{\"u}rr},
   title        = {Interpretable Neural Causal Models with TRAM-DAGs},
@@ -163,6 +206,25 @@ address = {USA},
 edition = {2nd},
 abstract = {Written by one of the preeminent researchers in the field, this book provides a comprehensive exposition of modern analysis of causation. It shows how causality has grown from a nebulous concept into a mathematical theory with significant applications in the fields of statistics, artificial intelligence, economics, philosophy, cognitive science, and the health and social sciences. Judea Pearl presents and unifies the probabilistic, manipulative, counterfactual, and structural approaches to causation and devises simple mathematical tools for studying the relationships between causal connections and statistical associations. The book will open the way for including causal analysis in the standard curricula of statistics, artificial intelligence, business, epidemiology, social sciences, and economics. Students in these fields will find natural models, simple inferential procedures, and precise mathematical definitions of causal concepts that traditional texts have evaded or made unduly complicated. The first edition of Causality has led to a paradigmatic change in the way that causality is treated in statistics, philosophy, computer science, social science, and economics. Cited in more than 3,000 scientific publications, it continues to liberate scientists from the traditional molds of statistical thinking. In this revised edition, Judea Pearl elucidates thorny issues, answers readers' questions, and offers a panoramic view of recent advances in this field of research. Causality will be of interests to students and professionals in a wide variety of fields. Anyone who wishes to elucidate meaningful relationships from data, predict effects of actions and policies, assess explanations of reported events, or form theories of causal understanding and causal speech will find this book stimulating and invaluable.}
 }
+
+
+@inproceedings{poinsot2024,
+  author    = {Audrey Poinsot and Alessandro Leite and Nicolas Chesneau and Mich{\`e}le S{\'e}bag and Marc Schoenauer},
+title = {Learning structural causal models through deep generative models: methods, guarantees, and challenges},
+year = {2024},
+isbn = {978-1-956792-04-1},
+url = {https://doi.org/10.24963/ijcai.2024/907},
+doi = {10.24963/ijcai.2024/907},
+abstract = {This paper provides a comprehensive review of deep structural causal models (DSCMs), particularly focusing on their ability to answer counterfactual queries using observational data within known causal structures. It delves into the characteristics of DSCMs by analyzing the hypotheses, guarantees, and applications inherent to the underlying deep learning components and structural causal models, fostering a finer understanding of their capabilities and limitations in addressing different counterfactual queries. Furthermore, it highlights the challenges and open questions in the field of deep structural causal modeling. It sets the stages for researchers to identify future work directions and for practitioners to get an overview in order to find out the most appropriate methods for their needs.},
+booktitle = {Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence},
+articleno = {907},
+numpages = {9},
+location = {Jeju, Korea},
+series = {IJCAI '24}
+}
+
+
+
 
 @article{hothorn2014,
  ISSN = {13697412, 14679868},

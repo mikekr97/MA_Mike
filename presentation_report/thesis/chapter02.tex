@@ -3,20 +3,13 @@
 % LaTeX file for Chapter 02
 
 
-\chapter{Methods} 
 
-In this chapter I will explain the necessary background needed to understand the TRAM-DAGs. Once the framework of tram dags is explained, I will present how the experiments of the simulation, the application on real data and the ITE estimation are conducted. Following research questions are addressed, and we try to answer them with the four experminets that are laid out at the end of this chapter:
+\chapter{Methods}
 
-\begin{itemize}
+This chapter introduces the methodological foundations and experimental designs used in this thesis. Section~\ref{sec:methods_tram_dags} presents the concept and functionality of TRAM-DAGs, along with the necessary theoretical background. Section~\ref{sec:methods_ite} provides the framework for estimating individualized treatment effects. Finally, Sections~\ref{sec:methods_experiment1}--\ref{sec:methods_experiment4} describe the four experiments conducted to address the research questions outlined in Section~\ref{sec:goals_contributions}.
 
-\item How can TRAM-DAGs be applied under different scenarios (datatypes, DAG structure, complexity, scaled varaibles) and how does this influence the interpretation of parameters?
-\item Do we obtain similar results on the IST trial when estimating the ITE as \citet{chen2025}.
-\item Why does the estimation of Individualized Treatment Effects (ITE) fail in some cases for most causal ML methods when validating them out of sample? 
-\item How can TRAM-DAGs be used to estimate the Individualized Treatment Effect (ITE) in a RCT and in a observational setting with confounding and mediating variables?
 
-\end{itemize}
-
-\section{TRAM-DAGs}
+\section{TRAM-DAGs} \label{sec:methods_tram_dags}
 
 The goal of TRAM-DAGs is to estimate the structural equations according to the causal order in a given DAG in a flexible and possibly still interpretable way in order to sample observational and interventional distributions and to make counterfactual statements. The estimation requires data and a DAG that describes the causal structure. It must be assumed that there are no hidden confounders. TRAM-DAGs estimate for each variable $X_i$ a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ is the noise value and $pa(X_i)$ are the causal parents of $X_i$. The important part here is that we can rearrange this equation to $X_i = h_i^{-1}(Z_i \mid pa(x_i))$ to get to the structural equation. The transformation functions $h$ are monotonically increasing functions that are a representation of the conditional distribution of $X_i$ on a latent scale. They are based on the idea of transformation models as introduced by \citet{hothorn2014} but were extended to deep trams by \citet{sick2020}. In the following sections I review the most important ideas of these methods as they are the essential components of TRAM-DAGs.
 
@@ -117,7 +110,7 @@ The estimated distribution function is invariant with respect to the choice of t
 
 
 
-\subsection{TRAM-DAGs: Deep TRAMS applied in a causal setting}
+\subsection{TRAM-DAGs: Deep TRAMS applied in a causal setting} \label{sec:tram_dags}
 
 
 
@@ -209,6 +202,10 @@ with the same process as for the observational sampling, with the only differenc
 
 \textbf{Counterfactual queries} In a counterfactual query one wants to know what the value of variable $X_i$ would have been if another variable $X_j$ had a different value than what was acutally observed. \citet{pearl_book2009} describes the three-step process to answer counterfacutal queries as follows: Given a causal model $M$ and observed evidence $e$ (which are the actually observed values of the variables $X_i$ of one sample) one wants to compute the probability of $Y=y$ under the hypothetical condition $X=x$.
 
+
+Here input image of counterfactuals from final presentation.
+
+
 Step 1 aims to explain the past (Z) by knowledge of the evidence e; 
 Step 2 amends the past to the hypothetical condition $X=x$ 
 Step 3 predicts the future (Y) based on our new understanding of the past and our newly established condition, $X =x$
@@ -243,7 +240,28 @@ While the probability of Y under the hypothetical condition $X=x$ can be determi
 
 
 
-\section{Individualized Treatment Effect (ITE)}
+\section{Individualized Treatment Effect (ITE)} \label{sec:methods_ite}
+
+
+\subsection{Terminology: ITE vs. CATE}
+
+In causal inference, the term \emph{Individual Treatment Effect (ITE)} typically refers to the unobservable difference in potential outcomes for a specific individual:
+\begin{equation}
+    \text{ITE}(x) = Y_i(1) - Y_i(0),
+\end{equation}
+where $Y_i(1)$ and $Y_i(0)$ are the potential outcomes for individual $i$ under treatment and control, respectively. However, this individual-level effect is inherently unobservable, as we only observe one of the two potential outcomes for each individual.
+
+Instead, most methods aim to estimate the expected treatment effect conditioned on a given set of covariates $X$. This quantity is known as the \emph{Conditional Average Treatment Effect (CATE)}:
+\begin{equation}
+    \text{CATE}(x) = \mathbb{E}[Y(1) - Y(0) \mid X = x] = \mathbb{E}[Y \mid X = x, T = 1] - \mathbb{E}[Y \mid X = x, T = 0].
+\end{equation}
+
+In applied fields such as healthcare, marketing, and machine learning, it is common to refer to estimates of the CATE as \emph{individualized treatment effects (ITE)}. Despite the slight abuse of terminology, this reflects the practical goal of estimating treatment effects tailored to individual characteristics.
+
+\bigskip
+
+\noindent\textbf{Terminology Note:} In this thesis, we use the term \emph{ITE} to refer to estimated individualized treatment effects, i.e., estimates of the CATE. This choice is made for consistency with model outputs, figures, and existing terminology in the literature we build upon.
+
 
 
 % https://ascpt.onlinelibrary.wiley.com/doi/epdf/10.1002/cpt.3159
@@ -278,6 +296,11 @@ In contrast to the mean-based estimands above, the \textit{quantile treatment ef
 where $Q_{Y(t) \mid X = x}(q)$ denotes the $q$-th quantile of the potential outcome under treatment $t$. QTEs are particularly relevant when treatment effects are not symmetrically distributed or when tail behavior is of interest. We will later perform a simulation study using the median for the QTE estimation.
 
 \subsection{Assumptions for Identifiability}
+
+
+
+% https://arxiv.org/pdf/2108.04939
+above paper also discusses the implications of strong identifiability assumpions and that cate still can be biased if there are unobserved interaction variables. (however, not sure how good this paper is, many typos)
 
 To identify treatment effects from observational data, several key assumptions are required. \textit{Consistency} ensures that the observed outcome equals the potential outcome under the received treatment. The \textit{Stable Unit Treatment Value Assumption (SUTVA)} assumes no interference between units and that treatments are well-defined. The most critical assumption is \textit{ignorability} (or unconfoundedness), which posits that, conditional on covariates $X$, the treatment assignment is independent of the potential outcomes:
 \begin{equation}
@@ -418,7 +441,7 @@ Problems with ITE: (in an RCT setting)
 
 
 
-\section{Experiment 1: TRAM-DAG (simulation study)}
+\section{Experiment 1: TRAM-DAG (simulation study)} \label{sec:methods_experiment1}
 
 In this experiment, we demonstrate the application of TRAM-DAGs on a synthetic dataset, using the same illustrative DAG shown previously in Figure~\ref{fig:tram_dag}. The aim is to show how TRAM-DAGs can learn structural equations from observational data, by fitting a model to the joint distribution that resulted from the underlying causal structure. We visualize the model fitting in terms of the training loss, and subsequently show and interpret the learned components of the transformation functions, such as intercepts, linear and complex shifts. Finally, we draw samples from the estimated distributions to get observational and interventional distributions. We also conduct counterfactual queries on the learned model.
 
@@ -525,7 +548,7 @@ We use the same data pre-processing steps as \citet{chen2025} to ensure comparab
 
 
 
-\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)}
+\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)} \label{sec:methods_experiment3}
 
 In this section, we will perform a simulation study to estimate the ITE with different models in an RCT setting under different scenarios. The aim is to identify conditions under which ITE estimation fails and whether such failure is model-agnostic -- i.e., driven by external factors such as unobserved covariates or treatment effect magnitude, rather than by the model class itself. It may provide insight into why ITE estimation can fail in a real-world application as, for example, demonstrated by \citet{chen2025} on the IST stroke trial and replicated in our own work in Section \ref{sec:methods_experiment2}. The simulation is based on a data generating process (DGP) that should resemble an RCT. We assume a binary outcome and a set of covariates that influence the treatment effect. There may also be treatment-covariate interactions that are responsible for heterogeneity of treatment effect. 
 
@@ -628,7 +651,7 @@ These simulation scenarios allow us to assess how ITE estimation performance beh
 
 
 
-\section{ITE estimation with TRAM-DAGs (simulation study)}
+\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)} \label{sec:methods_experiment4}
 
 
 % # DGP for simulation similarly done as: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/ (although, this was RCT setting), maybe also refer to the observational data ITE with RF paper
