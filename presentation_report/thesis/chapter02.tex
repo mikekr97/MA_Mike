@@ -11,101 +11,106 @@ This chapter introduces the methodological foundations and experimental designs 
 
 \section{TRAM-DAGs} \label{sec:methods_tram_dags}
 
-The goal of TRAM-DAGs is to estimate the structural equations according to the causal order in a given DAG in a flexible and possibly still interpretable way in order to sample observational and interventional distributions and to make counterfactual statements. The estimation requires data and a DAG that describes the causal structure. It must be assumed that there are no hidden confounders. TRAM-DAGs estimate for each variable $X_i$ a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ is the noise value and $pa(X_i)$ are the causal parents of $X_i$. The important part here is that we can rearrange this equation to $X_i = h_i^{-1}(Z_i \mid pa(x_i))$ to get to the structural equation. The transformation functions $h$ are monotonically increasing functions that are a representation of the conditional distribution of $X_i$ on a latent scale. They are based on the idea of transformation models as introduced by \citet{hothorn2014} but were extended to deep trams by \citet{sick2020}. In the following sections I review the most important ideas of these methods as they are the essential components of TRAM-DAGs.
+The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in a flexible and, if desired, interpretable way. This enables the sampling of observational and interventional distributions, as well as to make counterfactual statements. The approach requires data and a known causal graph describing the underlying structure. It is assumed that there are no hidden confounders. TRAM-DAGs estimate, for each variable $X_i$, a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ denotes the noise variable and $\text{pa}(X_i)$ are the causal parents of $X_i$. Crucially, this relationship can be inverted to yield the structural equation $X_i = h_i^{-1}(Z_i \mid pa(X_i))$. The monotonically increasing transformation functions $h_i$ represent the conditional distribution  $X_i \mid \text{pa}(X_i)$ on a latent scale $Z_i$. They are based on the framework of transformation models as introduced by \citet{hothorn2014} and were extended to deep TRAMs by \citet{sick2020}. The following summarize the key ideas of these models, which form the building blocks of TRAM-DAGs.
+
 
 \subsection{Transformation Models}
 
 
-Transformation models are a flexible distributional regression method for various data types. They can be for example specified as ordinary linear regression, logistic regression or proportional odds logistic regression. But Transformation models further allow to model conditional outcome distributions that do not even need to belong to a known distribution family of distributions by model it in parts flexibly. This reduces the strength of the assumptions that have to be made.
-
-The basic form of transformation models can be described by
+Transformation models are a flexible class of distributional regression models applicable to various data types. They can be regarded as generalizations of standard models such as linear regression, logistic regression, or proportional odds models, while also allowing for the modeling of outcome distributions that do not belong to a known parametric family. This is achieved by modeling components of the transformation function in a flexible, semi-parametric way, thereby reducing the strength of assumptions required about the underlying data-generating process. The basic form of transformation models can be described by 
 
 \begin{equation}
 F(y|\mathbf{x}) = F_Z(h(y \mid \mathbf{x})) =  F_Z(h_I(y) - \mathbf{x}^\top \boldsymbol{\beta})
 \label{eq:transformation_model}
 \end{equation}
 
-, where $F(y|\mathbf{x})$ is the conditional cumulative distribution function of the outcome variable $Y$ given the predictors $\mathbf{x}$. $h(y \mid \mathbf{x})$ is a transformation function that maps the outcome variable $y$ onto the latent scale of $Z$. $F_Z$ is the cumulative distribution function of a latent variable $Z$, the so-called inverse-link function that maps $h(y \mid \mathbf{x})$ to probabilities. In this basic version, the transformation function can be split into an intercept part $h_I(y)$ and a linear shift part $\mathbf{x}^\top \boldsymbol{\beta}$, where the vector $\mathbf{x}$ are the predictors and $\boldsymbol{\beta}$ are the corresponding coefficients.
+where $F(y|\mathbf{x})$ is the conditional cumulative distribution function of the outcome variable $Y$ given the predictors $\mathbf{x}$. The transformation function $h(y \mid \mathbf{x})$ maps the outcome variable $y$ onto the latent scale of variable $Z$, and $F_Z$ is the cumulative distribution function $Z$, the so-called inverse-link function that maps $h(y \mid \mathbf{x})$ to probabilities. In the basic version shown in Equation~\ref{eq:transformation_model}, the transformation function can be split into an intercept part $h_I(y)$ and a linear shift component $\mathbf{x}^\top \boldsymbol{\beta}$, where $\mathbf{x}$ are the predictors and $\boldsymbol{\beta}$ the corresponding coefficients.
 
-If the latent distribution $Z$ is chosen to be the standard logistic distribution, then the coefficient $\beta_i$ can be interpreted as log-odds ratios when increasing the predictor $x_i$ by one unit, holding all other predictors unchanged. This means that an increase of one unit in the predictor $x_i$ leads to an increase of the log-odds of the outcome $Y$ by $\boldsymbol{\beta}$. The additive shift of the transformation function means a linear shift on the latent scale (herer log-odds). The following transformation to probabilities by $F_Z$ potentially leads to a non-linear change in the conditional outcome distribution on the original scale. This means not only is the distribution shifted, also its shape can change to some degree based on the covariates. More details about the choice of the latent distribution and the interpretation of the coefficients are provided in the appendix XXX.
+If the latent distribution $Z$ is chosen to be the standard logistic, each coefficient $\beta_i$ can be interpreted as log-odds ratio: an increase of one unit in the predictor $x_i$, while holding other predictors unchanged, increases the log-odds (latent scale) of the outcome $Y$ by $\beta_i$. After applying the inverse link function $F_Z$, this can induce a non-linear change to the conditional distribution of $Y$ on the original scale. Further discussion on the choice of latent distribution and the interpretation of coefficients is provided in in Appendix~\ref{sec:interpretation_linear_coefficients}.
 
-
-For a continuous outcome $Y$ the intercept $h_I$ is represented by a bernstein polynomial, which is a flexible and monotonically increasing function
-
-\begin{equation}
-h_I(y) = \frac{1}{M + 1} \sum_{k=0}^{M} \vartheta_k \, \text{B}_{k, M}(y)
-\end{equation}
-
-, where $\vartheta_k$ are the coefficients of the bernstein polynomial and $\text{B}_{k, M}(y)$ are the Bernstein basis polynomials. More details about the technical implementation of the bernstein polynomial in the context of TRAM-DAGs is given in the appendix XXX.
-
-For a discrete outcome $Y$ the intercept $h_I$ is represented by cut-points, which are the thresholds that separate the different levels of the outcome. For example, for a binary outcome $Y$ there is one cut-point and for an ordinal outcome with $K$ levels there are $K-1$ cut-points. The transformation model is given by
+For a continuous outcome $Y$, the intercept $h_I(y)$ is represented by a Bernstein polynomial, which is a flexible and monotonically increasing function:
 
 \begin{equation}
-P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \boldsymbol{\beta}), \quad k = 1, 2, \ldots, K - 1
+h_I(y) = \frac{1}{M + 1} \sum_{k=0}^{M} \vartheta_k \, \text{B}_{k, M}(y),
+\label{eq:methods_bernstein_polynomial}
+\end{equation}
+
+where $\vartheta_k, k = 0, \ldots, M$ are the coefficients and $\text{B}_{k, M}(y)$ are the corresponding Bernstein basis polynomials. The coefficients $\vartheta_k$ are constrained to be monotonically increasing to ensure that the transformation function $h_I(y)$ is strictly increasing. More details on the technical implementation of Bernstein polynomial in the context of deep-TRAMs are provided in the Appendix~\ref{sec:bernstein_polynomial}
+
+
+
+
+
+
+For a discrete outcome $Y$, the intercept $h_I$ is represented by a set of cut-points $\vartheta_k$, which define the thresholds separating the different levels of the outcome. For example, a binary outcome requires one cut-point, while an ordinal outcome with $K$ levels requires $K-1$ cut-points. The transformation model is given by:
+
+\begin{equation}
+P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \boldsymbol{\beta}), \quad k = 1, 2, \ldots, K - 1.
 \end{equation}
 
 
-A visual representation for a continuous and discrete (ordinal) outcome is provided in Figure~\ref{fig:tram_cont_ord}.
+A visual representation for a continuous and discrete (ordinal) outcome is shown in Figure~\ref{fig:tram_cont_ord}.
 
 
 % include image /img/tram_cont_ord.png
 \begin{figure}[H]
 \centering
 \includegraphics[width=1\textwidth]{img/tram_cont_ord.png}
-\caption{\textbf{Left:} Example of a transformation model for a continuous outcome $Y$ with a smooth transformation function. \textbf{Right:} Example of a transformation model for an ordinal outcome $Y$ with 5 levels. The transformation function consists of cut-points that separate the probabilities for the levels of the outcome.
+\caption{\textbf{Left:} Example of a transformation model for a continuous outcome $Y$ with a smooth transformation function. \textbf{Right:} Example of a transformation model for an ordinal outcome $Y$ with 5 levels. The transformation function consists of cut-points separating the levels of the outcome.
 In both cases the latent distribution $Z$ is the standard logistic and the predictors $\mathbf{x}$ induce a linear (vertical) shift of the transformation function.}
 \label{fig:tram_cont_ord}
 \end{figure}
 
 
-To estimate the parameters $\boldsymbol{\beta}$ and $\boldsymbol{\vartheta}$ the negative log likelihood (NLL) is minimized. The NLL is defined as
+The parameters $\boldsymbol{\beta}$ and $\boldsymbol{\vartheta}$ are estimated by minimizing the negative log-likelihood (NLL), defined as:
+
 
 \begin{equation}
-\text{NLL} = - \frac{1}{n} \sum_{i=1}^{n} l_i(\boldsymbol{\beta}, \boldsymbol{\vartheta} ) = - \frac{1}{n} \sum_{i=1}^{n} \log (f_{Y \mid \mathbf{X} = \mathbf{x}}(y_i))
+\text{NLL} = - \frac{1}{n} \sum_{i=1}^{n} \log \left(f_{Y \mid \mathbf{X} = \mathbf{x}}(y_i)\right),
 \label{eq:nll_tram}
 \end{equation}
 
-where $l_i(\boldsymbol{\beta}, \boldsymbol{\vartheta})$ is the log-likelihood of the $i$-th observation,  $l_i(\boldsymbol{\beta}, \boldsymbol{\vartheta}) = f_{Y \mid \mathbf{X} = \mathbf{x}}(y_i)$ is the conditional density function of the outcome variable $Y$ given the predictors $\mathbf{x}$ under the current parameterization. I provide the full derivation in the appendix xxx.
+where $f_{Y \mid \mathbf{X} = \mathbf{x}}(y_i)$ is the conditional density function of the outcome $Y$ given the predictors $\mathbf{x}$ of the $i$-th observation under the current parameterization. A full derivation is provided in Appendix \ref{sec:nll}.
 
+Throughout this thesis, these transformation models form the foundation for estimating conditional distributions of variables within the TRAM-DAG framework. Unless stated otherwise, the latent distribution $F_Z$ is chosen to be the standard logistic, resulting in a logistic transformation model.
 
-For the remainder of this thesis, I rely on the idea of these transformation models to model the conditional distribution functions represented by the transformation functions of the respective variables. The standard logistic distribution is used as $F_Z$, which results in a logistic transformation model.
 
 
 \subsection{Deep TRAMs} \label{sec:deep_trams}
 
-The transformation models as discussed before were extended to deep TRAMs using a modular neural network \citep{sick2020}. The goal is to get a parametrized transformation function of the form \ref{eq:deep_tram.}.Each part, the intercept $h_I(X_i)$, the linear shift $\mathbf{x}_L^\top \boldsymbol{\beta}_L$ and the complex shift $f_C(\mathbf{x}_C)$ are assembled by the outputs of the individual neural networks. The user can specify the level of complexity the parents $pa(X_i)$ have on the transformaiton funciton. Figure \ref{fig:deep_tram} illustrates the case for a SI-LS-CS model.
+The transformation models introduced earlier were extended into deep TRAMs using a modular neural network architecture \citep{sick2020}. The goal is to obtain a parameterized transformation function of the form
 
 \begin{equation}
-h(y \mid \mathbf{x}_L, \mathbf{x}_C ) = h_I(y) + \mathbf{x}_L^\top \boldsymbol{\beta}_L + f_C(\mathbf{x}_C)
-\label{eq:deep_tram}
+h(y \mid \mathbf{x}_L, \mathbf{x}_C ) = h_I(y) + \mathbf{x}_L^\top \boldsymbol{\beta} + f(\mathbf{x}_C),
+\label{eq:deep_tram_old}
 \end{equation}
 
+where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predictors with a linear effect on the transformation function, and $\mathbf{x}_{C}$ are those with a potentially complex, non-linear influence. The parameters for each component of the model -- intercept, linear shift, and complex shift -- are obtained by a neural network module. The user can assign predictors to these components depending on the assumed structure of the data and the desired flexibility. Figure~\ref{fig:deep_tram} illustrates an example of a transformation function with these tree components (SI-LS-CS). For simplicity, it shows the simple intercept (SI) case where the intercept does not depend on predictors.
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{img/deep_tram.png}
-\caption{Modular deep transformation model. The transformation function $h(y \mid \mathbf{x})$ is constructed by the outputs of three neural networks.}
+\caption{Modular deep transformation model (deep TRAM). The transformation function $h(y \mid \mathbf{x})$ is constructed from the outputs of three neural networks: intercept (SI/CI), linear shift (LS), and complex shift (CS). The intercept module (left) shows the simple intercept (SI) case and could be extended to a complex intercept (CI) by feeding predictors into the module and adding hidden layers.}
 \label{fig:deep_tram}
 \end{figure}
 
-\textbf{Intercept } the shape of the transformation function at the baseline configuration $\mathbf{x}_L^\top \boldsymbol{\beta}_L = 0$ and $f_C(\mathbf{x}_C)=0$ is determined by the intercept $h_I(y)$. For a continuous outcome the intercept is represented by a smooth bernstein polynomial and in the discrete case by cut-points. In either case the parameters $\vartheta$ are obtained as output nodes of the neural network. A simple intercept (SI) is the case where the parameters $\vartheta$ do not depend on the any explanatory variables. The neural network thereby only takes a constant as input and directly outputs the parameters $\vartheta$. To make the intercept more flexible, the intercept can also depend on the explanatory variables. In this case the complex intercept (CI) models the intercept $\vartheta(x)$ by taking the predictors $x$ as input to a neural network with some hidden layers. This allows the intercept to change with the value of the predictors. Depending on the assumptions, predictors can be used in the complex intercept, or only a subset of them. A detailed explanation of the construction of the bernstein polynomial is given in appendix XXX.
 
-\textbf{Linear shift } If the predictors should have a linear effect on the transformation function, it can be modelled by a linear shift (LS). For this part the neural network without hidden layers and without biases takes the linear predictors $pa(X_i)$ as input and generates a single output node with a linear activation function. This results in the linear combination $\mathbf{x}_L^\top \boldsymbol{\beta}_L$ and it induces a linear vertical shift of the transformation function. The weights $\boldsymbol{\beta}_L$ are the interpretable coefficients of the linear shift. For the logistic transformation model, they are interpreted as log-odds-ratios.
-The interpretation is further described in the appendix \ref{sec:interpretation_linear_coefficients}. %  for interpretation see pearl book 2009 p. 366. the key is to say leaving all other variables "untouched" and not "constant". he also talks about the connection to the do-operator.
-
-\textbf{Complex shift } If the transformation function should be allowed to be shifted vertically in a non-linear manner, a complex shift (CS) can be applied. The predictor variables are inputted in a (deep) neural network with at least one hidden layer and non-linear activation functions such as sigmoid or ReLU. A single output node with $f_C(X_C)$ is obtained. With a complex shift, also interactions between predictor variables can be captured by giving the interacting variables into the same neural network.
+\textbf{Intercept:} The intercept defines the baseline shape of the transformation function when $\mathbf{x}_{L}^\top \boldsymbol{\beta} = 0$ and $f(\mathbf{x}_{C}) = 0$. For continuous outcomes, it is modeled using a smooth Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}), and for discrete outcomes via cut-points. The preliminary parameters $\hat{\vartheta}_k$ are the output nodes of a neural network, and subsequently transformed to be monotonically increasing $\vartheta_k$. A simple intercept (SI) assumes no dependency on predictors and uses only a constant input. A complex intercept (CI), by contrast, allows the parameters to vary as a function of selected predictors by feeding $\mathbf{x}$ into a neural network with hidden layers, producing predictor dependent parameters $\vartheta_k(\mathbf{x})$. This allows the baseline distribution to adapt flexibly to different covariate settings. Details on the computation of the Bernstein polynomial are provided in Appendix~\ref{sec:bernstein_polynomial}.
 
 
-\textbf{Level of complexity } One practical feature of these modular deep TRAMs is that one can specify, which predictors should have a linear or complex shift effect on the transformation function or that predictors are even allowed to deterimine the shape of the transformation function by a complex intercept. \citet{herzog2023} predicted the ordinal functional outcome three months after stroke by using semi-structured data that included tabular predictors and images. The two data modalities can be included in a single deep TRAM by modeling the part of the images with a CNN.
+\textbf{Linear shift:} Predictors with an assumed linear influence on the transformation funciton are modeled via the linear shift (LS) component. Here, a neural network without hidden layers and without bias nodes receives $\mathbf{x}_{L}$ as input and returns a linear combination $\mathbf{x}_{L}^\top \boldsymbol{\beta}$ as output. This results in a vertical, linear shift of the transformation function. The parameters $\boldsymbol{\beta}$ are interpretable coefficients, and in the case of a logistic transformation model, represent log-odds ratios. See Appendix~\ref{sec:interpretation_linear_coefficients} for more details.
 
-The estimated distribution function is invariant with respect to the choice of the inverse-link function $F_Z$ (scale of latent distribution) in an unconditional \citep{hothorn2018} or fully flexible (CI) setting. However, as soon as restrictions are placed on the influence of the predictors (LS, CS), this leads to assumptions about the scale of the dependency. Which latent distribution should be chosen depends on following factors: (i) the intended complexity of the model, (ii) the assumptions about the data generating process, (iii) the conventional, widely used, scale of interpretation for the specific problem. If the coefficients $\beta$ in the linear shift term should be interpreted as log odds ratios, then the standard logistic distribution is appropriate. For log hazard ratios it would be the minimum extreme value distribution. There exist plenty of other alternatives.
+\textbf{Complex shift:} Non-linear dependencies between predictors and the transformation function can be modeled by the complex shift (CS) component. The corresponding predictors $\mathbf{x}_{C}$ are input into a deep neural network (with at least one hidden layer and non-linear activation functions such as ReLU or sigmoid), yielding a scalar output $f(\mathbf{x}_{C})$. This allows modeling of non-linear predictor effects, including interactions between predictors if input multiple predictors into the neural network module.
 
-(The optimal scale could be found by comparing the likelihoods of the model under different latent distributions. )
+\textbf{Level of complexity:} A key advantage of the deep TRAM architecture is that users can specify the role of each predictor: linear (LS), complex (CS), or influencing the shape of the transformation function (CI). For example, \citet{herzog2023} predicted the ordinal functional outcome three months after stroke by combining structured tabular data with image features (via a CNN) as predictors. This flexible design allows the integration of different data modalities into a single model.
 
 
 
-\textbf{Parameter estimation } The parameters of the neural networks are learned by  minimizing the negative log-likelihood (NLL) of the conditional deep TRAM. The learning process is started with a random parameter configuration and the outputs of the neural networks are used to assemble the NLL of the transformation model. The NLL is then iteratively minimized by adjusting the parameters by the Adam optimizer \citep{kingma2015} until they eventually converge to the optimum state. Additionally, methods to prevent overfitting --- such as dropout, early stopping, or batch normalization --- can be applied. These techniques are particularly important in more complex networks to ensure that the model generalizes well to out-of-sample data. In the hidden layers, non-linear activation functions such as ReLU or sigmoid are applied.
+The resulting distribution function of deep TRAMs is invariant to the choice of the inverse-link function $F_Z$ (latent distribution) in an unconditional \citep{hothorn2018} or fully flexible (CI) setting. However, once restrictions are introduced on the influence of the predictors -- such as LS or CS -- the model assumes a fixed scale of dependence. The choice of latent distribution may depend on (i) assumptions about the data-generating process, (ii) the conventional and widely used interpretation scale for parameters (e.g., log-odds ratios for discrete outcomes or log-hazard ratios in survival analysis), and (iii) the scale on which the NLL is minimized.
+
+
+\textbf{Parameter estimation:} The weights of the neural networks are learned by minimizing the negative log-likelihood (NLL) of the conditional model. Starting from random weight initialization, the networks are trained using the Adam optimizer \citep{kingma2015}. Outputs of the modules are assembled to compute the NLL, and backpropagation is used to adjust weights iteratively. Deep learning techniques such as dropout, early stopping, and batch normalization can be applied to prevent overfitting and improve generalization. Nonlinear activation functions (e.g., ReLU or sigmoid) are used in hidden layers to capture complex relationships.
 
 
 
@@ -114,17 +119,19 @@ The estimated distribution function is invariant with respect to the choice of t
 
 
 
-In TRAM-DAGs these deep transformation models are applied in a causal setting. We assume a pre-specified DAG which defines the causal dependence. Then we estimate the distribution of each node by a transformation model that is conditional on its parents. Figrue \ref{fig:tram_dag} illustrates the basic idea of a TRAM-DAG where a DAG with 3 variables, without hidden confounder, is assumed to be known. The arrows in the DAG indicate the causal dependencies between the variables. The transformation models are constructed by a modular neural network. The assumed influence from the parent variables has to be specified as SI, LS or CS. In this example, $X_1$ is a continuous source node that acts as parent of $X_2$ and $X_3$. For a source node the transformation function only consists of a simple intercept (SI). $X_2$ is also continuous and its transformation function can be shifted additively (LS) by the value of $X_1$. $X_3$ is an ordinal variable with 4 levels and its transformation function depends on the values of $X_1$ (LS) and $X_2$ (CS). The cut-points $h(x_3 \mid x_1, x_2)$ represent the cumulative probabilities on the log-odds scale of the first 3 levels of $X_3$, where the probability of the last level $K=4$ is the complement of the previous levels $k_{1-3}$.
+In TRAM-DAGs, deep transformation models are applied within a causal setting. We assume a pre-specified DAG that represents the causal dependencies among variables. 
+Figure~\ref{fig:tram_dag} illustrates the basic idea using a simple DAG with three variables and no hidden confounders. Each node's conditional distribution is modeled using a deep TRAM given its parent variables in the DAG. The assumed influence of the parent variables must be specified as SI/CI, LS or CS. In this example, $X_1$ is a continuous source node (i.e., without parents) and its transformation function consists only of a simple intercept (SI). $X_2$ is also continuous and depends on $X_1$ by a linear shift (LS). $X_3$ is an ordinal variable with four levels; its transformation function is influenced linearly by $X_1$ (LS) and non-linearly by $X_2$ (CS). The cut-points $h(x_{3,k} \mid x_1, x_2)$ represent the cumulative log-odds of levels $k = 1, 2, 3$ of $X_3$. The probability of the highest category ($k = 4$) is the complement of the cumulative probability of the first three.
+
 
 % include image /img/tram_dag.png
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth]{img/tram_dag.png}
-\caption{Example of a TRAM-DAG with three variables $X_1$, $X_2$ and $X_3$. The transformation functions are represented by the modular neural networks. The arrows indicate the causal dependencies between the variables.}
+\includegraphics[width=0.95\textwidth]{img/tram_dag.png}
+\caption{Example of a TRAM-DAG with three variables: $X_1$, $X_2$, and $X_3$. Each variable's distribution is modeled conditionally on its parents using deep TRAMs. Arrows indicate the causal dependencies.}
 \label{fig:tram_dag}
 \end{figure}
 
-This DAG with the assumed dependencies can be described by an adjacency matrix \ref{eq:MA}, where the rows indicate the source and the columns the target of the effect: 
+This DAG, along with its assumed dependencies, can be represented by an adjacency matrix (Equation~\ref{eq:MA}), where rows indicate sources and columns indicate targets of causal influence:
 
 
 \begin{equation}
@@ -137,8 +144,7 @@ This DAG with the assumed dependencies can be described by an adjacency matrix \
 \label{eq:MA}
 \end{equation}
 
-To apply the framework of TRAM-DAGs on this example, we assume to have observational data that follows the structure of the adjacency matrix \ref{eq:MA}. In practice, the DAG is either defined by expert knowledge or by some sort of structure finding algorithm (XXX cite methods). Then we want to estimate the conditional distribution function of each variable by a deep TRAM so that we can sample from the distributions and make causal queries. The conditional distribution functions are given by
-
+To apply the TRAM-DAG framework to this example, it is assumed that observational data follow the structure defined by the adjacency matrix~\ref{eq:MA}. In practice, the DAG may be determined by domain expertise or through a structure learning algorithm (see e.g. \citealp{zheng2018}). Given a DAG, the conditional distribution of each variable is estimated using a deep TRAM, which subsequently allows generative sampling and to make causal inference. The conditional distribution functions for this example are:
 
 \[
 \begin{aligned}
@@ -149,31 +155,36 @@ X_3 &\sim F_Z(h_I(x_3) + \mathrm{LS}_{x_1} + \mathrm{CS}_{x_2})
 \]
 
 
-\textbf{Construct Modular Neural network}
+\textbf{Constructing the modular neural network:} As described in Section~\ref{sec:deep_trams}, transformation functions are constructed using a modular neural network. The inputs into the framework include the variables and the adjacency matrix~\ref{eq:MA}, which governs the information flow and ensures that connections match to the specified causal structure. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled prior to input. Further discussion of encoding and scaling is provided in Appendix~\ref{sec:encoding_discrete_variables} and~\ref{sec:scaling_continuous_variables}.
+While scaling (i.e., zero-mean and unit-variance normalization) removes the marginal variance pattern, \citet{reisach2021} showed that many structure learning algorithms rely heavily on this pattern and may suffer a drop in performance when it is eliminated. However, since our approach assumes a known DAG structure, this is not a concern in our setting.
 
-As discussed in the section \ref{sec:deep_trams}, the transformation functions are constructed by a modular neural network. The inputs are the variables in the system as well as the adjacency matrix \ref{eq:MA} which controls the information flow and assures that only valid connections according to the causal dependence are made. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled before feeding them in the neural network. The encoding and the effect of scaling on the interpretation of parameters is discussed in the appendix (\ref{sec:encoding_discrete_variables} and  \ref{sec:scaling_continuous_variables}). Scaling the input variables, meaning to bring the variables onto a zero-mean and one-variance, can remove the pattern in marginal variance which some structure learning algorithms rely on \citep{reisach2021}. However, since our analysis does not require to find the structure and already assumes a known DAG, this is not a problem. 
-Once the input variables are prepared and the structure is defined by the adjacency matrix, the architecture of the neural network for the complex shift and complex intercept has to be specified. These are factors such as depth, width, activation function, and whether dropout or batch normalization should be used. These considerations depend on the assumed complexity of the shifts. The outputs of the neural networks are the three components for the transformation function (SI, LS, CS) for each variable. These components are assembled to the transformation functions. Finally, the loss is defined as the negative log likelihood, which the model aims to optimize to estimate the optimal parameterization. The estimated parameters $\boldsymbol{beta}$ in the linear shifts are interpretable as log-odds-ratios when changing the value of the respective parent by one unit, leaving all others unchanged. 
+Once the data are preprocessed and the structure is specified, the architecture of the neural networks for the complex shift or complex intercept must be defined -- including choices such as depth, width, activation functions, and whether to use dropout or batch normalization. These decisions depend on the assumed complexity of the effects and the need to regularize against overfitting.
+
+Each node's transformation function is assembled from the outputs of its three modular components: the intercept (SI or CI), linear shift (LS), and complex shift (CS). Model training is performed by minimizing the NLL, optimizing all parameters at the same time. The estimated parameters $\boldsymbol{\beta}$ in the linear shift are interpretable as log-odds ratios corresponding to a one-unit increase in the respective parent variable, holding all other parent variables unchanged.
 
 
 
 
 \subsection{Sampling from TRAM-DAGs} \label{methods:sampling}
 
-\textbf{Observational sampling} Once the TRAM-DAG is fitted on data, it can be used to sample from the observational or interventional distribution or to make counterfactual queries. 
-The structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the inverse of the conditional transformation functions $h^{-1}(Z_i \mid \text{pa}(X_i))$ because $Z_i = h(X_i \mid \text{pa}(X_i))$. The sampling process from the observational distribution for one iteration (one observation of all variables in the DAG) is described in the pseudocode \ref{alg:sampling} and illustrated in Figure~\ref{fig:sampling}. The process is repeated for the desired number of samples. 
+Once a TRAM-DAG is fitted on data, it can be used to sample from the observational or interventional distribution, or to perform counterfactual queries. The structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the inverse of the conditional transformation functions, i.e., $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$, since the transformation function maps from observed values to the latent scale: $Z_i = h(X_i \mid \text{pa}(X_i))$.
+
+
+
+\textbf{Observational sampling:} The sampling process from the observational distribution is described in Algorithm~\ref{alg:sampling} and illustrated in Figure~\ref{fig:sampling}. In each iteration, one complete sample of all variables in the DAG is generated -- i.e. a sample from the joint observational distribution.
 
 \begin{algorithm}
-\caption{Generate a samples from the TRAM-DAG}
+\caption{Generate a complete sample from the observational distribution}
 \label{alg:sampling}
-\begin{algorithmic}[1]
-\State \textbf{Given:} A fitted TRAM-DAG with structural equations $X_i = f(Z_i, \text{pa}(X_i))$, where $Z_i = h(X_i \mid \text{pa}(X_i))$
+\begin{algorithmic}
+\State \textbf{Given:} A fitted TRAM-DAG with structural equations $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$
 \For{each node $X_i$ in topological order}
   \State Sample latent value $z_i \sim F_{Z_i}$ \Comment{e.g., \texttt{rlogis()} in R}
   \If{$X_i$ is continuous}
-    \State Compute $x_i = h^{-1}(z_i \mid \text{pa}(x_i))$ by solving $h(x_i \mid \text{pa}(x_i)) - z_i = 0$
-    \EndIf
-  \If{$X_i$ is discrete}
-    \State Determine $x_i$ such that $x_i = \min \left\{ x : z_i \le h(x \mid \text{pa}(x_i)) \right\}$
+    \State Solve $h(x_i \mid \text{pa}(x_i)) - z_i = 0$ for $x_i$ \Comment{numerical root-finding}
+  \ElsIf{$X_i$ is discrete}
+    \State Find category $x_i = \max \left( \{0\} \cup \left\{ x : z_i > h(x \mid \text{pa}(x_i)) \right\} \right) + 1
+$
   \EndIf
 \EndFor
 \end{algorithmic}
@@ -183,7 +194,7 @@ The structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the i
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{img/sampling.png}
-\caption{One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text{pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable.}
+\caption{One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text{pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable. See Algorithm~\ref{alg:sampling} for details.}
 \label{fig:sampling}
 \end{figure}
 
@@ -235,6 +246,16 @@ While the probability of Y under the hypothetical condition $X=x$ can be determi
 % see pearl book causality: 1.4.4 Counterfactuals in Functional Models (page 36)
 
 (What pearl writes:  Likewise, in contrast with the potential-outcome framework, counterfactuals in the structural account are not treated as undefined primitives but rather as quantities to be derived from the more fundamental concepts of causal mechanisms and their structure. )
+
+
+
+
+
+
+
+
+
+
 
 
 

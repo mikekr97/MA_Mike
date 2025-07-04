@@ -5,6 +5,8 @@
 
 % Benefit of TRAM-DAGS: our model "knows when to adjust" due to the causal graph and learned functions. With classical regression approaches, there is the danger of wrongly adjusting for covariates and therefore obtaining misleading parameter estimates for inference. A tram dag is a generative causal model because once fitted it can be used to generate samples from the distributions (including interventional and counterfactual.). Hybrid modelling (interpretable, flexible, etc) is a unique capability of this model, to our knowledge. " chatgpt: combining the robustness of structural causal modeling with the representational power of modern neural networks. Furthermore, the ability to selectively impose interpretability on certain components makes the model suitable for real-world tasks requiring both transparency and flexibility."
 
+%  for interpretation see pearl book 2009 p. 366. the key is to say leaving all other variables "untouched" and not "constant". he also talks about the connection to the do-operator.
+
 
 The poor performance in the IST dataset was likely due to true weak heterogeneity or due to unobserved variables. We come to this conclusion because of our simulations in experiment 3 that revealed these possible problems.
 
