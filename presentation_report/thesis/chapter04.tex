@@ -3,6 +3,8 @@
 
 \chapter{Discussion and Outlook}
 
+-- make sure to answer the research question in each discussion section!
+
 
 Discuss all of the following subjects also include literature and reasoning and explanation (maybe also move a part to methods) (include basically anything that we encountered): ghost interactions (literature from hoogland paper (2021?) and non-collapsibility from susanne and torsten). Overfitting of certain models in differenct settings. We need enough true heterogeneity so that the model can actually detect something, complex models might just overfit else. And the relevant variables observed, else models seem to have problems to allocate the observed heterogeneity. complex models tend to predict too much heterogeneity (if there is no heterogeneity), however in the case where an interaction variable was not observed, also the complex model predicted too narrow heterogeneity (see tuned-rf scenario 2 unobserved). Talk about S learner and T learner and the difference in performance or things we have to consider? Tram dag s learner seems to also work well when fully observed. We used QTE for last experiment, but Expected potential outcomes would also be possible with sampling or numerical integration (lucas mentioned that.) ITE based on Expected is certainly more generally known etc. but in certain applictions /problems QTE might be a better choice. Because of computational simplicity we used QTE.
 
@@ -13,66 +15,82 @@ Check all of the following again when including the final Experiment results in 
 
 \section{Experiment 1: TRAM-DAG (simulation study)}
 
-The tram dag can accurately estimate the causal dependencies with interpretable coefficients.
+The results demonstrate that the TRAM-DAG framework can learn the true parameters and both linear and complex shifts from the data, enabling it to act as a generative model for predicting interventions and counterfactuals. It successfully reproduced observational and interventional distributions and predicted correct counterfactual outcomes.
 
-The results demonstrate that the TRAM-DAG model is able to learn the true parameters and shifts from the data, and subsequently be used as generative model to predict interventions and counterfactuals.
+This experiment serves as a small proof of concept that TRAM-DAGs can be specified flexibly, with both interpretable and complex components, to capture causal relationships of varying complexity when the true DAG is known and the data is generated accordingly.
+
 
 
 \section{Experiment 2: ITE on International Stroke Trial (IST)}
 
-We observed similar results as reported by \citet{chen2025} across all three models: the T-learner logistic regression, T-learner tuned random forest and the S-learner TRAM-DAG. The logistic model shows moderate discrimination in the training set, which did not generalize to the test set, as illustrated in the ITE-ATE plot in Figure \ref{fig:IST_density_ITE_ATE_glm_tlearner}. The tuned random forest model showed a stronger discrimination in the training set, but also failed to generalize to the test set (Figure \ref{fig:IST_density_ITE_ATE_tuned_rf}). In contrast, the TRAM-DAG S-learner estimates less heterogeneity as the other two models, as shown in the density plot in Figure \ref{fig:IST_density_ITE_ATE_TRAM_DAG}, resulting in a weak discrimination in both the training and test set. For all three models, the confidence intervals for the ITE-ATEs plots in the test set include the zero-line, suggesting no significant effect in any of the estimated ITE subgroup. Poor calibration does not appear to cause the limited ITE performance, as shown in the Appendix \ref{sec:calibrations_experiment2}, Figures (\ref{fig:calibration_IST_glm} - \ref{fig:calibration_IST_TRAM_DAG}). However, since the ground truth is unknown, it remains unclear whether the models fail to capture true treatment effect heterogeneity, or if, for example, the underlying heterogeneity is too small, or influenced by unobserved effect modifiers. We explore this further in Experiment 3 (ITE Simulation Study).
+We observed similar results to those reported by \citet{chen2025} when estimating ITEs on the International Stroke Trial dataset across all three models: the T-learner logistic regression, the T-learner tuned random forest, and the S-learner TRAM-DAG. The logistic model showed moderate discrimination in the training set, which did not generalize to the test set, as illustrated by the ITE-ATE plot in Figure~\ref{fig:IST_density_ITE_ATE_glm_tlearner}. The tuned random forest model showed stronger discrimination in the training set but similarly failed to generalize to the test set (Figure~\ref{fig:IST_density_ITE_ATE_tuned_rf}). In contrast, the S-learner TRAM-DAG estimated less heterogeneity than the other two models, as shown in the density plot in Figure~\ref{fig:IST_density_ITE_ATE_TRAM_DAG}, resulting in weak discrimination in both the training and test sets. For all three models, the confidence intervals in the ITE-ATE plots on the test set included the zero line, suggesting no significant effect in any of the estimated ITE subgroups.
+
+Poor calibration does not appear to explain the limited ITE performance, as calibration on the test set was good, as shown in Appendix~\ref{sec:calibrations_experiment2}, Figures~\ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG}. However, since the ground truth is unknown, it remains unclear whether the models fail to capture true treatment effect heterogeneity, or whether the underlying heterogeneity is too small, or driven by unobserved effect modifiers. We explore this further in Experiment 3 (ITE Simulation Study; see Sections~\ref{sec:methods_experiment3}, ~\ref{sec:results_experiment3}) and~\ref{sec:disc_experiment3}).
+
+
+\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)} \label{sec:disc_experiment3}
 
 
 
-\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)}
+In Scenario~1, where treatment effect heterogeneity was large and all covariates were observed, the T-learner logistic regression accurately estimated the ITE. The observed ATE, conditional on the respective ITE subgroup, was well calibrated in both the training and test datasets, as shown in the ITE-ATE plot in Figure~\ref{fig:fully_observed_glm_tlearner}. This is as expected, since the data were generated with the same model class (logistic regression), and applying logistic regression as a T-learner for ITE estimation can accurately capture the interaction effects.
 
-% https://arxiv.org/pdf/2108.04939 came to a similar conclusion
+The tuned random forest model also performed well. As illustrated in Figure~\ref{fig:fully_tuned_rf_tlearner}, choosing a different model class than that used in the DGP may lead to worse prediction accuracy in terms of $\text{P}(Y = 1 \mid X, T)$ and ITE. This difference between the two models arises because the logistic regression model has only a small number of parameters, and with sufficient data, these parameters can converge to their true values as used in the logistic DGP, allowing near-perfect recovery of the true probabilities and thus ITEs. 
 
-In scenario 1, where treatment effect heterogeneity was large and all covariates were observed, the T-learner logistic regression accurately estimated the ITE. The observed ATE, conditional on the respective ITE subgroup, was well calibrated in both, the training and test dataset, as shown in the ITE-ATE plot in Figure \ref{fig:fully_observed_glm_tlearner}. This is as expected, since the data was generated with the same model class (logistic regression) and applying logistic regression as T-learner for ITE estimation can accurately capture the interaction effects. The tuned random forest model also performed well. As illustrated in Figure \ref{fig:fully_tuned_rf_tlearner}, choosing a different model class as in the DGP, may lead to worse prediction accuracy in terms of $\text{P}(Y=1 \mid X, T)$ and ITE. This difference between the two models arises because the logistic regression model has only a small number of parameters, and with sufficient data, these parameters can converge to their true values that were used in the logistic DGP, allowing near-perfect recovery of the true probabilities and thus ITEs. In contrast, the non-parametric random forest must infer the underlying probabilities from the observed binary outcomes (0 or 1), which are themselves realizations of a Bernoulli process. This introduces inherent noise, making it harder for the model to estimate the true risk accurately - even with large sample sizes. Nonetheless, the tuned random forest also captured the general trend of the ITEs, as reflected in the ITE-ATE plot. Both models were able to capture treatment effect heterogeneity well under full observability of covariates.
+In contrast, the non-parametric random forest must infer the underlying probabilities from the observed binary outcomes (0 or 1), which are themselves realizations of a Bernoulli process. This introduces inherent noise, making it harder for the model to estimate the true risk accurately -- even with large sample sizes. Nonetheless, the tuned random forest also captured the general trend of the ITEs, as reflected in the ITE-ATE plot. Both models were able to capture treatment effect heterogeneity well under full observability of covariates.
 
 
-In scenario 2, where the treatment effect heterogeneity remained large but one important interaction covariate ($X_1$) was not observed, prediction accuracy decreased for both models and the estimated heterogeneity in terms of the ITE was smaller than the true heterogeneity. Although not all heterogeneity could be recovered, the T-learner logistic regression still estimated the ITEs in the correct direction. As shown in Figure \ref{fig:unobserved_interaction_glm_tlearner}, the confidence intervals for the ATE per ITE subgroup covered the calibration line. This indicates that individuals estimated to have a smaller ITE indeed experienced worse outcomes under treatment, compared to untreated individuals in the same subgroup. Although a considerable number of individuals had a true ITE that was positive, the T-learner logistic regression did not predict a single positive ITE. This shows that the missing covariate $X_1$ prevents that we can detect the individuals that would actually benefit from the treatment. In contrast, the T-learner tuned random forest estimated larger treatment effect heterogeneity than the logistic model, but still could not accurately estimate the ITE and also failed to detect patients that would benefit from the treatment. The ITE-ATE plot in Figure \ref{fig:unobserved_interaction_tuned_rf_tlearner} illustrates that the model discriminates too strongly in the training set, and does not generalize well to the test set.
+In Scenario~2, where treatment effect heterogeneity remained large but one important interaction covariate ($X_1$) was not observed, prediction accuracy decreased for both models, and the estimated heterogeneity in terms of the ITE was smaller than the true heterogeneity. Although not all heterogeneity could be recovered, the T-learner logistic regression still estimated the ITEs in the correct direction. As shown in Figure~\ref{fig:unobserved_interaction_glm_tlearner}, the confidence intervals for the ATE per ITE subgroup covered the calibration line. This indicates that individuals estimated to have a smaller ITE indeed experienced worse outcomes under treatment compared to untreated individuals in the same subgroup.
+
+Although a considerable number of individuals had a true ITE that was positive, the T-learner logistic regression did not predict a single positive ITE. This shows that the missing covariate $X_1$ prevents detection of individuals who would actually benefit from the treatment. In contrast, the T-learner with tuned random forest estimated larger treatment effect heterogeneity than the logistic model, but still could not accurately estimate the ITE and also failed to detect patients who would benefit from the treatment. The ITE-ATE plot in Figure~\ref{fig:unobserved_interaction_tuned_rf_tlearner} illustrates that the model discriminates too strongly in the training set and does not generalize well to the test set.
+
 
 % This is likely due to the fact that the tuned random forest model is a non-parametric model that tries to fit the data as closely as possible, which can lead to overfitting when crucial variables are missing.
 
 
-In scenario 3, where the true treatment effect heterogeneity was small and all covariates were observed, the T-learner logistic regression estimated a larger heterogeneity than the truth. In the ITE-ATE plot in Figure \ref{fig:small_interaction_glm_tlearner}, the confidence intervals of all ITE subgroups overlap and include the zero-line, indicating the treatment effect is not significantly different from zero. This matches expectations given the small true effect sizes. However, the T-learner tuned random forest model wrongly estimated an even larger larger treatment effect heterogeneity than the logistic regression model. As shown in Figure~\ref{fig:small_interaction_tuned_rf_tlearner}, the model exhibited strong discrimination in the training set but did not replicate this pattern in the test set, where regardless of the estimated ITE, the observed outcomes are similar.
+In Scenario~3, where the true treatment effect heterogeneity was small and all covariates were observed, the T-learner logistic regression estimated a larger heterogeneity than actually present. In the ITE-ATE plot in Figure~\ref{fig:small_interaction_glm_tlearner}, the confidence intervals of all ITE subgroups overlap and include the zero line, indicating that the treatment effect is not significantly different from zero. This matches expectations given the small true effect sizes.
+
+However, the T-learner tuned random forest model incorrectly estimated even larger treatment effect heterogeneity than the logistic regression model. As shown in Figure~\ref{fig:small_interaction_tuned_rf_tlearner}, the model exhibited strong discrimination in the training set but did not to replicate this pattern in the test set, where -- regardless of the estimated ITE -- the observed outcomes in the subgroups were similar.
 
 
 
-Tuning more flexible models like random forests using cross-validation improved the generalization to a test set, but led to poor calibration in terms of predicted probability vs. empirically observed outcomes in the training set. An illustrative case is shown in Appendix \ref{sec:calibration_tuned_rf} for the T-learner tuned random forest in scenario 3 (with weak effects), where calibration was poor in the training set but aligned well with the identity line in the test set. We observed this pattern whenever in the ITE-ATE plot the results from the training set did not generalize to the test set. This highlights the importance of evaluating models on an independent test set, when tuning a model to prevent overfitting. Although, evaluation on a test set should be done in any case.
 
-In this experiment we showed that even though causal ML models for ITE estimation can be well calibrated in terms of prediction accuracy $\text{P}(Y=1 \mid X, T)$, they can still fail to estimate the ITE accurately under less favorable scenarios. In the case of full observability of covariates, but low interaction effects, models may estimate too high heterogeneity, which is not present in the data. However, this may become visible in the ITE-ATE plot on the test set, which can reveal that the apparent heterogeneity does not generalize. A more serious challenge arises when crucial effect-modifying variables are unobserved: in such cases, only a part of the heterogeneity can potentially be captured. Although the ITE estimates may still reflect the correct direction (i.e., be unbiased), they may fail to identify individuals who would actually benefit from treatment. Critically, this underestimation of heterogeneity is not apparent in ITE-ATE plots, making it difficult to detect in practice. Whether poor ITE performance is due to truly weak heterogeneity or to unobserved variables remains an important and open problem. 
+Tuning more flexible models like random forests using cross-validation improved generalization to the test set but led to poor calibration in terms of predicted probabilities vs. empirically observed outcomes in the training set. An illustrative case is shown in Appendix~\ref{sec:calibration_tuned_rf} for the T-learner tuned random forest in Scenario~3 (with weak effects), where calibration was poor in the training set but aligned well with the identity line in the test set. We observed this pattern whenever, in the ITE-ATE plot, results from the training set did not generalize to the test set. This highlights the importance of evaluating models on an independent test set, when tuning a model to prevent overfitting. Although, evaluation on a test set should be done in any case.
+
+In this experiment, we showed that even when causal ML models for ITE estimation are well calibrated in terms of prediction accuracy $\text{P}(Y = 1 \mid \mathbf{X}, T)$, they can still fail to estimate the ITE accurately under less favorable scenarios. In cases of full observability of covariates but low interaction effects, models may estimate too high heterogeneity that is not present in the data. However, this can become visible in the ITE-ATE plot on the test set, which reveals that the apparent heterogeneity does not generalize.
 
 
 
-% - include somewhere the discussion about the difference between discrimination and claibraion:
+\citet{vegetabile2021} also analyzed the effect of unobserved interaction variables. He pointed out that as long as all confounding variables $\mathbf{X}$ are observed and conditioned on, the ignorability assumption required for ITE estimation is satisfied -- even in the presence of an unobserved interaction variable $Z$. However, if such a variable $Z$ exists, the estimated ITEs would be biased, and this issue could arise even in an RCT setting where confounding is removed through randomization.
+
+\citet{nichols2007} discusses various methods for estimating causal effects from observational data, including in the presence of unobserved variables. One of these methods, instrumental variables (IV), can help reduce bias from unobserved confounding. Whether IV methods can also address unobserved effect modifiers in the context of ITE estimation is not something we explored, and remains beyond the scope of this thesis.
+
+
+
+% such as the use of instrumental variables (IV) to estimate CATE in the presence of unobserved confounders \citep{nichols2007, hartford2017}. \citet{frauen2023} propose a model based on IV that is said to also be applicable on observational data. However, this is not yet widely adopted and remains an area for future research.
+
+ % check more details, they also have an example DAG, however it is not yet accepted and still under review
+
+
+
+%  --> the following will be used in Experiment 4 (methods)
+% http://www.mit.edu/~vchern/papers/ch_iqr_ema.pdf estimate the quantile treatment effect (heterogeneous) with instrumental variables, it looks very similar to the TRAM-DAG approach: *This interpretation makes quantile analysis an interesting tool for describing and learning the structure of heterogeneous treatment effects and controlling for unobserved heterogeneity."
+
+% https://www.rfberlin.com/wp-content/uploads/2024/12/24030.pdf good book/paper about instrumental variables, also talks about potential outcomes (but i should maybe not go too much into detial)
+
+% - maybe include somewhere the discussion about the difference between discrimination and claibraion:
 % https://bavodc.github.io/websiteCalibrationCurves/articles/CalibrationCurves.html
 
-% 1.2 Different aspects of the predictive performance
-% To assess how well the model is able to predict (the probability of) the outcome, we assess two different aspects of the model (Van Calster et al. 2016, 2019; Alba et al. 2017):
-% 
-% discrimination;
-% calibration.
-% With discrimination, we refer to the model’s ability to differentiate between observations that have the event and observations that have not. In this context, this translates to giving higher risk estimates for patients with the event than patients without the event. We commonly assess this using the area under the receiver operating characteristic curve. However, discrimination performance does not tell us how accurate the predictions are. The estimated risk may result in good discrimination and can be inaccurate at the same time. We refer to the accuracy of the predictions as the calibration. Hence, hereby we assess the agreement between the estimated and observed number of events (Van Calster et al. 2016). We say that a prediction model is calibrated if the predicted risks correspond to the observed proportions of the event.
 
-
-
-
-
-
-
-% Maybe an explanation for strong discrimination in train set but not in test set for complex model such as tuned RF, is maybe that tuning means making sure that out of sample perfomrmance is good (or accurate in terms of calibration), but this means that on the train set it may not be well calibrated (as maybe seen in ITE ATE plot?) check if this really makes sense...
 
 
 % An example could be the psychological condition of a patient which might also affect how the treatment works, this is not a confounder but an effect modifier, and i would assume that this variable is rarely recorede or measured.
 
-% - Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
-
-% - question still to answer: the estimated ITE on the train vs test set is equally bad (in terms of scatterplot and RMSE), so why does the ITE-ATE plot and the ITE Outcome plot looks like it discriminates good in the train set but not in the test set? Could the answer be, that the model is overfitting, hence tries to really model the observed outcomes and not the true probabilities, hence when an inportant variable is missing, it could still reasonably well predict the outcome (probability) but these are not the causal relationships anymore, so therefore the ITE estimation is bad on the train and the test set. But the ITE-ATE plot still looks good in the train set, because at least the observed outcomes could be predicted very well.??? still not sure if this is the case and how to proof.
 
 
-\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)}
+
+
+\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)} \label{sec:disc_experiment4}
+
 
 We analyzed ITE estimation under an observational setting (confounded) and under an RCT setting (randomized treatment allocation) in three different scenarios - direct and interaciton treatment effect, only direct but no interaction effect, and no direct but with interaction effect. We noticed that in the first scenario with 
 

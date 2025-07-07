@@ -264,6 +264,19 @@ series = {IJCAI '24}
 
 
 
+@article{little2000,
+  author    = {Roderick J. Little and Donald B. Rubin},
+  title     = {Causal Effects in Clinical and Epidemiological Studies Via Potential Outcomes: Concepts and Analytical Approaches},
+  journal   = {Annual Review of Public Health},
+  year      = {2000},
+  volume    = {21},
+  pages     = {121--145},
+  doi       = {10.1146/annurev.publhealth.21.1.121},
+  url       = {https://www.annualreviews.org/content/journals/10.1146/annurev.publhealth.21.1.121},
+  publisher = {Annual Reviews},
+  issn      = {1545-2093},
+  keywords  = {randomization, observational studies, statistical inference, noncompliance, missing data}
+}
 
 @article{hoogland2021,
 author = {Hoogland, Jeroen and IntHout, Joanna and Belias, Michail and Rovers, Maroeska M. and Riley, Richard D. and E. Harrell Jr, Frank and Moons, Karel G. M. and Debray, Thomas P. A. and Reitsma, Johannes B.},
@@ -279,6 +292,93 @@ eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.9154},
 abstract = {Randomized trials typically estimate average relative treatment effects, but decisions on the benefit of a treatment are possibly better informed by more individualized predictions of the absolute treatment effect. In case of a binary outcome, these predictions of absolute individualized treatment effect require knowledge of the individual's risk without treatment and incorporation of a possibly differential treatment effect (ie, varying with patient characteristics). In this article, we lay out the causal structure of individualized treatment effect in terms of potential outcomes and describe the required assumptions that underlie a causal interpretation of its prediction. Subsequently, we describe regression models and model estimation techniques that can be used to move from average to more individualized treatment effect predictions. We focus mainly on logistic regression-based methods that are both well-known and naturally provide the required probabilistic estimates. We incorporate key components from both causal inference and prediction research to arrive at individualized treatment effect predictions. While the separate components are well known, their successful amalgamation is very much an ongoing field of research. We cut the problem down to its essentials in the setting of a randomized trial, discuss the importance of a clear definition of the estimand of interest, provide insight into the required assumptions, and give guidance with respect to modeling and estimation options. Simulated data illustrate the potential of different modeling options across scenarios that vary both average treatment effect and treatment effect heterogeneity. Two applied examples illustrate individualized treatment effect prediction in randomized trial data.},
 year = {2021}
 }
+
+
+
+@article{hoogland2024,
+author = {Hoogland, J. and Efthimiou, O. and Nguyen, T. L. and Debray, T. P. A.},
+title = {Evaluating individualized treatment effect predictions: A model-based perspective on discrimination and calibration assessment},
+journal = {Statistics in Medicine},
+volume = {43},
+number = {23},
+pages = {4481-4498},
+keywords = {treatment effect, individualized, prediction, discrimination, calibration},
+doi = {https://doi.org/10.1002/sim.10186},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.10186},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.10186},
+abstract = {In recent years, there has been a growing interest in the prediction of individualized treatment effects. While there is a rapidly growing literature on the development of such models, there is little literature on the evaluation of their performance. In this paper, we aim to facilitate the validation of prediction models for individualized treatment effects. The estimands of interest are defined based on the potential outcomes framework, which facilitates a comparison of existing and novel measures. In particular, we examine existing measures of discrimination for benefit (variations of the c-for-benefit), and propose model-based extensions to the treatment effect setting for discrimination and calibration metrics that have a strong basis in outcome risk prediction. The main focus is on randomized trial data with binary endpoints and on models that provide individualized treatment effect predictions and potential outcome predictions. We use simulated data to provide insight into the characteristics of the examined discrimination and calibration statistics under consideration, and further illustrate all methods in a trial of acute ischemic stroke treatment. The results show that the proposed model-based statistics had the best characteristics in terms of bias and accuracy. While resampling methods adjusted for the optimism of performance estimates in the development data, they had a high variance across replications that limited their accuracy. Therefore, individualized treatment effect models are best validated in independent data. To aid implementation, a software implementation of the proposed methods was made available in R.},
+year = {2024}
+}
+
+@article{willke2012,
+  author    = {Richard J. Willke and Zhiyuan Zheng and Prasun Subedi and Rikard Althin and C. Daniel Mullins},
+  title     = {From concepts, theory, and evidence of heterogeneity of treatment effects to methodological approaches: a primer},
+  journal   = {BMC Medical Research Methodology},
+  year      = {2012},
+  volume    = {12},
+  number    = {1},
+  pages     = {185},
+  doi       = {10.1186/1471-2288-12-185},
+  url       = {https://doi.org/10.1186/1471-2288-12-185},
+  issn      = {1471-2288}
+}
+
+
+@article{christensen2021,
+title = {Effect Modifiers and Statistical Tests for Interaction in Randomized Trials},
+journal = {Journal of Clinical Epidemiology},
+volume = {134},
+pages = {174-177},
+year = {2021},
+issn = {0895-4356},
+doi = {https://doi.org/10.1016/j.jclinepi.2021.03.009},
+url = {https://www.sciencedirect.com/science/article/pii/S0895435621000810},
+author = {Robin Christensen and Martijn J.L. Bours and Sabrina M. Nielsen},
+abstract = {Statistical analyses of randomized controlled trials (RCTs) yield a causally valid estimate of the overall treatment effect, which is the contrast between the outcomes in two randomized treatment groups commonly accompanied by a confidence interval. In addition, the trial investigators may want to examine whether the observed treatment effect varies across patient subgroups (also called ‘heterogeneity of treatment effects’), i.e. whether the treatment effect is modified by the value of a variable assessed at baseline. The statistical approach for this evaluation of potential effect modifiers is a test for statistical interaction to evaluate whether the treatment effect varies across levels of the effect modifier. In this article, we provide a concise and nontechnical explanation of the use of simple statistical tests for interaction to identify effect modifiers in RCTs. We explain how to calculate the test of interaction by hand, applied to a dataset with simulated data on 1,000 imaginary participants for illustration.}
+}
+
+@article{rubin1980,
+ ISSN = {01621459, 1537274X},
+ URL = {http://www.jstor.org/stable/2287653},
+ author = {Donald B. Rubin},
+ journal = {Journal of the American Statistical Association},
+ number = {371},
+ pages = {591--593},
+ publisher = {[American Statistical Association, Taylor \& Francis, Ltd.]},
+ title = {Randomization Analysis of Experimental Data: The Fisher Randomization Test Comment},
+ urldate = {2025-07-05},
+ volume = {75},
+ year = {1980}
+}
+
+
+@article{rosenbaum1983,
+ ISSN = {00063444, 14643510},
+ URL = {http://www.jstor.org/stable/2335942},
+ abstract = {The propensity score is the conditional probability of assignment to a particular treatment given a vector of observed covariates. Both large and small sample theory show that adjustment for the scalar propensity score is sufficient to remove bias due to all observed covariates. Applications include: (i) matched sampling on the univariate propensity score, which is a generalization of discriminant matching, (ii) multivariate adjustment by subclassification on the propensity score where the same subclasses are used to estimate treatment effects for all outcome variables and in all subpopulations, and (iii) visual representation of multivariate covariance adjustment by a two-dimensional plot.},
+ author = {Paul R. Rosenbaum and Donald B. Rubin},
+ journal = {Biometrika},
+ number = {1},
+ pages = {41--55},
+ publisher = {[Oxford University Press, Biometrika Trust]},
+ title = {The Central Role of the Propensity Score in Observational Studies for Causal Effects},
+ urldate = {2025-07-05},
+ volume = {70},
+ year = {1983}
+}
+
+@article{kunzel2019,
+author = {S{\"o}ren R. K{\"u}nzel  and Jasjeet S. Sekhon  and Peter J. Bickel  and Bin Yu },
+title = {Metalearners for estimating heterogeneous treatment effects using machine learning},
+journal = {Proceedings of the National Academy of Sciences},
+volume = {116},
+number = {10},
+pages = {4156-4165},
+year = {2019},
+doi = {10.1073/pnas.1804597116},
+URL = {https://www.pnas.org/doi/abs/10.1073/pnas.1804597116},
+eprint = {https://www.pnas.org/doi/pdf/10.1073/pnas.1804597116},
+abstract = {Estimating and analyzing heterogeneous treatment effects is timely, yet challenging. We introduce a unifying framework for many conditional average treatment effect estimators, and we propose a metalearner, the X-learner, which can adapt to structural properties, such as the smoothness and sparsity of the underlying treatment effect. We present its favorable properties, using theory and simulations. We apply it, using random forests, to two field experiments in political science, where it is shown to be easy to use and to produce results that are interpretable. There is growing interest in estimating and analyzing heterogeneous treatment effects in experimental and observational studies. We describe a number of metaalgorithms that can take advantage of any supervised learning or regression method in machine learning and statistics to estimate the conditional average treatment effect (CATE) function. Metaalgorithms build on base algorithms-such as random forests (RFs), Bayesian additive regression trees (BARTs), or neural networks-to estimate the CATE, a function that the base algorithms are not designed to estimate directly. We introduce a metaalgorithm, the X-learner, that is provably efficient when the number of units in one treatment group is much larger than in the other and can exploit structural properties of the CATE function. For example, if the CATE function is linear and the response functions in treatment and control are Lipschitz-continuous, the X-learner can still achieve the parametric rate under regularity conditions. We then introduce versions of the X-learner that use RF and BART as base learners. In extensive simulation studies, the X-learner performs favorably, although none of the metalearners is uniformly the best. In two persuasion field experiments from political science, we demonstrate how our X-learner can be used to target treatment regimes and to shed light on underlying mechanisms. A software package is provided that implements our methods.}}
 
 
 @article{herzog2023,
@@ -351,6 +451,38 @@ year = {2018}
       archivePrefix={arXiv},
       primaryClass={stat.ML},
       url={https://arxiv.org/abs/1803.01422}, 
+}
+
+
+@article{rubin2005,
+ ISSN = {01621459},
+ URL = {http://www.jstor.org/stable/27590541},
+ abstract = {Causal effects are defined as comparisons of potential outcomes under different treatments on a common set of units. Observed values of the potential outcomes are revealed by the assignment mechanism - a probabilistic model for the treatment each unit receives as a function of covariates and potential outcomes. Fisher made tremendous contributions to causal inference through his work on the design of randomized experiments, but the potential outcomes perspective applies to other complex experiments and nonrandomized studies as well. As noted by Kempthorne in his 1976 discussion of Savage's Fisher lecture, Fisher never bridged his work on experimental design and his work on parametric modeling, a bridge that appears nearly automatic with an appropriate view of the potential outcomes framework, where the potential outcomes and covariates are given a Bayesian distribution to complete the model specification. Also, this framework crisply separates scientific inference for causal effects and decisions based on such inference, a distinction evident in Fisher's discussion of tests of significance versus tests in an accept/reject framework. But Fisher never used the potential outcomes framework, originally proposed by Neyman in the context of randomized experiments, and as a result he provided generally flawed advice concerning the use of the analysis of covariance to adjust for posttreatment concomitants in randomized trials.},
+ author = {Donald B. Rubin},
+ journal = {Journal of the American Statistical Association},
+ number = {469},
+ pages = {322--331},
+ publisher = {[American Statistical Association, Taylor \& Francis, Ltd.]},
+ title = {Causal Inference Using Potential Outcomes: Design, Modeling, Decisions},
+ urldate = {2025-07-05},
+ volume = {100},
+ year = {2005}
+}
+
+
+@article{holland1986,
+ ISSN = {01621459, 1537274X},
+ URL = {http://www.jstor.org/stable/2289064},
+ abstract = {Problems involving causal inference have dogged at the heels of statistics since its earliest days. Correlation does not imply causation, and yet causal conclusions drawn from a carefully designed experiment are often valid. What can a statistical model say about causation? This question is addressed by using a particular model for causal inference (Holland and Rubin 1983; Rubin 1974) to critique the discussions of other writers on causation and causal inference. These include selected philosophers, medical researchers, statisticians, econometricians, and proponents of causal modeling.},
+ author = {Paul W. Holland},
+ journal = {Journal of the American Statistical Association},
+ number = {396},
+ pages = {945--960},
+ publisher = {[American Statistical Association, Taylor & Francis, Ltd.]},
+ title = {Statistics and Causal Inference},
+ urldate = {2025-07-05},
+ volume = {81},
+ year = {1986}
 }
 
 
@@ -531,4 +663,30 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
   url       = {https://doi.org/10.1186/1745-6215-12-101},
   issn      = {1745-6215}
 }
+
+@misc{vegetabile2021,
+      title={On the Distinction Between "Conditional Average Treatment Effects" (CATE) and "Individual Treatment Effects" (ITE) Under Ignorability Assumptions}, 
+      author={Brian G. Vegetabile},
+      year={2021},
+      eprint={2108.04939},
+      archivePrefix={arXiv},
+      primaryClass={stat.ME},
+      url={https://arxiv.org/abs/2108.04939}, 
+}
+
+@article{chernozhukov2005,
+ ISSN = {00129682, 14680262},
+ URL = {http://www.jstor.org/stable/3598944},
+ abstract = {The ability of quantile regression models to characterize the heterogeneous impact of variables on different points of an outcome distribution makes them appealing in many economic applications. However, in observational studies, the variables of interest (e.g., education, prices) are often endogenous, making conventional quantile regression inconsistent and hence inappropriate for recovering the causal effects of these variables on the quantiles of economic outcomes. In order to address this problem, we develop a model of quantile treatment effects (QTE) in the presence of endogeneity and obtain conditions for identification of the QTE without functional form assumptions. The principal feature of the model is the imposition of conditions that restrict the evolution of ranks across treatment states. This feature allows us to overcome the endogeneity problem and recover the true QTE through the use of instrumental variables. The proposed model can also be equivalently viewed as a structural simultaneous equation model with nonadditive errors, where QTE can be interpreted as the structural quantile effects (SQE).},
+ author = {Victor Chernozhukov and Christian Hansen},
+ journal = {Econometrica},
+ number = {1},
+ pages = {245--261},
+ publisher = {[Wiley, Econometric Society]},
+ title = {An IV Model of Quantile Treatment Effects},
+ urldate = {2025-07-06},
+ volume = {73},
+ year = {2005}
+}
+
 

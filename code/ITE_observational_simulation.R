@@ -26,9 +26,8 @@ source('code/utils/utils_tf.R')
 library(tfprobability)
 source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
 
-#### Saving the current version of the script into runtime
+#### Saving the current version of the script
 DIR = 'runs/ITE_observational_simulation/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
@@ -389,56 +388,6 @@ data_type = train$type
 
 
 
-# check with colr
-
-library(tram)
-
-# Fit model
-colr_model <- Colr(Y ~ X1 + X2 + X3 + Tr + X2:Tr + X3:Tr, 
-                   data = train$simulated_full_data)
-
-# Predict under treatment (Tr = 1)
-dat_tx <- train$simulated_full_data
-dat_tx$Tr <- 1
-pred_colr_tx <- predict(colr_model, newdata = dat_tx, 
-                        type = "quantile", prob = 0.5)
-
-# Predict under control (Tr = 0)
-dat_ct <- train$simulated_full_data
-dat_ct$Tr <- 0
-pred_colr_ct <- predict(colr_model, newdata = dat_ct, 
-                        type = "quantile", prob = 0.5)
-
-# Calculate ITE: median(Y(1)) - median(Y(0))
-ITE_Colr <- pred_colr_tx - pred_colr_ct
-
-# Plot
-par(mfrow=c(1,1))
-plot(train$simulated_full_data$ITE_median, ITE_Colr,
-     xlab = "True ITE", ylab = "Estimated ITE (Colr)",
-     main = "Colr(Y ~ X1 + X2 + X3 + Tr + X2:Tr + X3:Tr)")
-abline(0, 1, col = "red", lty = 2)
-
-
-# now the same but with t-learner Colr(Y ~ X1 + X2 + X3) on tx and ct groups
-dat_tx <- train$simulated_full_data[train$simulated_full_data$Tr == 1, ]
-dat_ct <- train$simulated_full_data[train$simulated_full_data$Tr == 0, ]
-colr_model_tx <- Colr(Y ~ X1 + X2 + X3, data = dat_tx)
-colr_model_ct <- Colr(Y ~ X1 + X2 + X3, data = dat_ct)
-pred_colr_tx <- predict(colr_model_tx, newdata = train$simulated_full_data, 
-                        type = "quantile", prob = 0.5)
-pred_colr_ct <- predict(colr_model_ct, newdata = train$simulated_full_data,
-                        type = "quantile", prob = 0.5)
-# Calculate ITE: median(Y(1)) - median(Y(0))
-ITE_Colr_tlearner <- pred_colr_tx - pred_colr_ct
-# Plot
-par(mfrow=c(1,1))
-plot(train$simulated_full_data$ITE_median, ITE_Colr_tlearner,
-     xlab = "True ITE", ylab = "Estimated ITE (Colr T-learner)",
-     main = "Colr T-learner(Y ~ X1 + X2 + X3)")
-abline(0, 1, col = "red", lty = 2)
-
-
 ############################
 # Check simulated Train Data
 ############################
@@ -546,7 +495,7 @@ hidden_features_CS = c(2, 5, 5, 2)
 
 
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS,
-                                 dropout = TRUE, batchnorm = TRUE, activation = "relu")
+                                 dropout = FALSE, batchnorm = FALSE, activation = "relu")
 optimizer = optimizer_adam(learning_rate = 0.001)
 param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational)
 
