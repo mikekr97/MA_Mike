@@ -40,12 +40,12 @@
 \section{Experiment 1: TRAM-DAG (simulation study)}
 
 In this section, we present the results of the simulation study to evaluate the performance of a TRAM-DAG in a simple scenario as illustrated by the DAG in Figure \ref{fig:dag_and_matrix}. The model was fitted on synthetic data. Figure \ref{fig:exp1_loss_parameters} shows the loss and the estimated parameters for the linear shifts over epochs during training. The loss was minimized during training and the estimated parameters $\beta_{12}$ and $\beta_{13}$ converged to the true values used in the DGP. The linear shift parameters are the interpretable part of the model (log-odds ratios). 
-From the fitted model, we generated samples from the observational distribution, as shown in Figure \ref{fig:exp1_observational_distribution}. The TRAM-DAG can recover the observational distribution as its samples align with the data that was used to fit the model. Then we drew samples from the interventional distribution, where $X_2 = 1$ is fixed, as shown in Figure \ref{fig:exp1_interventional_distribution}. Fixing $X_2$ leads to a distributional change in $X_3$, which was also captured by the model. The TRAM-DAG learns the linear shifts ($\beta_{12}$, $\beta_{13}$) and the complex shift ($f(X_2)$), which are shown in Figure \ref{fig:exp1_shifts}. Figure~\ref{fig:exp1_intercepts} presents the intercepts learned for each of the nodes. For comparison, we added the estimated intercept functions from the Continuous Outcome Logistic Regression (Colr() function from the \texttt{tram} package \citep{hothorn2018}) for $X_1$ and $X_2$, and the true values used in the DGP for the ordinal variable $X_3$ (three cut-points for the four levels). Since the transformation functions for $X_1$ and $X_2$ contain no complex terms, they match the default form used in Colr(). Finally, Figure~\ref{fig:exp1_counterfactuals} shows the counterfactuals for $X_2$ estimated by the TRAM-DAG for varying values of $X_1$. The counterfactuals are the predicted values of $X_2$ had $X_1$ taken other values instead of the initially observed one. 
+From the fitted model, we generated samples from the observational distribution, as shown in Figure \ref{fig:exp1_observational_distribution}. The TRAM-DAG can recover the observational distribution as its samples align with the data that was used to fit the model. Then we drew samples from the interventional distribution, where $X_2 = 1$ is fixed, as shown in Figure \ref{fig:exp1_interventional_distribution}. Fixing $X_2$ leads to a distributional change in $X_3$, which was also captured by the model. The TRAM-DAG learns the linear shifts ($\beta_{12}$, $\beta_{13}$) and the complex shift $f(X_2)$, which are shown in Figure \ref{fig:exp1_shifts}. Figure~\ref{fig:exp1_intercepts} presents the intercepts learned for each of the nodes. For comparison, we added the estimated intercept functions from the Continuous Outcome Logistic Regression (Colr() function from the \texttt{tram} package \citep{hothorn2018}) for $X_1$ and $X_2$, and the true values used in the DGP for the ordinal variable $X_3$ (three cut-points for the four levels). Since the transformation functions for $X_1$ and $X_2$ contain no complex terms, they match the default form used in Colr(). Finally, Figure~\ref{fig:exp1_counterfactuals} shows the counterfactuals for $X_2$ estimated by the TRAM-DAG for varying values of $X_1$. The counterfactuals are the predicted values of $X_2$ had $X_1$ taken other values instead of the initially observed one. 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/exp1_loss_parameters.png}
-\caption{TRAM-DAG model fitting over 400 epochs for Experiment 1. Left: Loss functions on the training and validation sets. Right: Estimated parameters (betas) for the linear shift components over epochs. The estimates converge to the true values used in the DGP.}
+\caption{TRAM-DAG model fitting over 400 epochs for Experiment 1. Left: loss functions on the training and validation sets; Right: estimated parameters (betas) for the linear shift components over epochs. The estimates converge to the true values used in the DGP.}
 \label{fig:exp1_loss_parameters}
 \end{figure}
 
@@ -112,7 +112,7 @@ In this section, we present the results of the ITE estimation on the Internation
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_IST/glm_tlearner_density_ITE_ATE.png}
-\caption{Results for the International Stroke Trial (IST) using the T-learner logistic regression. Left: Density of predicted ITEs in the training and test sets. Right: Observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results for the International Stroke Trial (IST) using the T-learner logistic regression. Left: density of predicted ITEs in the training and test sets; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:IST_density_ITE_ATE_glm_tlearner}
 \end{figure}
 
@@ -121,7 +121,7 @@ In this section, we present the results of the ITE estimation on the Internation
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_IST/IST_tuned_rf_tlearner_density_ITE_ATE.png}
-\caption{Results for the International Stroke Trial (IST) using the T-learner tuned random forest. Left: Density of predicted ITEs in the training and test sets. Right: Observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results for the International Stroke Trial (IST) using the T-learner tuned random forest. Left: density of predicted ITEs in the training and test sets; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:IST_density_ITE_ATE_tuned_rf}
 \end{figure}
 
@@ -129,7 +129,7 @@ In this section, we present the results of the ITE estimation on the Internation
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_density_ITE_ATE.png}
-\caption{Results for the International Stroke Trial (IST) using the S-learner TRAM-DAG. Left: Density of predicted ITEs in the training and test sets. Right: Observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results for the International Stroke Trial (IST) using the S-learner TRAM-DAG. Left: density of predicted ITEs in the training and test sets; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:IST_density_ITE_ATE_TRAM_DAG}
 \end{figure}
 
@@ -139,9 +139,9 @@ In this section, we present the results of the ITE estimation on the Internation
 
  
 
-\section{Experiment 3: ITE model robustness under RCT conditions (simulation study)} \label{sec:results_experiment3}
+\section{Experiment 3: ITE model robustness in RCTs (simulation study)} \label{sec:results_experiment3}
 
-In this section, we present the performance of two causal ML models for estimating the ITE under different scenarios. Scenario 1 represents the ideal case where all variables are observed and treatment effects and heterogeneity are large. Scenario 2 uses the same DGP as in Scenario 1 but removes the covariate $X_1$, which has a strong interaction effect with the treatment, from the dataset and treats it as unobserved. Finally, in Scenario 3, the coefficients for the direct and interaction treatment effects are reduced, resulting in low heterogeneity. All variables are observed again in this last scenario. 
+In this section, we present the performance of two causal ML models for estimating the ITE under different simulated scenarios. Scenario 1 represents the ideal case where all variables are observed and treatment effects and heterogeneity are large. Scenario 2 uses the same DGP as in Scenario 1 but removes the covariate $X_1$, which has a strong interaction effect with the treatment, from the dataset and treats it as unobserved. Finally, in Scenario 3, the coefficients for the direct and interaction treatment effects are reduced, resulting in low heterogeneity. All variables are observed again in this last scenario. 
 
 In each scenario, we applied the T-learner logistic regression and the T-learner tuned random forest. The results of the models for the three scenarios are presented in Figures~\ref{fig:fully_observed_glm_tlearner} to~\ref{fig:small_interaction_tuned_rf_tlearner}.
 
@@ -243,7 +243,7 @@ In each scenario, we applied the T-learner logistic regression and the T-learner
 
 \section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)}
 
-First, we present the results for scenario (1), which includes both direct and interaction effects  of treatment. Then, we show the results for scenario (2), which has a direct effect but no interaction effects, and finally scenario (3), which includes interaction effects but no direct treatment effect. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounding. We also compare the average treatment effect (ATE), which can be directly calculated in the RCT setting, with the ATE derived from the estimated individualized treatment effects. All ITEs presented in this section are technically quantile treatment effects (QTEs) based on the 0.5-quantile of the potential outcomes. For simplicity, we will refer to them as ITEs. The aim is to investigate how the TRAM-DAG performs in the presence or absence of direct and interaction effects of the treatment, both in confounded and in randomized settings, for the purpose of ITE estimation.
+First, we present the results for Scenario (1), which includes both direct and interaction effects  of treatment. Then, we show the results for Scenario (2), which has a direct effect but no interaction effects, and finally Scenario (3), which includes interaction effects but no direct treatment effect. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounding. We also compare the average treatment effect (ATE), which can be directly calculated in the RCT setting on observed outcomes, with the ATE derived from the estimated ITEs. All ITEs presented in this section are technically quantile treatment effects (QTEs) based on the 0.5-quantile of the potential outcomes. For simplicity, we will refer to them as ITEs. The aim is to investigate how the TRAM-DAG performs in the presence or absence of direct and interaction effects of the treatment, both in confounded and in randomized settings, for the purpose of ITE estimation.
 
 \subsection{Scenario (1): Direct and interaction effects} 
 
@@ -412,7 +412,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \clearpage
 
 
-\subsection{Scenario (2): With direct but no interaction effects}
+\subsection{Scenario (2): With direct effect, but no interaction effects}
 
 \begin{figure}[H]
 \centering
@@ -546,7 +546,7 @@ ATE as mean(ITE$_\text{estimated}$)
 
 
 \clearpage 
-¨
+
 
 
 \subsection{Scenario (3): No direct effect, but with interaction effects}

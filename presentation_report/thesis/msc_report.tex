@@ -13,8 +13,10 @@
 
 
 	\vspace*{6cm}{\bfseries\Huge
-	Modeling Functional Relationships in Causal Graphs and Estimating Individualized Interventions:\\[5mm]
-	Neural Causal Models (TRAM-DAGs) and Conditional Average Treatment Effects
+	Functional Modeling with Neural Causal Models and Personalized Treatment Effect Estimation 
+	
+	% Modeling Functional Relationships in Causal Graphs and Estimating Individualized Interventions:\\[5mm]
+	% Neural Causal Models (TRAM-DAGs) and Conditional Average Treatment Effects
 	}
 
   % \vspace*{6cm}{\bfseries\Huge
@@ -46,25 +48,22 @@
 \addcontentsline{toc}{chapter}{\bfseries{Preface}}
 \thispagestyle{plain}\markboth{Preface}{Preface}
 
-In the introduction part, my aim is to give a summary of 
-important concepts of causal inference and causal models. Further, 
-I motivate the importance for methods that allow to draw causal 
-conclusions from observational data in contrast to randomized controlled
-trials (RCTs) and that the proposed framework of tram-dags (cite sick duerr)
- can be used as such a tool. \\ 
- 
-In the methods section, I give a detailed description of the tram-dag framework 
-and how it works by illustrating it on a simple simulated example. 
-I also show for what kind of causal queries the model can be used for. 
-Although it is not a topic for observations data, I discuss how the model can be 
-used for estimating the individualized treatment effect (ITE).\\ 
 
-In the results section, I will first show results from simulation studies where the 
-ground truth is known. Second, I will show results on a real-world example in the
-setting of climate data. Third, I present the results of the ITE estimation. \\ 
 
-In the final section, I will discuss the results and give a conclusion about the 
-advantages and limitation of this framework and provide an outlook.
+This thesis marks the final part of my Master of Science in Biostatistics at the University of Zurich. I wanted to work on a topic where I could apply my interest and deepen my knowledge in machine learning, especially in relation to causal questions.
+
+The TRAM-DAG framework \citep{sick2025}, developed by my supervisors Prof. Dr. Beate Sick and Prof. Dr. Oliver D{\"u}rr, provided a perfect opportunity to do so. Our initial aim was to apply it to real-world data and potentially include semi-structured data. However, due to some surprising findings by \citet{chen2025}, our focus shifted towards the increasingly important topic of individualized treatment effect (ITE) estimation. Towards the end, we then bridged ITE estimation with the TRAM-DAG framework.
+
+I want to thank my supervisors and all the people I had the chance to work and study with, as well as everyone who supported me on this journey.
+
+% In the introduction, our aim is to give a summary of key concepts in causal inference and causal models. We also motivate the need for methods that allow drawing causal conclusions from observational data and introduce the proposed framework of TRAM-DAGs \citep{sick2025} as a tool that can be used for this purpose. We also want to highlight the importance of estimation of personalized treatment effects. \\ 
+% 
+% In the methods section, we give a detailed description of the TRAM-DAG framework, how it works, and for what kinds of causal queries the model can be used. Although individualized treatment effect (ITE) estimation is not a typical observational data problem, we also discuss important considerations and how TRAM-DAGs and other models can be applied in this context. \\ 
+% 
+% Then, we persent results of simulation studies that show the capabilities of TRAM-DAGs, the analysis of potential limitations in ITE estimation, and the TRAM-DAG applied for ITE estimation. Additionally, we perform ITE estimation on the International Stroke Trial (IST) with different causal ML methods including TRAM-DAGs.\\ 
+% 
+% In the final sections, we discuss the results and draw conclusions about the strengths and limitations of the framework and ITE esitimaiton in general, while also providing an outlook for future research. 
+
 
 \bigskip
 
@@ -87,11 +86,29 @@ advantages and limitation of this framework and provide an outlook.
 \addcontentsline{toc}{chapter}{\bfseries{Abstract}}
 \thispagestyle{plain}\markboth{Abstract}{Abstract}
 
-Abstract here
+
+
+This thesis investigates the use of TRAM-DAGs \citep{sick2025} as a flexible approach for estimating structural equations in known directed acyclic graphs (DAGs). TRAM-DAGs offer several advantages: the model inherently knows when to control for covariates based on the DAG, is highly customizable in terms of flexibility and interpretability, and allows sampling from observational, interventional, and counterfactual distributions. We show how to incorporate ordinal predictors, model interactions, and examine how variable scaling affects interpretability.
+
+A main focus was the estimation of individualized treatment effects (ITEs) using a variety of causal machine learning (ML) models. In simulation studies, we analyzed limitations in ITE estimation and found that unmeasured effect modifiers can severely impact estimation accuracy, and that the ignorability assumption alone may not ensure unbiased results -- a concern also noted in prior research. The limitations found may also help explain the poor ITE estimation performance observed in the real-world application on the International Stroke Trial dataset \citep{chen2025}. We further demonstrated that TRAM-DAGs can be used for ITE estimation in relatively complex DAG structures, provided that the DAG is fully known and all variables are observed.
+
+While promising, TRAM-DAGs require training time due to their reliance on neural networks and, when aiming for interpretability, certain assumptions about the model structure. Future work could explore applications to more real-world data, potentially including semi-structured inputs, and further investigate ITE estimation in the presence of unmeasured interactions.
+
+This thesis contributes to the field of causal inference under observational data and to the estimation of personalized treatment effects using causal ML models.
+
+% This thesis investigates the use of TRAM-DAGs as a flexible approach for estimating structural equations in known DAGs. TRAM-DAGs offer several advantages: the model knows when to adjust based on the DAG, avoids incorrect covariate adjustment, and allows sampling from observational, interventional, and counterfactual distributions. Their ability to combine interpretability with flexibility makes them well suited for practical use.
+% We show how to incorporate ordinal predictors, model interactions, and how variable scaling affects interpretability. A main focus was the estimation of individualized treatment effects (ITEs), using a variety of causal machine learning (ML) models.
+% In simulation studies, we analyzed limitations in ITE estimation where we found that However, we also found that unmeasured effect modifiers can severely impact ITE estimation, and that the ignorability assumption alone may not ensure unbiased results. We demonstrated that TRAM-DAGs can also be applied for ITE estimation in relatively complex DAG structures, when the DAG is fully known and all variables are observed.
+% 
+% The found limitations may also reflected reasons for poor ITE estimation performance in the real-world application on the International Stroke Trial.
+% 
+% While promising, TRAM-DAGs rely on neural networks and require training time and assumptions about model structure. Future work could apply them to more real-world data, possibly including semi-structured inputs, and further investigate ITE estimation with unmeasured interactions.
+% 
+% This thesis contributes to the field of causal inference under observational data and towards personalized treatment effect estimation using causal machine learning models.
 
 \bigskip
 
-\noindent\textbf{Keywords:} Neural Causal Models (TRAM-DAGs), Structural Causal Models, Counterfactuals, Transfrmation Models, Observational Data, Heterogeneous Treatment Effects, Individualized Treatment Effects (ITE), Conditional Average Treatment Effects (CATE)
+\noindent\textbf{Keywords:} TRAM-DAGs, neural causal model, individualized treatment effect, structural causal model, counterfactuals, transformation model, observational data, heterogeneous treatment effect, conditional average treatment effect
 
 
 

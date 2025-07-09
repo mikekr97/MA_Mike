@@ -6,16 +6,12 @@
 \chapter{Appendix}
 
 
-To do:
+% - inlcude Example of ITE simulation with tram dags with complex shift: $theta + LS(X2) + CS(T, X1)$ to show how tram dags can model interactions. Maybe just refer in the methods for the CS of tram dags, or alternatively in the ITE with tram dags (where i used CI, but to show that CS is also possible to allow for specific interactions)
 
-- include results of ITE estimation with not tuned RF for scenario 1 (fully observed,strong effects) to show the importance that models should be well calibrated (in this case tuned) to yield good results
-
-- inlcude Example of ITE simulation with tram dags with complex shift: $theta + LS(X2) + CS(T, X1)$ to show how tram dags can model interactions. Maybe just refer in the methods for the CS of tram dags, or alternatively in the ITE with tram dags (where i used CI, but to show that CS is also possible to allow for specific interactions)
-
-Complex shift (Interaction example) to show what is also possible:
-
-Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
-And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
+% Complex shift (Interaction example) to show what is also possible:
+% 
+% Here I just want to make a short input from another example. So there the true model was that of a logistic regression with the binary outcome Y and 3 predictors. The binary treatment T and the two continuous predictors X1 and X2. There was also an interaction effect assumed between treatment and X1. So this basically means that the effect of X1 on the outcome is different for the two treatment groups.
+% And here we can show that our TRAM-DAG specified by a complex shift of T and X1 can also capture this interaction effect quite well.
 
 
 
@@ -26,7 +22,7 @@ And here we can show that our TRAM-DAG specified by a complex shift of T and X1 
 
 The transformation model framework allows for interpretation of the coefficients in the linear shift component. The choice of the inverse-link function $F_Z$ determines the interpretation of the coefficients. For example, if the standard logistic distribution is chosen as the latent scale, i.e. $F_Z(z) = \operatorname{expit}(z)$, the coefficients can be interpreted as log-odds ratios. For $F_Z(z) = 1-\exp(-\exp(z))$, the interpretation of the coefficients changes to log-hazard ratios.
 
-Consider the conditional transformation function:
+Consider the conditional transformation model:
 
 \begin{equation}
 F_{X_2 \mid X_1}(x_2) = \operatorname{expit}( h(x_2) + \beta_{12} x_1 ),
@@ -51,7 +47,7 @@ This shows that on the log-odds scale, $X_1$ has an additive linear effect on $X
 = \exp(\beta_{12}).
 \end{equation}
 
-Therefore, $\exp(\beta_{12})$ represents the multiplicative change in odds of $X_2 \le x_2$ for a one-unit increase in $X_1$, holding all else constant. This corresponds to a log-odds ratio interpretation.
+Therefore, $\exp(\beta_{12})$ represents the multiplicative change in odds of $X_2 \le x_2$ for a one-unit increase in $X_1$, holding all else constant. This means that $\beta_{12}$ can be interpreted as a log-odds ratio.
 
 
 
@@ -358,7 +354,7 @@ In summary, standardizing predictors changes coefficient interpretation, whereas
 
 
 
-\section{Calibration plots: Experiment 2} \label{sec:calibrations_experiment2}
+\section{Experiment 2: Calibration plots} \label{sec:calibrations_experiment2}
 
 Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show the calibration plots of predicted risks versus observed outcome proportions for the models applied in Experiment 2 (International Stroke Trial, IST).
 
@@ -395,7 +391,7 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \clearpage
 
 
-\section{Standard random forest for ITE estimation: Experiment 3} \label{sec:default_rf_ite}
+\section{Experiment 3: Standard random forest for ITE estimation} \label{sec:default_rf_ite}
 
 In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects. Here, we present results from a default (untuned) random forest model in Scenario~(1), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_glm_rf}.
 
@@ -426,7 +422,7 @@ By comparison, the results of the tuned random forest (Figure~\ref{fig:fully_tun
 \clearpage
 
 
-\section{Calibration plots: Experiment 3} \label{sec:calibration_tuned_rf}
+\section{Experiment 3: Calibration plots} \label{sec:calibration_tuned_rf}
 
 Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Section \ref{sec:results_experiment3} where we presented the true probabilities of the event $\text{P}(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to improved generalization it leads to a better calibration on the test set.
 
@@ -444,3 +440,4 @@ Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of th
 \section{Declaration of tools and services used} \label{sec:declaration_tools_services}
 
 During the preparation of this thesis, I used ChatGPT, Google's Gemini and Github Copilot in order to to support language refinement, such as checking grammar, spelling and clarity of expression as well as to assist in plotting and resolving some R coding errors. After using theses tools/services, I reviewed and edited the content as needed and I take full responsibility for the content of the report.
+

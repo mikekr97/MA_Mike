@@ -21,8 +21,8 @@ The gold standard for estimating the causal effect of an intervention on an outc
 
 For these reasons, much of research aims to make causal inference from observational data, using non-experimental or quasi-experimental designs. Unlike RCTs, these settings do not involve randomization to treatment, which introduces challenges due to confounding. Methods for causal inference from observational data aim to correctly control for such confounders to enable valid causal conclusions. Recently, \citet{sick2025} proposed the TRAM-DAGs framework, which estimates the functional form of causal relationships in a known causal graph based on observational or RCT data and make subsequent causal queries. In this thesis we further analyze and apply this method.
 
-As mentioned earlier, an application where causal inference is of particular importance is the estimation of personalized treatment effects. In personalized medicine, this is referred to as the individualized treatment effect (ITE) or conditional average treatment effect (CATE), while in business and marketing contexts, the term uplift modeling is often used (\citealp{gutierrez2017}; \citealp{zhao2020}). These concepts refer to the difference in potential outcomes under different treatments, assessed at the level of individuals or subgroups. Such estimates are critical in settings where treatment responses vary significantly between individuals. For clinical decision-making, tailoring therapies to individual characteristics can lead to more effective and efficient care. The importance of estimating individual-level effects is not limited to medicine. It also is of high interest in marketing, where campaigns can be precisely targeted to maximize impact and minimize adverse responses. Consider, for instance, the decision of whether to send a push notification (treatment) to a customer. Some customers might be persuadables, who will respond positively only if treated. Others, in contrast, might have responded positively without the intervention but are negatively affected by it -- for example, a customer who is reminded of a forgotten subscription and, as a result, decides to cancel it. In this context, identifying persuadables is valuable, while treating the latter may be counterproductive. This illustrates the need to understand treatment effects at a granular level to guide individualized decisions.
-Various methods have been proposed to estimate individualized treatment effects, yet this task remains challenging. The fundamental problem is that only one of the two potential outcomes can ever be observed for any given individual, making the estimation of treatment effects inherently more difficult than standard predictive modeling.
+As mentioned earlier, an application where causal inference is of particular importance is the estimation of personalized treatment effects. In personalized medicine, this is referred to as the individualized treatment effect (ITE) or conditional average treatment effect (CATE), while in business and marketing contexts, the term uplift modeling is often used \citep{gutierrez2017, zhao2020}. These concepts refer to the difference in potential outcomes under different treatments, assessed at the level of individuals or subgroups. Such estimates are critical in settings where treatment responses vary significantly between individuals. For clinical decision-making, tailoring therapies to individual characteristics can lead to more effective and efficient care. The importance of estimating individual-level effects is not limited to medicine. It also is of high interest in marketing, where campaigns can be precisely targeted to maximize impact and minimize adverse responses. Consider, for instance, the decision of whether to send a push notification (treatment) to a customer. Some customers might be persuadables, who will respond positively only if treated. Others, in contrast, might have responded positively without the intervention but are negatively affected by it -- for example, a customer who is reminded of a forgotten subscription and, as a result, decides to cancel it. In this context, identifying persuadables is valuable, while treating the latter may be counterproductive. This illustrates the need to understand treatment effects at a granular level to guide individualized decisions.
+Various methods have been proposed to estimate individualized treatment effects, yet this task remains challenging. The fundamental problem is that only one of the two potential outcomes can ever be observed for any given individual \citep{holland1986}, making the estimation of treatment effects inherently more difficult than standard predictive modeling.
 
 % \citep{gutierrez2017, zhao2020}
 
@@ -35,10 +35,10 @@ Various methods have been proposed to estimate individualized treatment effects,
 
 \section{Key concepts of causal inference}
 
-Causal relationships can be represented by a directed acyclic graph (DAG), as shown in Figure \ref{fig:pearl_levels}(a). The variables, or nodes, are connected by directed edges, which represent causal dependencies.
+Causal relationships can be represented by a directed acyclic graph (DAG), as shown in Figure~\ref{fig:pearl_levels}(a). The variables, or nodes, are connected by directed edges, which represent causal dependencies.
 
 % Visual examples of these levels are presented in Figure~\ref{fig:pearl_levels}(a)--(c). redundant, later i refer to it again
-Questions in causal inference are typically classified into one of the three levels of Pearl's hierarchy of causation \citep{pearl_book2009}. Level 1 corresponds to observational queries, expressed as conditional probabilities $P(Y \mid X)$, which can be answered directly from the joint distribution $P(Y \cap X)$. Level 2 involves interventional queries, such as $P(Y \mid do(X))$, which describe the probability when actively setting a variable $X$ to a particular value. Unlike observational queries, answering interventional questions requires knowledge of the underlying causal structure. Level 3 addresses counterfactual reasoning, which poses the greatest challenge. These are hypothetical what-if questions that require reasoning about outcomes under alternative realities. For example, if a patient received a treatment and died, the factual outcome is death under the received treatment. The counterfactual would be the outcome that would have occurred had the patient received a different treatment.
+Questions in causal inference are typically classified into one of the three levels of Pearl's hierarchy of causation \citep{pearl_book2009}. Level 1 corresponds to observational queries, expressed as conditional probabilities $\text{P}(Y \mid X)$, which can be answered directly from the joint distribution $\text{P}(Y \cap X)$. Level 2 involves interventional queries, such as $\text{P}(Y \mid \text{do}(X = \alpha))$, which describe the probability when actively setting a variable $X$ to a particular value. Unlike observational queries, answering interventional questions requires knowledge of the underlying causal structure. Level 3 addresses counterfactual reasoning, which poses the greatest challenge. These are hypothetical what-if questions that require reasoning about outcomes under alternative realities. For example, if a patient received a treatment and died, the factual outcome is death under the received treatment. The counterfactual would be the outcome that would have occurred had the patient received a different treatment.
 
  
 Some statisticians argue that counterfactuals -- being unobservable and untestable -- are of limited scientific value and may be regarded as metaphysical \citep{dawid2000}. Nevertheless, there are important practical questions that require the analysis of such counterfactuals.
@@ -49,12 +49,12 @@ Some statisticians argue that counterfactuals -- being unobservable and untestab
 \begin{figure}[H]
 \centering
 \includegraphics[width=1\textwidth]{img/pearl_levels.png}
-\caption{Example for the three levels of Pearl's hierarchy of causation. (a) DAG for observational data. (b) DAG when making a do-intervention by fixing the variable E at a certain value. c) Observed factual outcome and corresponding counterfactual query.}
+\caption{Illustration of the three levels of Pearl's hierarchy of causation. (a) Directed acyclic graph (DAG) for observational data. (b) DAG when making a do-intervention by fixing the variable $E$ at a certain value. (c) Observed factual outcome and the corresponding counterfactual query.}
 \label{fig:pearl_levels}
 \end{figure}
 
 
-To illustrate Pearl's three levels of causality, I consider a simplified example involving the exposure Exercise ($E$), the outcome Heart Disease ($Y$), the confounder Age ($X_1$) and the additional covariate Smoking ($X_2$). I assume that exercise reduces the risk of heart disease, but both variables are also influenced by age. Figure \ref{fig:pearl_levels}(a)--(c) illustrates the corresponding scenarios.
+To illustrate Pearl's three levels of causality, we consider a simplified example involving the exposure Exercise ($E$), the outcome Heart Disease ($Y$), the confounder Age ($X_1$) and the additional covariate Smoking ($X_2$). I assume that exercise reduces the risk of heart disease, but both variables are also influenced by age. Figure~\ref{fig:pearl_levels}(a)--(c) illustrates the corresponding scenarios.
 
 
 
@@ -66,7 +66,7 @@ Example: What is the probability of heart disease given that a person exercises?
 \[
 P(Y = 1 \mid E = 1)
 \]
-This can be estimated directly from data by conditioning on $E = 1$ and computing the frequency of $Y$. However, such an estimate does not account for confounding variables like age.
+This can be estimated directly from data by conditioning on $E = 1$ and computing the frequency of $Y = 1$. However, such an estimate does not account for confounding variables like age.
 
 
 
@@ -86,7 +86,6 @@ Example: For a person who does not exercise and has heart disease, would they st
 \[
 P(Y_{E=1} \mid E = 0, Y = 1)
 \]
-Here, $Y_{E=1}$ represents the counterfactual outcome under positive exposure. Counterfactual queries require a structural causal model (SCM) and cannot be answered from data alone. 
 
 Here, $Y_{E=1}$ represents the counterfactual outcome under positive exposure. Counterfactual queries cannot be answered from observational data alone; they require a structural framework that explicitly models the data-generating process. 
 
@@ -133,14 +132,14 @@ This thesis contributes to the further exploration of the TRAM-DAG framework and
 
 The first part of this thesis focuses on a systematic analysis and extension of TRAM-DAGs. This includes applying the model across a variety of settings, such as different data types, model complexities, and neural network configurations (e.g., activation functions, batch normalization, dropout). Most analyses are conducted on simulated data to know the underlying data-generating process, but the model is also applied to real-world data to demonstrate its practical utility.
 
-The second focus of the thesis is on the estimation of personalized treatment effects. Recent work by \citet{chen2025} showed that most causal machine learning models trained on RCT data failed to generalize when evaluated out of sample. In this thesis, we replicate some of their work by applying various models, including TRAM-DAGs, to the same data and analyzing whether we come to a similar conclusion. We further investigate why individualized treatment effect (ITE) estimation can fail in such settings, and under which conditions reliable estimates can be obtained. In addition, we demonstrate that TRAM-DAGs can be effectively used to estimate ITEs even in non-randomized observational settings, provided that the causal graph is known and fully observed. In doing so, we explore the potential of TRAM-DAGs as a framework for answering complex causal questions across different levels of Pearl's hierarchy.
+The second focus of the thesis is on the estimation of personalized treatment effects. Recent work by \citet{chen2025} showed that most causal machine learning models trained on RCT data failed to generalize when evaluated out of sample. In this thesis, we replicate some of their work by applying various models, including TRAM-DAGs, to the same data and analyzing whether we come to a similar conclusion. We further investigate why individualized treatment effect (ITE) estimation can fail in such settings, and under which conditions reliable estimates can be obtained. In addition, we demonstrate that TRAM-DAGs can be effectively used to estimate ITEs also in non-randomized observational settings, provided that the causal graph is known and fully observed. In doing so, we explore the potential of TRAM-DAGs as a framework for answering complex causal questions across different levels of Pearl's hierarchy.
 
 
 
 Formally, we aim to answer following research questions in this thesis:
 
 \begin{itemize}
-    \item How can TRAM-DAGs be applied under different scenarios such as ordinal predictors, scaled vs. raw variables or allowing for interactions between variables.
+    \item How can TRAM-DAGs be applied under different scenarios such as ordinal predictors, scaled vs. raw variables or allowing for interactions between variables?
     \item Do we obtain similar results when estimating ITEs on a real-world RCT dataset, as reported by \citet{chen2025}?
     \item What are possible reasons for the failure of ITE estimation in some cases when causal machine learning models are validated out of sample?
     \item How can TRAM-DAGs be used to estimate ITEs in both randomized controlled trials and observational settings involving confounding and mediating variables?
