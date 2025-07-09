@@ -1182,20 +1182,27 @@ calc.ATE.Continuous.median <- function(data) {
 }
 
 
-plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.df.val) {
+
+plot_ATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.df.val, 
+                                 delta_horizontal = 0.03, ylim_delta = 0.1) {
   bin_centers <- (head(breaks, -1) + tail(breaks, -1)) / 2
   group_labels <- levels(dev.data$ITE.Group)
   
-  delta <- 0.03     # Horizontal offset between training and test
+  delta <- delta_horizontal     # Horizontal offset between training and test
   cap_width <- 0.02 # Width of CI caps
   
   # Set up empty plot
   plot(NULL,
        xlim = range(bin_centers) + c(-0.1, 0.1),
-       ylim = range(c(dev.data$ATE.lb, val.data$ATE.ub)) + c(-0.1, 0.1),
+       ylim = range(c(dev.data$ATE.lb, dev.data$ATE.ub, 
+                      val.data$ATE.lb, val.data$ATE.ub)) + c(-ylim_delta, ylim_delta),
        xlab = "ITE Group", ylab = "ATE (Difference in Medians)",
        xaxt = "n")
   
+  # Add title explaining the axis
+  # mtext(expression("Observed ATE per ITE-subgroup: " * Delta[treated] - Delta[control]),
+  #       side = 3, line = 0.5, cex = 0.95)
+  # 
   ### Training CI bars + points
   x_train <- bin_centers - delta
   for (i in seq_along(bin_centers)) {
@@ -1227,9 +1234,6 @@ plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.
              add = TRUE, pch = "|", col = "#36648B", jitter = 0.002, cex = 0.6)
   
   # Custom x-axis
-  # axis(1, at = bin_centers, labels = group_labels)
-  
-  # Custom x-axis
   axis(1, at = bin_centers, labels = FALSE)  # suppress default labels
   
   # Add staggered labels manually
@@ -1239,15 +1243,13 @@ plot_CATE_vs_ITE_base <- function(dev.data, val.data, breaks, res.df.train, res.
          labels = group_labels[i], srt = 0, xpd = TRUE)
   }
   
-  
   # Legend
-  legend("topleft", inset = c(0.02, 0.02),  # move slightly downward
+  legend("topleft", inset = c(0.02, 0.02),
          legend = c("Training", "Test", "Theoretical ATE"),
          col = c("orange", "#36648B", "black"), 
          pch = c(16, 16, NA), lty = c(1, 1, 3),
-         bty = "n", cex =0.8, lwd = c(2, 2, 1))
+         bty = "n", cex = 0.8, lwd = c(2, 2, 1))
 }
-
 
 
 

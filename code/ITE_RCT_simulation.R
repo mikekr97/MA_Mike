@@ -87,8 +87,9 @@ dgp_simulation <- function(n_obs=20000,
                            rho = 0.1, 
                            doX=c(NA, NA, NA, NA, NA, NA, NA),
                            main_effect = TRUE,
-                           interaction_effect = TRUE,
-                           samples_potential_outcomes = 10000) {
+                           interaction_effect = TRUE) {
+  # ,
+  # samples_potential_outcomes = 10000
   
   #n_obs = 1e5 n_obs = 10
   set.seed(SEED)
@@ -261,15 +262,15 @@ dgp_simulation <- function(n_obs=20000,
   
   
   ### ITE with expected values of potential outcomes (sampling)
-  
-  # sample 1000 rlogis for each of n_obs
-  n_samples <- samples_potential_outcomes
-  X7_samples <- matrix(NA, nrow = n_obs, ncol = n_samples)
-  
-  # Fill the matrix with standard logistic samples
-  for (i in 1:n_obs) {
-    X7_samples[i, ] <- rlogis(n_samples)
-  }
+  # 
+  # # sample 1000 rlogis for each of n_obs
+  # n_samples <- samples_potential_outcomes
+  # X7_samples <- matrix(NA, nrow = n_obs, ncol = n_samples)
+  # 
+  # # Fill the matrix with standard logistic samples
+  # for (i in 1:n_obs) {
+  #   X7_samples[i, ] <- rlogis(n_samples)
+  # }
   
   # dim(X7_samples)
   # 
@@ -290,21 +291,21 @@ dgp_simulation <- function(n_obs=20000,
   # # Expected value of first observations potential outcome (Control)
   # mean(h_y_inverse(X7_samples[1,] - logit_X7_ct[1]))
   # 
-  
-  # Expected potential outcomes for all observations (Control group)
-  expected_outcomes_ct <- sapply(1:n_obs, function(i) {
-    mean(h_y_inverse(X7_samples[i, ] - logit_X7_ct[i]))
-  })
-  
-  # Expected potential outcomes for all observations (Treatment group)
-  expected_outcomes_tx <- sapply(1:n_obs, function(i) {
-    mean(h_y_inverse(X7_samples[i, ] - logit_X7_tx[i]))
-  })
-  
-  # ITE based on expected values
-  ITE_expected <- expected_outcomes_tx - expected_outcomes_ct
-  
-  
+  # 
+  # # Expected potential outcomes for all observations (Control group)
+  # expected_outcomes_ct <- sapply(1:n_obs, function(i) {
+  #   mean(h_y_inverse(X7_samples[i, ] - logit_X7_ct[i]))
+  # })
+  # 
+  # # Expected potential outcomes for all observations (Treatment group)
+  # expected_outcomes_tx <- sapply(1:n_obs, function(i) {
+  #   mean(h_y_inverse(X7_samples[i, ] - logit_X7_tx[i]))
+  # })
+  # 
+  # # ITE based on expected values
+  # ITE_expected <- expected_outcomes_tx - expected_outcomes_ct
+  # 
+  # 
   # plot(ITE_median, ITE_expected)
   
   
@@ -319,8 +320,9 @@ dgp_simulation <- function(n_obs=20000,
                                     X6 = X6,
                                     Y=X7, 
                                     ITE_true = ITE_true, 
-                                    ITE_median = ITE_median,
-                                    ITE_expected = ITE_expected)
+                                    ITE_median = ITE_median  #,
+                                    # ITE_expected = ITE_expected
+                                    )
   
   
   
@@ -378,7 +380,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 1
+scenario <- 2
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -400,6 +402,8 @@ if (scenario == 1) {
 
 
 MODEL_NAME = 'ModelCI'  # before ModelCI, created a few really extreme samples
+
+# MODEL_NAME = 'ModelCI_regularized'  # Saved for Scenario 2 (with dropout, batchnorm)
 
 # define model_name as combination of n_obs and scenario
 if (scenario == 1) {
@@ -431,8 +435,7 @@ print(paste0("Starting experiment ", fn))
 
 
 train <- dgp_simulation(n_obs = n_obs, SEED = 123, rho = 0.1, doX = c(NA, NA, NA, NA, NA, NA, NA),
-                        main_effect = main_effect, interaction_effect = interaction_effect,
-                        samples_potential_outcomes = 10000)
+                        main_effect = main_effect, interaction_effect = interaction_effect)
 global_min = train$min
 global_max = train$max
 data_type = train$type
@@ -644,7 +647,7 @@ hidden_features_CS = c(2, 5, 5, 2)
 
 
 param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS,
-                                 dropout = TRUE, batchnorm = TRUE, activation = "relu")
+                                 dropout = FALSE, batchnorm = FALSE, activation = "relu")
 optimizer = optimizer_adam(learning_rate = 0.001)
 param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational)
 
@@ -700,7 +703,7 @@ if (file.exists(fnh5)) {
   } else { ### Training with diagnostics and early stopping
     
     # Early stopping parameters
-    patience <- 100
+    patience <- 30
     best_val_loss <- Inf
     epochs_no_improve <- 0
     early_stop_epoch <- NULL
@@ -793,6 +796,8 @@ if (TRUE){
     dx4_ct = 0
     doX = c(NA, NA, NA, dx4_ct, NA, NA, NA)
     s_do_fitted_ct = do_dag_struct_ITE_observational(param_model, train$A, doX, num_samples = 5000)$numpy()
+    
+    head(sort(s_do_fitted_ct[,7]))
     
     
     ### Do X4 = Treatment
@@ -1039,14 +1044,15 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 
 
 
+
 #### Save last plot (X7)
 
 # Set file name
 file_name <- file.path(DIR_szenario, paste0(scenario_name,'X7_treatment_densities.png'))
 
 # Save to PNG with high resolution
-png(filename = file_name, width = 2000, height = 1600, res = 300)
-
+# png(filename = file_name, width = 2000, height = 1600, res = 300)
+png(filename = file_name, width = 1500, height = 1450, res = 300)
 # Plot
 par(mfrow = c(1,1), mar = c(4.5, 4.5, 2, 1))
 plot(density(s_do_fitted_ct[,7]), 
@@ -1055,6 +1061,7 @@ plot(density(s_do_fitted_ct[,7]),
      ylab = "Density", 
      lty = 1, 
      col = "black", 
+     # xlim = c(-4, 4),
      lwd = 2, 
      ylim = c(0, max(density(s_do_fitted_tx[,7])$y,
                      density(d_tx[,7])$y, density(d_ct[,7])$y)))
@@ -1262,44 +1269,45 @@ legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"),
 
 ### save the density ITE plots:
 
-# Save as PNG in same location as other plots
-file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_densities_train_test.png'))
-# png(filename = file_name, width = 3000, height = 1600, res = 300)
-png(filename = file_name, width = 2000, height = 1000, res = 300)
+file_name <- file.path(DIR_szenario, paste0(scenario_name, 'ITE_densities_train_test.png'))
+png(filename = file_name, width = 1000, height = 2000, res = 300)
 
-# Layout: two plots side by side
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+# Layout: two plots stacked vertically
+par(mfrow = c(2, 1),
+    mar = c(4.5, 4.5, 2, 1),  # bottom, left, top, right
+    mgp = c(2, 0.7, 0),       # axis title, label, axis line
+    tcl = -0.3,               # tick length
+    cex.lab = 1.2,            # axis label size
+    cex.axis = 1.1)           # axis number size
 
 # --- Plot 1: Train set
 plot(density(res.df.train$ITE_median_pred),
      main = "", xlab = "ITE", ylab = "Density",
-     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
-     col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
+     col = "black", lwd = 2, lty = 1, ylim = c(0, 1.1))
 
 lines(density(res.df.train$ITE_median),
       col = "black", lwd = 2, lty = 2)
 
 legend("topright", legend = c("TRAM-DAG", "DGP"),
-       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.6, bty = "n")
 
-mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Train Set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
 # --- Plot 2: Test set
 plot(density(res.df.val$ITE_median_pred),
      main = "", xlab = "ITE", ylab = "Density",
-     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
-     col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
+     col = "black", lwd = 2, lty = 1, ylim = c(0, 1.1))
 
 lines(density(res.df.val$ITE_median),
       col = "black", lwd = 2, lty = 2)
 
 legend("topright", legend = c("TRAM-DAG", "DGP"),
-       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.6, bty = "n")
 
-mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Test Set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# Close PNG device
 dev.off()
+
 
 
 
@@ -1317,34 +1325,72 @@ plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
 abline(0, 1, col = 'red', lty = 2)
 
 
+# 
+# ### Save ITE scatterplots
+# 
+# file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_scatter_train_test.png'))
+# # png(filename = file_name, width = 3000, height = 1600, res = 300)
+# png(filename = file_name, width = 2000, height = 1000, res = 300)
+# 
+# # Layout: two plots side by side
+# par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+# 
+# # --- Plot 1: Train scatter
+# plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
+#      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+#      pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)  # semi-transparent black
+# 
+# abline(0, 1, col = "red", lty = 2, lwd = 2)
+# mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+# 
+# # --- Plot 2: Test scatter
+# plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
+#      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+#      pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+# 
+# abline(0, 1, col = "red", lty = 2, lwd = 2)
+# mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+# 
+# # Close PNG device
+# dev.off()
 
-### Save ITE scatterplots
 
-file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_scatter_train_test.png'))
-# png(filename = file_name, width = 3000, height = 1600, res = 300)
-png(filename = file_name, width = 2000, height = 1000, res = 300)
 
-# Layout: two plots side by side
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
 
-# --- Plot 1: Train scatter
+# Scatterplot thesis layout
+
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name, 'ITE_scatter_train_test.png'))
+png(filename = file_name, width = 1000, height = 2000, res = 300)
+
+# Layout: two plots stacked vertically
+par(mfrow = c(2, 1),
+    mar = c(4.5, 4.5, 2, 1),  # bottom, left, top, right
+    mgp = c(2, 0.7, 0),       # tighter axis title/label spacing
+    cex.lab = 1.2,            # axis label size
+    cex.axis = 1,             # tick label size
+    tcl = -0.3)               # shorter ticks
+
+# --- Train set ---
+lims <- range(c(res.df.train$ITE_median, res.df.train$ITE_median_pred), na.rm = TRUE)
 plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)  # semi-transparent black
-
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
 abline(0, 1, col = "red", lty = 2, lwd = 2)
-mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Train set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# --- Plot 2: Test scatter
+# --- Test set ---
+lims <- range(c(res.df.val$ITE_median, res.df.val$ITE_median_pred), na.rm = TRUE)
 plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
-
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
 abline(0, 1, col = "red", lty = 2, lwd = 2)
-mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Test set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# Close PNG device
 dev.off()
+
 
 
 
@@ -1368,7 +1414,14 @@ abline(0, 1, col = 'red', lty = 2)
 # STEP 1: Define bin breaks based on training data
 # breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
 
-breaks <- seq(-2, 0.5, by = 0.5)
+# scenario 1
+breaks <- round(seq(-1.9, 0.5, by = 0.3), 2)
+
+# scenario 2
+breaks <- round(seq(-0.9, -0.1, by = 0.15), 2)
+
+# scenario 3
+breaks <- round(seq(-1.05, 1.05, by = 0.3), 2)
 
 
 # STEP 2: Group training data and compute ATE per bin
@@ -1387,6 +1440,60 @@ data.val.grouped.ATE <- res.df.val %>%
   group_modify(~ calc.ATE.Continuous.median(.x)) %>%
   ungroup()
 
+
+
+par(mfrow=c(1,1))
+
+plot_ATE_vs_ITE_base(dev.data = data.dev.grouped.ATE, 
+                     val.data = data.val.grouped.ATE, 
+                     breaks, 
+                     res.df.train, 
+                     res.df.val, 
+                     delta_horizontal = 0.01, # 0.025
+                     ylim_delta = 0.1)
+
+
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_ATE.png'))
+
+# png(filename = file_name, width = 1900, height = 1500, res = 300)
+# png(filename = file_name, width = 2000, height = 1550, res = 300) # scenario 1
+png(filename = file_name, width = 2200, height = 1600, res = 300) # scenario 3
+
+
+plot_ATE_vs_ITE_base(dev.data = data.dev.grouped.ATE, 
+                     val.data = data.val.grouped.ATE, 
+                     breaks, 
+                     res.df.train, 
+                     res.df.val, 
+                     delta_horizontal = 0.01, # 0.025
+                     ylim_delta = 0.1)
+
+# Close PNG device
+dev.off()
+
+
+
+
+### not used anymore:
+
+
+
+
+###  Note: as result we get 1) the ITE_median_pred which is uses the median for
+### the potential outcomes to calculate the ITE and we also get 2) ITE_obsZ_pred 
+### which was estimated, using the observed latent sample Z_i, this is used here
+### to validate  ITE_true vs. (ITE_obsZ_pred). 
+
+### Note: with linear h as in this DGP, ITE_obsZ_pred and ITE_median_pred
+### in the DGP are equal, but in the TRAM-DAG due to CI we will probably not have 
+### a straight h. I obesrved, that for the observed Latent variable, estimated ITEs are
+### quite off for low or high latent values. I assume that extrapolation 
+### is not ideal in some cases.
+
+
+# maybe check coloured for where the latent_obsZ was outside the 5% and 95% quantiles
+par(mfrow = c(1,2))
 
 plot_CATE_vs_ITE_group_median(
   dev.data = data.dev.grouped.ATE,
@@ -1431,20 +1538,8 @@ plot_CATE_vs_ITE_group_median_with_theoretical(
 plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
 
 
-###  Note: as result we get 1) the ITE_median_pred which is uses the median for
-### the potential outcomes to calculate the ITE and we also get 2) ITE_obsZ_pred 
-### which was estimated, using the observed latent sample Z_i, this is used here
-### to validate  ITE_true vs. (ITE_obsZ_pred). 
-
-### Note: with linear h as in this DGP, ITE_obsZ_pred and ITE_median_pred
-### in the DGP are equal, but in the TRAM-DAG due to CI we will probably not have 
-### a straight h. I obesrved, that for the observed Latent variable, estimated ITEs are
-### quite off for low or high latent values. I assume that extrapolation 
-### is not ideal in some cases.
 
 
-# maybe check coloured for where the latent_obsZ was outside the 5% and 95% quantiles
-par(mfrow = c(1,2))
 plot(res.df.train$ITE_true , res.df.train$ITE_obsZ_pred, 
      main = "ITE Train: True vs. Predicted (obsZ)", 
      xlab = "ITE_true", ylab = "ITE_obsZ_pred")

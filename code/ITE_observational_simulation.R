@@ -326,7 +326,7 @@ dgp_simulation <- function(n_obs=20000,
 # scenario4:  main_absent, interaction_absent
 
 n_obs <- 20000
-scenario <- 1
+scenario <- 2
 
 # assign TRUE or FALSE to main_effect, interaction_effect according to selected scenario with if
 if (scenario == 1) {
@@ -900,7 +900,8 @@ legend("topright", legend=c("Tr=0 (TRAM-DAG)", "Tr=1 (TRAM-DAG)", "Tr=0 (DGP)", 
 file_name <- file.path(DIR_szenario, paste0(scenario_name, 'X7_treatment_densities.png'))
 
 # Save to PNG with high resolution
-png(filename = file_name, width = 2000, height = 1600, res = 300)
+# png(filename = file_name, width = 2000, height = 1600, res = 300)
+png(filename = file_name, width = 1500, height = 1450, res = 300)
 
 # Plot
 par(mfrow = c(1,1), mar = c(4.5, 4.5, 2, 1))
@@ -1130,46 +1131,45 @@ legend("topright", legend=c("ITE DGP", "ITE TRAM-DAG"), col=c("black", "red"),
 
 ### save the density ITE plots:
 
-# Save as PNG in same location as other plots
-file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_densities_train_test.png'))
-# png(filename = file_name, width = 3000, height = 1600, res = 300)
-png(filename = file_name, width = 2000, height = 1000, res = 300)
+file_name <- file.path(DIR_szenario, paste0(scenario_name, 'ITE_densities_train_test.png'))
+png(filename = file_name, width = 1000, height = 2000, res = 300)
 
-# Layout: two plots side by side
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+# Layout: two plots stacked vertically
+par(mfrow = c(2, 1),
+    mar = c(4.5, 4.5, 2, 1),  # bottom, left, top, right
+    mgp = c(2, 0.7, 0),       # axis title, label, axis line
+    tcl = -0.3,               # tick length
+    cex.lab = 1.2,            # axis label size
+    cex.axis = 1.1)           # axis number size
 
 # --- Plot 1: Train set
 plot(density(res.df.train$ITE_median_pred),
      main = "", xlab = "ITE", ylab = "Density",
-     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
-      # col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
-    col = "black", lwd = 2, lty = 1, ylim = c(0,1.1), xlim=c(-1.2, 1.2))
+     col = "black", lwd = 2, lty = 1, ylim = c(0, 1.1))  # 0, 30 for scenario 2
 
 lines(density(res.df.train$ITE_median),
       col = "black", lwd = 2, lty = 2)
 
 legend("topright", legend = c("TRAM-DAG", "DGP"),
-       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.6, bty = "n")
 
-mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Train Set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
 # --- Plot 2: Test set
 plot(density(res.df.val$ITE_median_pred),
      main = "", xlab = "ITE", ylab = "Density",
-     # col = "black", lwd = 2, lty = 1, ylim = c(0,30), xlim=c(-1, 0))
-    # col = "black", lwd = 2, lty = 1, ylim = c(0,1.1))
-    col = "black", lwd = 2, lty = 1, ylim = c(0,1.1), xlim=c(-1.2, 1.2))
+     col = "black", lwd = 2, lty = 1, ylim = c(0, 1.1))  # 0, 30 for scenario 2
 
 lines(density(res.df.val$ITE_median),
       col = "black", lwd = 2, lty = 2)
 
 legend("topright", legend = c("TRAM-DAG", "DGP"),
-       col = "black", lty = c(1, 2), lwd = 2, cex = 0.8, bty = "n")
+       col = "black", lty = c(1, 2), lwd = 2, cex = 0.6, bty = "n")
 
-mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Test Set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# Close PNG device
 dev.off()
+
 
 
 
@@ -1186,37 +1186,76 @@ plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
      main = "ITE Test: True vs. Predicted (median)", 
      xlab = "ITE_median", ylab = "ITE_median_pred")
 abline(0, 1, col = 'red', lty = 2)
+# 
+# 
+# ### Save ITE scatterplots
+# 
+# file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_scatter_train_test.png'))
+# # png(filename = file_name, width = 3000, height = 1600, res = 300)
+# png(filename = file_name, width = 2000, height = 1000, res = 300)
+# 
+# # Layout: two plots side by side
+# par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+# 
+# # --- Plot 1: Train scatter
+# plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
+#      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+#      pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)  # semi-transparent black
+# 
+# abline(0, 1, col = "red", lty = 2, lwd = 2)
+# mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+# 
+# # --- Plot 2: Test scatter
+# plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
+#      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+#      pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
+# 
+# abline(0, 1, col = "red", lty = 2, lwd = 2)
+# mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+# 
+# # Close PNG device
+# dev.off()
 
 
 
+# Scatterplot thesis layout
 
-### Save ITE scatterplots
 
-file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_scatter_train_test.png'))
-# png(filename = file_name, width = 3000, height = 1600, res = 300)
-png(filename = file_name, width = 2000, height = 1000, res = 300)
+file_name <- file.path(DIR_szenario, paste0(scenario_name, 'ITE_scatter_train_test.png'))
+png(filename = file_name, width = 1000, height = 2000, res = 300)
 
-# Layout: two plots side by side
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 2, 1))  # bottom, left, top, right
+# Layout: two plots stacked vertically
+par(mfrow = c(2, 1),
+    mar = c(4.5, 4.5, 2, 1),  # bottom, left, top, right
+    mgp = c(2, 0.7, 0),       # tighter axis title/label spacing
+    cex.lab = 1.2,            # axis label size
+    cex.axis = 1,             # tick label size
+    tcl = -0.3)               # shorter ticks
 
-# --- Plot 1: Train scatter
+# --- Train set ---
+lims <- range(c(res.df.train$ITE_median, res.df.train$ITE_median_pred), na.rm = TRUE)
 plot(res.df.train$ITE_median, res.df.train$ITE_median_pred,
      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)  # semi-transparent black
-
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
 abline(0, 1, col = "red", lty = 2, lwd = 2)
-mtext("Train Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Train set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# --- Plot 2: Test scatter
+# --- Test set ---
+lims <- range(c(res.df.val$ITE_median, res.df.val$ITE_median_pred), na.rm = TRUE)
 plot(res.df.val$ITE_median, res.df.val$ITE_median_pred,
      main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
-     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8)
-
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
 abline(0, 1, col = "red", lty = 2, lwd = 2)
-mtext("Test Set", side = 3, line = 0.5, cex = 1.1)
+mtext("Test set", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
 
-# Close PNG device
 dev.off()
+
+
+
+
+
 
 
 
@@ -1236,18 +1275,19 @@ abline(0, 1, col = 'red', lty = 2)
 
 
 
-# ITE (median) vs. cATE plot
+# ITE (median) vs. ATE plot
 
 # STEP 1: Define bin breaks based on training data
 
 
+# scenario 1
+breaks <- round(seq(-1.6, 0.5, by = 0.3), 2)
 
-breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
+# scenario 2
+breaks <- round(seq(-0.85, -0.35, by = 0.10), 2)
 
-
-# breaks <- round(seq(-0.6, 0.2, by = 0.1), 1)
-
-breaks <- round(seq(-1.75, 0.5, by = 0.25), 2)
+# scenario 3
+breaks <- round(seq(-1.05, 1.05, by = 0.3), 2)
 
 
 # STEP 2: Group training data and compute ATE per bin
@@ -1266,55 +1306,34 @@ data.val.grouped.ATE <- res.df.val %>%
   group_modify(~ calc.ATE.Continuous.median(.x)) %>%
   ungroup()
 
-
-plot_CATE_vs_ITE_group_median(
-  dev.data = data.dev.grouped.ATE,
-  val.data = data.val.grouped.ATE)
-
-
-### save ITE-cATE plot without theoretical centers
-
-
-p_ate_ite <- plot_CATE_vs_ITE_group_median(
-  dev.data = data.dev.grouped.ATE,
-  val.data = data.val.grouped.ATE)
-
-file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_cATE.png'))
-ggsave(file_name, plot=p_ate_ite, width = 5, height = 4, dpi = 300, device = "png")
-
-
-
-
-
-##### ITE-cATE plot 
-
-# Define the mapping from ITE.Group to numeric center values
-bin_centers <- data.frame(
-  ITE.Group = levels(factor(data.dev.grouped.ATE$ITE.Group)),  # assuming ITE.Group is a factor
-  theoretical.center = (head(breaks, -1) + tail(breaks, -1)) / 2  # compute midpoints between break pairs
-)
-bin_centers$ITE.Group <- factor(bin_centers$ITE.Group, levels = levels(data.dev.grouped.ATE$ITE.Group))
-
-
-plot_CATE_vs_ITE_group_median_with_theoretical(
-  dev.data = data.dev.grouped.ATE,
-  val.data = data.val.grouped.ATE,
-  bin_centers = bin_centers)
-
-
-
-
-### Final plot for ITE-ATE (make sure to check breaks first if coverage is good!):
 par(mfrow = c(1,1))
-plot_CATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
+
+plot_ATE_vs_ITE_base(dev.data = data.dev.grouped.ATE, 
+                     val.data = data.val.grouped.ATE, 
+                     breaks, 
+                     res.df.train, 
+                     res.df.val,  
+                     delta_horizontal = 0.01,  # 0.025
+                     ylim_delta = 0.1)
 
 
 
+file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_ATE.png'))
 
+# png(filename = file_name, width = 1900, height = 1500, res = 300)
+# png(filename = file_name, width = 2000, height = 1550, res = 300) # scenario 1
+png(filename = file_name, width = 2200, height = 1600, res = 300) # scenario 2 & 3
 
+plot_ATE_vs_ITE_base(dev.data = data.dev.grouped.ATE, 
+                     val.data = data.val.grouped.ATE, 
+                     breaks, 
+                     res.df.train, 
+                     res.df.val, 
+                     delta_horizontal = 0.007,  # 0.025
+                     ylim_delta = 0.1)
 
-
-
+# Close PNG device
+dev.off()
 
 
 
@@ -1395,6 +1414,59 @@ dev.off()
 
 
 
+################# not used anymore
+
+# breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
+
+
+
+# 
+# plot_CATE_vs_ITE_group_median(
+#   dev.data = data.dev.grouped.ATE,
+#   val.data = data.val.grouped.ATE)
+# 
+# 
+# ### save ITE-ATE plot without theoretical centers
+# 
+# 
+# p_ate_ite <- plot_CATE_vs_ITE_group_median(
+#   dev.data = data.dev.grouped.ATE,
+#   val.data = data.val.grouped.ATE)
+# 
+# file_name <- file.path(DIR_szenario, paste0(scenario_name,'ITE_cATE.png'))
+# ggsave(file_name, plot=p_ate_ite, width = 5, height = 4, dpi = 300, device = "png")
+# 
+# 
+# 
+# 
+# 
+# ##### ITE-ATE plot
+# 
+# # Define the mapping from ITE.Group to numeric center values
+# bin_centers <- data.frame(
+#   ITE.Group = levels(factor(data.dev.grouped.ATE$ITE.Group)),  # assuming ITE.Group is a factor
+#   theoretical.center = (head(breaks, -1) + tail(breaks, -1)) / 2  # compute midpoints between break pairs
+# )
+# bin_centers$ITE.Group <- factor(bin_centers$ITE.Group, levels = levels(data.dev.grouped.ATE$ITE.Group))
+# 
+# 
+# plot_CATE_vs_ITE_group_median_with_theoretical(
+#   dev.data = data.dev.grouped.ATE,
+#   val.data = data.val.grouped.ATE,
+#   bin_centers = bin_centers)
+# 
+# 
+# 
+# 
+# ### Final plot for ITE-ATE (make sure to check breaks first if coverage is good!):
+# par(mfrow = c(1,1))
+# plot_ATE_vs_ITE_base(data.dev.grouped.ATE, data.val.grouped.ATE, breaks, res.df.train, res.df.val)
+
+
+
+
+
+
 ###  Note: as result we get 1) the ITE_median_pred which is uses the median for
 ### the potential outcomes to calculate the ITE and we also get 2) ITE_obsZ_pred 
 ### which was estimated, using the observed latent sample Z_i, this is used here
@@ -1407,7 +1479,7 @@ dev.off()
 ### is not ideal in some cases.
 
 
-# maybe check coloured for where the latent_obsZ was outside the 5% and 95% quantiles
+# maybe check colored for where the latent_obsZ was outside the 5% and 95% quantiles
 par(mfrow = c(1,2))
 plot(res.df.train$ITE_true , res.df.train$ITE_obsZ_pred, 
      main = "ITE Train: True vs. Predicted (obsZ)", 
