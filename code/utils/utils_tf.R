@@ -1023,6 +1023,6 @@ dag_maf_plot_new <- function(layer_masks, layer_sizes) {
 
 # dag_maf_plot_new(masks_CS, layer_sizes_CS)
 # 
-# ggsave("network_plot.pdf", dag_maf_plot_new(masks_CS, layer_sizes_CS), 
-       # width = 4.5, height = 4)
+# ggsave("network_plot.pdf", dag_maf_plot_new(masks_CS, layer_sizes_CS),
+# width = 4.5, height = 4)
 

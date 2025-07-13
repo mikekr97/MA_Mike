@@ -160,15 +160,12 @@ abstract = { Problems with inferring causal relationships from nonexperimental d
 @InProceedings{gutierrez2017,
   title = 	 {Causal Inference and Uplift Modelling: A Review of the Literature},
   author = {Pierre Gutierrez and Jean-Yves G{\'e}rardy},
-
   booktitle = 	 {Proceedings of The 3rd International Conference on Predictive Applications and APIs},
   pages = 	 {1--13},
   year = 	 {2017},
-  editor = 	 {Hardgrove, Claire and Dorard, Louis and Thompson, Keiran and Douetteau, Florian},
   volume = 	 {67},
-  series = 	 {Proceedings of Machine Learning Research},
   month = 	 {11--12 Oct},
-  publisher =    {PMLR},
+  publisher =    {Proceedings of Machine Learning Research},
   pdf = 	 {http://proceedings.mlr.press/v67/gutierrez17a/gutierrez17a.pdf},
   url = 	 {https://proceedings.mlr.press/v67/gutierrez17a.html},
   abstract = 	 {Uplift modeling refers to the set of techniques used to model the incremental impact of an action or treatment on a customer outcome. Uplift modeling is therefore both a Causal Inference problem and a Machine Learning one. The literature on uplift is split into 3 main approaches - the Two-Model approach, the Class Transformation approach and modeling uplift directly. Unfortunately, in the absence of a common framework of causal inference and notation, it can be quite difficult to assess those three methods. In this paper, we use the Rubin (1974) model of causal inference and its modern “econometrics” notation to provide a clear comparison of the three approaches and generalize one of them. To our knowledge, this is the first paper that provides a unified review of the uplift literature. Moreover, our paper contributes to the literature by showing that, in the limit, minimizing the Mean Square Error (MSE) formula with respect to a causal effect estimator is equivalent to minimizing the MSE in which the unobserved treatment effect is replaced by a modified target variable. Finally, we hope that our paper will be of use to researchers interested in applying Machine Learning techniques to causal inference problems in a business context as well as in other fields: medicine, sociology or economics.}
@@ -181,13 +178,14 @@ abstract = { Problems with inferring causal relationships from nonexperimental d
       eprint={1908.05372},
       archivePrefix={arXiv},
       primaryClass={stat.ML},
+  note         = {arXiv preprint 1908.05372},
       url={https://arxiv.org/abs/1908.05372}, 
 }
 
 @misc{sick2025,
   author       = {Beate Sick and Oliver D{\"u}rr},
-  title        = {Interpretable Neural Causal Models with TRAM-DAGs},
-  note         = {Accepted at the CLeaR 2025 Conference},
+  title        = {Interpretable Neural Causal Models with {TRAM-DAGs}},
+  note         = {arXiv preprint 2503.16206, accepted at the CLeaR 2025 Conference},
   year         = {2025},
   eprint       = {2503.16206},
   archivePrefix= {arXiv},
@@ -195,6 +193,7 @@ abstract = { Problems with inferring causal relationships from nonexperimental d
   url          = {https://arxiv.org/abs/2503.16206},
   doi          = {10.48550/arXiv.2503.16206}
 }
+
 
 @book{pearl_book2009,
 author = {Pearl, Judea},
@@ -210,17 +209,16 @@ abstract = {Written by one of the preeminent researchers in the field, this book
 
 @inproceedings{poinsot2024,
   author    = {Audrey Poinsot and Alessandro Leite and Nicolas Chesneau and Mich{\`e}le S{\'e}bag and Marc Schoenauer},
-title = {Learning structural causal models through deep generative models: methods, guarantees, and challenges},
+title = {Learning structural causal models through deep generative models: Methods, guarantees, and challenges},
 year = {2024},
 isbn = {978-1-956792-04-1},
 url = {https://doi.org/10.24963/ijcai.2024/907},
 doi = {10.24963/ijcai.2024/907},
 abstract = {This paper provides a comprehensive review of deep structural causal models (DSCMs), particularly focusing on their ability to answer counterfactual queries using observational data within known causal structures. It delves into the characteristics of DSCMs by analyzing the hypotheses, guarantees, and applications inherent to the underlying deep learning components and structural causal models, fostering a finer understanding of their capabilities and limitations in addressing different counterfactual queries. Furthermore, it highlights the challenges and open questions in the field of deep structural causal modeling. It sets the stages for researchers to identify future work directions and for practitioners to get an overview in order to find out the most appropriate methods for their needs.},
-booktitle = {Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence},
+booktitle = {Proceedings of the 33rd International Joint Conference on Artificial Intelligence (IJCAI)},
 articleno = {907},
 numpages = {9},
-location = {Jeju, Korea},
-series = {IJCAI '24}
+location = {Jeju, Korea}
 }
 
 
@@ -242,7 +240,7 @@ series = {IJCAI '24}
 }
 
 @INPROCEEDINGS{sick2020,
-  author={Sick, Beate and Hathorn, Torsten and D{\"u}rr, Oliver},
+  author={Sick, Beate and Hothorn, Torsten and D{\"u}rr, Oliver},
   booktitle={2020 25th International Conference on Pattern Recognition (ICPR)}, 
   title={Deep transformation models: Tackling complex regression problems with neural network based transformation models}, 
   year={2021},
@@ -259,6 +257,7 @@ series = {IJCAI '24}
       eprint={2501.04061},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
+  note = {arXiv preprint 2501.04061},
       url={https://arxiv.org/abs/2501.04061}, 
 }
 
@@ -345,7 +344,7 @@ abstract = {Statistical analyses of randomized controlled trials (RCTs) yield a 
  number = {371},
  pages = {591--593},
  publisher = {[American Statistical Association, Taylor \& Francis, Ltd.]},
- title = {Randomization Analysis of Experimental Data: The Fisher Randomization Test Comment},
+ title = {Randomization Analysis of Experimental Data: The {Fisher} Randomization Test Comment},
  urldate = {2025-07-05},
  volume = {75},
  year = {1980}
@@ -396,17 +395,12 @@ abstract = {Abstract In many medical applications, interpretable models with hig
 year = {2023}
 }
 
-
-@misc{kingma2015,
-title={Adam: A Method for Stochastic Optimization}, 
-note={Published as a conference paper at the 3rd International Conference for Learning Representations, San Diego, 2015},
-author={Diederik P. Kingma and Jimmy Ba},
-year={2015},
-eprint={1412.6980},
-archivePrefix={arXiv},
-primaryClass={cs.LG},
-url={https://arxiv.org/abs/1412.6980},
-doi={10.48550/arXiv.1412.6980},
+@inproceedings{kingma2015,
+  title={Adam: A method for stochastic optimization},
+  author={Kingma, Diederik P. and Ba, Jimmy},
+  booktitle={Proceedings of the 3rd International Conference on Learning Representations (ICLR)},
+  year={2015},
+  url={https://arxiv.org/abs/1412.6980}
 }
 
 @article{hothorn2018,
@@ -444,12 +438,13 @@ year = {2018}
 
 
 @misc{zheng2018,
-      title={DAGs with NO TEARS: Continuous Optimization for Structure Learning}, 
+      title={{DAGs} with NO TEARS: Continuous Optimization for Structure Learning}, 
       author={Xun Zheng and Bryon Aragam and Pradeep Ravikumar and Eric P. Xing},
       year={2018},
       eprint={1803.01422},
       archivePrefix={arXiv},
       primaryClass={stat.ML},
+  note         = {arXiv preprint 1803.01422, accepted at NeurIPS 2018},
       url={https://arxiv.org/abs/1803.01422}, 
 }
 
@@ -504,16 +499,13 @@ year = {2024}
 
 @inproceedings{reisach2021,
 author = {Reisach, Alexander G. and Seiler, Christof and Weichwald, Sebastian},
-title = {Beware of the simulated DAG! causal discovery benchmarks may be easy to game},
+title = {Beware of the simulated {DAG}! {C}ausal discovery benchmarks may be easy to game},
 year = {2021},
 isbn = {9781713845393},
-publisher = {Curran Associates Inc.},
-address = {Red Hook, NY, USA},
 abstract = {Simulated DAG models may exhibit properties that, perhaps inadvertently, render their structure identifiable and unexpectedly affect structure learning algorithms. Here, we show that marginal variance tends to increase along the causal order for generically sampled additive noise models. We introduce varsortability as a measure of the agreement between the order of increasing marginal variance and the causal order. For commonly sampled graphs and model parameters, we show that the remarkable performance of some continuous structure learning algorithms can be explained by high varsortability and matched by a simple baseline method. Yet, this performance may not transfer to real-world data where varsortability may be moderate or dependent on the choice of measurement scales. On standardized data, the same algorithms fail to identify the ground-truth DAG or its Markov equivalence class. While standardization removes the pattern in marginal variance, we show that data generating processes that incur high varsortability also leave a distinct covariance pattern that may be exploited even after standardization. Our findings challenge the significance of generic benchmarks with independently drawn parameters.},
-booktitle = {Proceedings of the 35th International Conference on Neural Information Processing Systems},
+booktitle = {Proceedings of the 35th Conference on Neural Information Processing Systems (NeurIPS)},
 articleno = {2127},
-numpages = {13},
-series = {NIPS '21}
+numpages = {13}
 }
 
 @article{friedman2010,
@@ -530,7 +522,7 @@ series = {NIPS '21}
 
 @article{breiman2001,
 author = {Breiman, Leo},
-title = {Random Forests},
+title = {{Random Forests}},
 year = {2001},
 issue_date = {October 1 2001},
 publisher = {Kluwer Academic Publishers},
@@ -540,7 +532,7 @@ number = {1},
 issn = {0885-6125},
 url = {https://doi.org/10.1023/A:1010933404324},
 doi = {10.1023/A:1010933404324},
-journal = {Mach. Learn.},
+journal = {Machine Learning},
 month = oct,
 pages = {5-32},
 numpages = {28},
@@ -595,15 +587,11 @@ Penalization methods are not a ‘carte blanche’; they do not guarantee a reli
                   Geoff Pleiss and
                   Yu Sun and
                   Kilian Q. Weinberger},
-  editor       = {Doina Precup and
-                  Yee Whye Teh},
   title        = {On Calibration of Modern Neural Networks},
-  booktitle    = {Proceedings of the 34th International Conference on Machine Learning,
-                  {ICML} 2017, Sydney, NSW, Australia, 6-11 August 2017},
-  series       = {Proceedings of Machine Learning Research},
+booktitle    = {Proceedings of the 34th International Conference on Machine Learning},
   volume       = {70},
   pages        = {1321--1330},
-  publisher    = {{PMLR}},
+publisher = {Proceedings of Machine Learning Research},
   year         = {2017},
   url          = {http://proceedings.mlr.press/v70/guo17a.html},
   timestamp    = {Wed, 02 Oct 2024 14:40:04 +0200},
@@ -639,7 +627,7 @@ series = {ICML'17}
 
 
 @article{IST1997,
-title = {The International Stroke Trial (IST): a randomised trial of aspirin, subcutaneous heparin, both, or neither among 19,435 patients with acute ischaemic stroke},
+title = {The {International Stroke Trial (IST)}: a randomised trial of aspirin, subcutaneous heparin, both, or neither among 19,435 patients with acute ischaemic stroke},
 author = {{International Stroke Trial Collaborative Group}},
 journal = {The Lancet},
 volume = {349},
@@ -652,8 +640,8 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
 }
 
 @article{sandercock2011,
-  author    = {Sandercock, Peter A.G. and Niewada, Maciej and Cz{\l}onkowska, Anna and the International Stroke Trial Collaborative Group},
-  title     = {The International Stroke Trial database},
+  author    = {Sandercock, Peter A.G. and Niewada, Maciej and Członkowska, Anna and the International Stroke Trial Collaborative Group},
+  title     = {{The International Stroke Trial database}},
   journal   = {Trials},
   year      = {2011},
   volume    = {12},
@@ -665,14 +653,16 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
 }
 
 @misc{vegetabile2021,
-      title={On the Distinction Between "Conditional Average Treatment Effects" (CATE) and "Individual Treatment Effects" (ITE) Under Ignorability Assumptions}, 
+      title={On the Distinction Between "Conditional Average Treatment Effects" ({CATE}) and "Individual Treatment Effects" ({ITE}) Under Ignorability Assumptions}, 
       author={Brian G. Vegetabile},
       year={2021},
       eprint={2108.04939},
       archivePrefix={arXiv},
       primaryClass={stat.ME},
-      url={https://arxiv.org/abs/2108.04939}, 
+      note         = {arXiv preprint 2108.04939, presented at the Workshop on the Neglected Assumptions in Causal Inference (NACI), 38th International Conference on Machine Learning (ICML), 2021},
+    url={https://arxiv.org/abs/2108.04939}, 
 }
+
 
 @article{chernozhukov2005,
  ISSN = {00129682, 14680262},
@@ -683,7 +673,7 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
  number = {1},
  pages = {245--261},
  publisher = {[Wiley, Econometric Society]},
- title = {An IV Model of Quantile Treatment Effects},
+ title = {An {IV} Model of Quantile Treatment Effects},
  urldate = {2025-07-06},
  volume = {73},
  year = {2005}
@@ -697,6 +687,7 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
       archivePrefix={arXiv},
       primaryClass={stat.ME},
       url={https://arxiv.org/abs/2503.01657}, 
+  note         = {arXiv preprint 2503.01657}
 }
 
 @article{liu2009,
@@ -707,7 +698,7 @@ issue_date = {12/1/2009},
 publisher = {JMLR.org},
 volume = {10},
 issn = {1532-4435},
-journal = {J. Mach. Learn. Res.},
+journal = {The Journal of Machine Learning Research},
 month = dec,
 pages = {2295-2328},
 numpages = {34}
@@ -733,10 +724,10 @@ year = {2022}
 author = {Aalen, Odd and Cook, Richard and R{\o}ysland, Kjetil},
 year = {2015},
 month = {06},
-pages = {},
-title = {Does Cox analysis of a randomized survival study yield a causal treatment effect?},
+pages = {579--593},
+title = {Does {Cox} analysis of a randomized survival study yield a causal treatment effect?},
 volume = {21},
-journal = {Lifetime data analysis},
+journal = {Lifetime Data Analysis},
 doi = {10.1007/s10985-015-9335-y}
 }
 
@@ -745,8 +736,7 @@ doi = {10.1007/s10985-015-9335-y}
   author       = {Lucas Kook},
   year         = {2024},
   note         = {R package version 0.1-1},
-  url          = {https://cran.r-project.org/web/packages/comets},
-  howpublished = {\url{https://cran.r-project.org/web/packages/comets}},
+  url          = {https://github.com/LucasKook/comets},
   urldate      = {2025-07-08}
 }
 
@@ -755,24 +745,25 @@ doi = {10.1007/s10985-015-9335-y}
   title = {reticulate: Interface to 'Python'},
   author = {Kevin Ushey and JJ Allaire and Yuan Tang},
   year = {2025},
-  note = {R package version 1.42.0,
-    https://github.com/rstudio/reticulate},
+  note = {R package version 1.42.0},
   url = {https://rstudio.github.io/reticulate/},
 }
 
 @misc{keras,
-  title={R Interface to Keras},
+  title={{R Interface to 'Keras'}},
   author={Chollet, Fran\c{c}ois and Allaire, JJ and others},
   year={2017},
   publisher={GitHub},
-  howpublished={\url{https://github.com/rstudio/keras}},
+  note = {R package version 2.15.0},
+  url = {https://github.com/rstudio/keras}
 }
+ %howpublished={\url{https://github.com/rstudio/keras}},
 
 @Manual{tensorflow,
     title = {tensorflow: R Interface to 'TensorFlow'},
     author = {JJ Allaire and Yuan Tang},
     year = {2025},
-    note = {R package version 2.16.0.9000},
+    note = {R package version 2.16.9},
     url = {https://github.com/rstudio/tensorflow},
   }
 

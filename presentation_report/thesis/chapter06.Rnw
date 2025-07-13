@@ -360,6 +360,68 @@ In summary, standardizing predictors changes coefficient interpretation, whereas
 
 
 
+\section{Modeling interactions with complex shift (CS)} \label{sec:complex_shift}
+
+% file ITE_simulation_CS.R
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.4\textwidth]{img/appendix_dag_cs_interaction.png}
+\caption{DAG for the complex shift example. The treatment $T$ interacts with the covariate $X_1$ to influence the outcome $Y$. The covariate $X_2$ has a direct effect on the outcome.}
+\label{fig:complex_shift_dag}
+\end{figure}
+
+
+The aim of this section is to show how TRAM-DAGs can effectively model interactions between multiple variables in a customizable way, using either a complex shift (CS) or a complex intercept (CI). 
+
+Here, we provide an example based on a simple DAG, as visualized in Figure~\ref{fig:complex_shift_dag}. Assume that the binary treatment $T$ is sampled from a Bernoulli distribution with probability 0.5. The covariates $X_1$ and $X_2$ represent baseline characteristics and are sampled from a standard normal distribution with a compound symmetric covariance matrix ($\rho = 0.1$). The outcome $Y$ is binary and sampled from a Bernoulli distribution with a probability that depends on the treatment $T$ and the covariates $X_1$ and $X_2$. The treatment $T$ interacts with the covariate $X_1$ to influence the outcome, while the covariate $X_2$ has a direct effect on the outcome. The formula for the outcome (on the log-odds scale) is given by:
+
+
+
+\[
+\text{logit}(P(Y=1 \mid T, X_1, X_2)) = \beta_0 + X_1 \beta_1 + X_2 \beta_2 + T \beta_3 + \textcolor{red}{T X_1\beta_4}
+\]
+
+where $\beta_0 = 0.45$, $\beta_1 = -0.5$, $\beta_2 = 0.1$, $\beta_3 = -0.85$, and $\beta_4 = 0.7$. The interaction term $T X_1$ allows the effect of $X_1$ on the outcome to vary depending on the treatment group. This results in a heterogeneous treatment effect. 
+We sample 20,000 training observations from this logistic data-generating process, and model it using a TRAM-DAG following the assumed structure in the DAG in Figure~\ref{fig:complex_shift_dag}. The TRAM-DAG is specified with a complex shift (CS) of the treatment $T$ and the covariate $X_1$, which allows it to capture the interaction effect.
+
+\[
+h(Y_k \mid T, X_1, X_2) = \vartheta_k + \textcolor{red}{\text{CS}(T, X_1)} + \text{LS}(X_2)
+\]
+
+where $K = 1$ because the outcome is binary. The neural network for the CS is defined as shown in Figure~\ref{fig:complex_shift_nn}, taking the treatment $T$ and the covariate $X_1$ as inputs, which allows them to interact. 
+After training the TRAM-DAG, we can visualize the resulting learned complex shift for each of the treatment groups, as illustrated in Figure~\ref{fig:CS_interaction}. Due to the interaction, the effect of the covariate $X_1$ on the outcome $Y$ differs between the treatment groups. The estimated effect aligns with the one specified in the data-generating process.
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.5\textwidth]{img/appendix_CS_NN_interaction.pdf}
+\caption{Neural network architecture for the complex shift (CS) effect of the treatment $T$ and the covariate $X_1$ on the outcome $Y$ ($X_4$). ReLU activation and batch normalization were used in the hidden layers. The deep neural network enables interactions between the input variables.}
+\label{fig:complex_shift_nn}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{img/appendix_CS_T_X1_interaction.png}
+\caption{Learned complex shift (CS) effect of the treatment $T$ and the covariate $X_1$ on the outcome (log-odds scale). Left: effect of $X_1$ on the outcome $Y$ in the control group ($T=0$); Right: effect of $X_1$ on the outcome $Y$ in the treatment group ($T=1$).}
+\label{fig:CS_interaction}
+\end{figure}
+
+
+The fitted TRAM-DAG was then used to estimate the individualized treatment effect (ITE) for each sample $i$, defined as $\text{ITE}_i(\mathbf{x}_i) = P(Y_i = 1 \mid T = 1, \mathbf{X}_i = \mathbf{x}_i) - P(Y_i = 1 \mid T = 0, \mathbf{X}_i = \mathbf{x}_i)$. We estimated the ITEs on the test set using the trained TRAM-DAG. In the uncalibrated model, the predicted ITEs did not perfectly match the true ITEs -- although the difference was only a small deviation. Therefore, we recalibrated the model by fitting a generalized additive model (GAM) on a separate calibration dataset using the predicted probabilities from the TRAM-DAG. The recalibrated ITEs aligned well with the true ITEs. The results are shown in Figure~\ref{fig:ITE_interaction}.
+
+This example demonstrates how TRAM-DAGs can be used to model interactions, which are crucial for accurate ITE estimation when applying the model as an S-learner.
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{img/appendix_ITE_recal.png}
+\caption{Estimated individualized treatment effects (ITE) using the fitted TRAM-DAG with a complex shift (CS). Left: estimated vs. true ITEs using the uncalibrated model. Right: estimated vs. true ITEs after recalibration. Recalibration was performed using an independent calibration dataset, where a generalized additive model (GAM) was fitted to recalibrate the probability estimates produced by the TRAM-DAG.}
+\label{fig:ITE_interaction}
+\end{figure}
+
+
 
 \section{Experiment 2: Calibration plots} \label{sec:calibrations_experiment2}
 

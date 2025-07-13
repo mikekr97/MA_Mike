@@ -16,9 +16,10 @@ MASTER = msc_report
 	Rscript -e "library(knitr); knitr::purl('$<',documentation=0L)"
 
 
+# below changed from pdflatex to xelatex to allow for polish characters
 .tex.pdf:
 	latexmk -bibtex -synctex=1 -pdf  -use-make -halt-on-error \
-	 -pdflatex="pdflatex" -silent $(MASTER).tex
+	 -pdflatex="xelatex" -silent $(MASTER).tex  
 
 # Conversion rules:
 all: 	$(MASTER).pdf 

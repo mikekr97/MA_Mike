@@ -203,6 +203,7 @@ FUNCTION {emphasize}
 
 INTEGERS { nameptr namesleft numnames }
 
+
 FUNCTION {format.names}
 { 's :=
   #1 'nameptr :=

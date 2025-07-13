@@ -4,20 +4,27 @@
 % helping packages
 \usepackage{ifthen}
 \usepackage{calc}
-
+%
 % added by mike
 \usepackage{booktabs}  % needed for table?
 \usepackage{tabularx}  % needed for table?
 \usepackage{tikz}     % needed for plot of MA and DAG (methods Experiment 1)
 \usepackage{algorithmicx} % needed for algorithms
 \usepackage{algorithm} % needed for algorithms
+
 % \usepackage{float}  % force figures not to float with H
+\usepackage{lmodern} % for polish name
 
+% below changed because switched from pdflatex to xelatex (in Makefile)
+\usepackage{fontspec} % Enables Unicode fonts
+\setmainfont{Latin Modern Roman}   
 
+% bleow commented out because not needed if used xelatex (template used latin1)
 
+% \usepackage[T1]{fontenc}       % provides fonts having  accented characters
+% % \usepackage[latin1]{inputenc}  % allows the user to input accented characters directly from the keyboard
+% \usepackage[utf8]{inputenc} % Mike: changed because of polish character in bibliography
 
-\usepackage[T1]{fontenc}       % provides fonts having  accented characters 
-\usepackage[latin1]{inputenc}  % allows the user to input accented characters directly from the keyboard
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,7 +94,10 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[pdftex,plainpages=false,pdfpagelabels,pagebackref=true,colorlinks=true,pdfpagemode=UseOutlines]{hyperref}
+
+% below changed because switched from pdflatex to xelatex
+% \usepackage[pdftex,plainpages=false,pdfpagelabels,pagebackref=true,colorlinks=true,pdfpagemode=UseOutlines]{hyperref}
+\usepackage[plainpages=false,pdfpagelabels,pagebackref=true,colorlinks=true,pdfpagemode=UseOutlines]{hyperref}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

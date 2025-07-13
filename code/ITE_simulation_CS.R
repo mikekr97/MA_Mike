@@ -3,15 +3,17 @@ if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
 }
 # Get command-line arguments
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) == 0) {
-  args <- c(3, 'cs')
-  args <- c(1, 'ls')
-}
-F32 <- as.numeric(args[1])
-M32 <- args[2]
-print(paste("FS:", F32, "M32:", M32))
+# args <- commandArgs(trailingOnly = TRUE)
+# if (length(args) == 0) {
+#   args <- c(3, 'cs')
+#   args <- c(1, 'ls')
+# }
+# F32 <- as.numeric(args[1])
+# M32 <- args[2]
+# print(paste("FS:", F32, "M32:", M32))
 
+
+# code copied and shortened from file TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R
 
 #### A mixture of discrete and continuous variables ####
 library(tensorflow)
@@ -36,30 +38,16 @@ source('code/utils/utils_tfp.R')
 ##### Flavor of experiment ######
 
 #### Saving the current version of the script into runtime
-DIR = 'runs/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu/run'
-# DIR = 'runs/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI/run'
+DIR = 'runs/ITE_simulation_CS/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
 # Copy this file to the directory DIR
-file.copy('/code/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R', file.path(DIR, 'TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R'), overwrite=TRUE)
-# file.copy('/code/TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI.R', file.path(DIR, 'TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu_CI.R'), overwrite=TRUE)
-
+file.copy('/code/ITE_simulation_CS.R', file.path(DIR, 'ITE_simulation_CS.R'), overwrite=TRUE)
 
 len_theta = 20 # Number of coefficients of the Bernstein polynomials
-hidden_features_I = c(4, 5, 5, 4) # c(3,3,3,3) 
-hidden_features_CS = c(2,5,5,2) # c(4,8,10,8,4)#c(2,5,5,2) #c(4,8,8,4)# c(2,5,5,2)
-
-# if (F32 == 1){
-#   FUN_NAME = 'DPGLinear'
-#   f <- function(x) -0.3 * x
-# } else if (F32 == 2){
-#   f = function(x) 2 * x**3 + x
-#   FUN_NAME = 'DPG2x3+x'
-# } else if (F32 == 3){
-#   f = function(x) 0.5*exp(x)
-#   FUN_NAME = 'DPG0.5exp'
-# }
+hidden_features_I = c(4, 5, 5, 4)  # not used in this example
+hidden_features_CS = c(2,5,5,2) 
 
 
 
@@ -69,20 +57,10 @@ MA =  matrix(c(
   0,   0,  0, 'ls',
   0,   0,  0,   0), nrow = 4, ncol = 4, byrow = TRUE)
 MODEL_NAME = 'ModelCS'
-# 
-# MA
-
-# MA =  matrix(c(
-#   0,   0,  0, 'ci',
-#   0,   0,  0, 'ci',
-#   0,   0,  0, 'ci',
-#   0,   0,  0,   0), nrow = 4, ncol = 4, byrow = TRUE)
-# MODEL_NAME = 'ModelCS'
 
 MA
 
 FUN_NAME = 'x1_ordinal_12_'
-# FUN_NAME = 'x1_ordinal_12_CI_'
 
 fn = file.path(DIR, paste0(FUN_NAME, '_', MODEL_NAME))
 print(paste0("Starting experiment ", fn))
@@ -268,6 +246,9 @@ n_obs <- 20000
 
 dgp_data = dgp(n_obs)
 
+dgp_data$df_R_train
+dgp_data$df_orig_train
+
 # percentage of patients with Y=1
 mean(dgp_data$simulated_full_data$Y)
 
@@ -443,12 +424,7 @@ ggplot(df$data.val, aes(x = Y_prob, y = Ypred, color = as.factor(Tr))) +
 (global_max = dgp_data$max)
 data_type = dgp_data$type
 
-# len_theta_max = len_theta
-# for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for the ordinal)
-#   if (dgp_data$type[i] == 'o'){
-#     len_theta_max = max(len_theta_max, nlevels(dgp_data$df_R[,i]) - 1)
-#   }
-# }
+
 
 
 
@@ -459,6 +435,13 @@ param_model = create_param_model(MA, hidden_features_I=hidden_features_I,
                                  hidden_features_CS=hidden_features_CS,
                                  activation = "relu",
                                  batchnorm = TRUE)
+
+dag_maf_plot_new(masks_CS = , layer_sizes_CS)
+# 
+# ggsave("network_plot.pdf", dag_maf_plot_new(masks_CS, layer_sizes_CS), 
+# width = 4.5, height = 4)
+
+
 optimizer = optimizer_adam(learning_rate = 0.0005)
 param_model$compile(optimizer, loss=struct_dag_loss)
 
@@ -474,11 +457,12 @@ param_model$get_layer("activation_48")$get_config()
 
 # num_epochs <- 1000
 num_epochs <- 450   ### final model with c(2,5,5,2) and Relu
-# fnh5 = paste0(fn, '_E', num_epochs, '.h5')
-# fnRdata = paste0(fn, '_E', num_epochs, '.RData')
+
 
 fnh5 = paste0(fn, '_E', num_epochs, 'CS.h5')   # 'CI.h5'
 fnRdata = paste0(fn, '_E', num_epochs, 'CS.RData')   # 'CI.RData'
+
+
 if (file.exists(fnh5)){
   param_model$load_weights(fnh5)
   load(fnRdata) #Loading of the workspace causes trouble e.g. param_model is zero
@@ -542,28 +526,6 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 
-# learned weights for linear Shift
-param_model$get_layer(name = "beta")$get_weights()[[1]] * param_model$get_layer(name = "beta")$mask
-
-# Weight estimates by glm()
-# fit_321 <- glm(x3 ~ x1 + x2, data = dgp_data$df_R_train_ct, family = binomial(link="logit")) # glm for binary (negative shift)
-
-
-p <- ggplot(ws, aes(x=1:nrow(ws))) + 
-  geom_line(aes(y=w34, color='x2 --> Y')) + 
-  # geom_line(aes(y=w23, color='x2 --> x3')) + 
-  # geom_hline(aes(yintercept=-coef(fit_321)[2], color='glm'), linetype=2) +
-  # geom_hline(aes(yintercept=-coef(fit_321)[3], color='glm'), linetype=2) +
-  #scale_color_manual(values=c('x1 --> x2'='skyblue', 'x1 --> x3='red', 'x2 --> x3'='darkgreen')) +
-  labs(x='Epoch', y='Coefficients') +
-  theme_minimal() +
-  theme(legend.title = element_blank())  # Removes the legend title
-
-p
-
-
-
-
 
 
 
@@ -609,38 +571,6 @@ do_probability = function (h_params){
   if (len_theta == -1){ 
     len_theta = dim(theta_tilde)[3]
   }
-  
-  # NLL = 0
-  ### Continiuous dimensions
-  #### At least one continuous dimension exits
-  # if (length(cont_dims) != 0){
-  #   
-  #   # inputs in h_dag_extra:
-  #   # data=(40000, 3), 
-  #   # theta=(40000, 3, 20), k_min=(3), k_max=(3))
-  #   
-  #   # creates the value of the Bernstein at each observation
-  #   # and current parameters: output shape=(40000, 3)
-  #   h_I = h_dag_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]) 
-  #   
-  #   # adding the intercepts and shifts: results in shape=(40000, 3)
-  #   # basically the estimated value of the latent variable
-  #   h = h_I + h_LS[,cont_dims, drop=FALSE] + h_CS[,cont_dims, drop=FALSE]
-  #   
-  #   #Compute terms for change of variable formula
-  #   
-  #   # log of standard logistic density at h
-  #   log_latent_density = -h - 2 * tf$math$softplus(-h) #log of logistic density at h
-  #   
-  #   ## h' dh/dtarget is 0 for all shift terms
-  #   log_hdash = tf$math$log(tf$math$abs(
-  #     h_dag_dash_extra(t_i[,cont_dims, drop=FALSE], theta[,cont_dims,1:len_theta,drop=FALSE], k_min[cont_dims], k_max[cont_dims]))
-  #   ) - 
-  #     tf$math$log(k_max[cont_dims] - k_min[cont_dims])  #Chain rule! See Hathorn page 12 
-  #   
-  #   NLL = NLL - tf$reduce_mean(log_latent_density + log_hdash)
-  # }
-  
   ### Ordinal dimensions
   if (length(cont_ord) != 0){
     B = dim(h_params)[1]
@@ -654,28 +584,11 @@ do_probability = function (h_params){
       
       cdf_cut <- logistic_cdf(h)
       prob_Y1_X <- 1- cdf_cut
-      # # putting -Inf and +Inf to the left and right of the cutpoints
-      # neg_inf = tf$fill(c(B,1L), -Inf)
-      # pos_inf = tf$fill(c(B,1L), +Inf)
-      # h_with_inf = tf$concat(list(neg_inf, h, pos_inf), axis=-1L)
-      # logistic_cdf_values = logistic_cdf(h_with_inf)
-      # #cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:ncol(logistic_cdf_values)], logistic_cdf_values[, 1:(ncol(logistic_cdf_values) - 1)])
-      # cdf_diffs <- tf$subtract(logistic_cdf_values[, 2:tf$shape(logistic_cdf_values)[2]], logistic_cdf_values[, 1:(tf$shape(logistic_cdf_values)[2] - 1)])
-      # 
-      # # Picking the observed cdf_diff entry for column 4:
-      # class_indices <- tf$cast(t_i[, col] - 1, tf$int32)  # Convert to zero-based index
-      # # Create batch indices to pair with class indices
-      # batch_indices <- tf$range(tf$shape(class_indices)[1])
-      # # Combine batch_indices and class_indices into pairs of indices
-      # gather_indices <- tf$stack(list(batch_indices, class_indices), axis=1)
-      # cdf_diff_picked <- tf$gather_nd(cdf_diffs, gather_indices)
+      
     }
   }
   
-  ### DEBUG 
-  #if (sum(is.infinite(log_lik$numpy())) > 0){
-  #  print("Hall")
-  #}
+
   return (prob_Y1_X)
 }
 
@@ -777,6 +690,14 @@ ITE_true <- dgp_data$test.compl.data$data.val$ITE_true
 
 plot(ITE_true, ITE_i_test, xlab = "True ITE", ylab = "Estimated ITE TRAM-DAG", main = "ITE_i")
 abline(0,1)
+
+
+
+
+file_name <- file.path(DIR_szenario, paste0(scenario_name, 'ITE_scatter_train_test.png'))
+png(filename = file_name, width = 1000, height = 2000, res = 300)
+
+
 
 
 
@@ -986,28 +907,6 @@ ggplot(test_df, aes(x = Y_prob, y = Y_prob_glm, color = as.factor(Tr))) +
 # abline(0,1, col = "red")
 
 
-
-
-
-## seems like the TRAM-DAG has problems at the edges of the distribution
-
-
-
-# ### Test
-# 
-# # input test data into model
-# h_params_orig <- param_model(dgp_data$df_orig_train)
-# 
-# # probabilities for Y=1 on original test data
-# Y_prob_tram_dag <- as.numeric(do_probability(h_params_orig))
-# 
-# # true probabilities for y=1 on dgp
-# Y_prob_dgp <- dgp_data$test.compl.data$data.dev$Y_prob
-# 
-# par(mfrow= c(1,3))
-# # plot true against estimated
-# plot(Y_prob_dgp, Y_prob_tram_dag, xlab = "True Probabilities", ylab = "Estimated Probabilities", main = "Prob TRAM-DAG")
-# abline(0,1, col = "red")
 
 
 
@@ -1487,6 +1386,48 @@ plot(ITE_true, ITE_i_test_recal, xlab = "True ITE", ylab = "Recalibrated ITE TRA
 abline(0,1, col="red")
 
 
+##### save ITE scatterplot for test set (un-calibrated, and re-calibrated)
+
+ITE_i_test <- as.numeric(ITE_i_test)
+
+file_name <- file.path(DIR, 'ITE_scatter_test_un_recalibrated.png')
+png(filename = file_name, width = 3000, height = 1500, res = 300)
+
+# Layout: two plots stacked vertically
+par(mfrow = c(1, 2),
+    mar = c(4.5, 4.5, 2, 1),  # bottom, left, top, right
+    mgp = c(2, 0.7, 0),       # tighter axis title/label spacing
+    cex.lab = 1.2,            # axis label size
+    cex.axis = 1,             # tick label size
+    tcl = -0.3)               # shorter ticks
+
+# --- Train set ---
+lims <- range(c(ITE_true, ITE_i_test), na.rm = TRUE)
+plot(ITE_true, ITE_i_test,
+     main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+mtext("Test set (uncalibrated)", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
+
+# --- Test set ---
+lims <- range(c(ITE_true, ITE_i_test_recal), na.rm = TRUE)
+plot(ITE_true, ITE_i_test_recal,
+     main = "", xlab = "ITE (True)", ylab = "ITE (Predicted)",
+     pch = 16, col = rgb(0, 0, 0, 0.4), cex = 0.8,
+     xlim = lims, ylim = lims)
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+mtext("Test set (recalibrated)", side = 3, line = 0.8, cex = 1.2, font = 2)  # bold title
+
+dev.off()
+
+
+
+
+
+
+
+
 df_test_recalibrated <- data.frame(
   ITE_true = ITE_true,
   ITE_i_test_recal = as.numeric(ITE_i_test_recal),
@@ -1581,272 +1522,5 @@ dev.off()
 
 
 
-
-
-#########################################
-# Follwoing plots used for identification of problems In complex shift 
-#########################################
-
-# no more problems in last model with Relu and batchnormalization: 
-
-# x1_ordinal_12__ModelCS_E450CS
-
-
-### search for reason of bad border estimation
-
-# problems appear outside of TRUE ITE of c(-0.45, 0.20)
-
-# make a new variable in test.results$data.dev.rs for ITE below interval, between and above  c(-0.45, 0.20)
-
-dat <- test.results$data.dev.rs %>%
-  mutate(
-    ITE_group = case_when(
-      ITE_true < -0.45 ~ "below",
-      ITE_true >= -0.45 & ITE_true <= 0.20 ~ "between",
-      ITE_true > 0.20 ~ "above"
-    )
-  )
-
-dat$Y_prob_tram <- Y_prob_tram_dag
-
-
-# plot the true probabilities Y_prob against the estimated Y_prob_tram_dag and color according to ITE_group
-ggplot(dat, aes(x = Y_prob, y = Y_prob_tram, color = ITE_group)) +
-  # geom_point() +
-  # make the points see through (like alpha?)
-  geom_point(alpha = 0.3) +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# plot X1 against Y_prob_tram and color according to ITE_group
-ggplot(dat, aes(x = X1, y = Y_prob_tram, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  labs(x = "X1", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# plot X1 against Tr and color according to ITE_group
-ggplot(dat, aes(x = X1, y = Tr, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  labs(x = "X1", y = "Treatment", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# plot X1 against Y and color according to ITE_group
-ggplot(dat, aes(x = X1, y = Y, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  labs(x = "X1", y = "Y", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-
-
-# plot X1 against Y_prob_tram and color according to ITE_group, but do this separately grouped by Treatment
-ggplot(dat, aes(x = X1, y = Y_prob_tram, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  facet_wrap(~Tr) +
-  labs(x = "X1", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-
-# plot X1 against Y and color according to ITE_group, but do this separately grouped by Treatment
-ggplot(dat, aes(x = X1, y = Y, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  facet_wrap(~Tr) +
-  labs(x = "X1", y = "Y", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-# plot X2 against Y and color according to ITE_group, but do this separately grouped by Treatment
-ggplot(dat, aes(x = X2, y = Y, color = ITE_group)) +
-  geom_point() +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  facet_wrap(~Tr) +
-  labs(x = "X2", y = "Y", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-# make a summary of the proportion of Y=1 in each group
-dat_summary <- dat %>%
-  group_by(ITE_group) %>%
-  summarise(
-    mean_Y_prob = mean(Y_prob),
-    mean_Y_prob_tram = mean(Y_prob_tram),
-    mean_ITE_true = mean(ITE_true),
-    mean_ITE = mean(ITE),
-    mean_Y = mean(Y),
-    mean_Tr = mean(Tr)
-  )
-dat_summary
-
-
-# select only "below" group
-dat_below_0.5 <- dat %>%
-  filter(ITE_group == "below", 
-         Y_prob < 0.5)
-
-# summarize dat_below
-dat_below_summary <- dat_below_0.5 %>%
-  summarise(
-    mean_Y_prob = mean(Y_prob),
-    mean_Y_prob_tram = mean(Y_prob_tram),
-    mean_ITE_true = mean(ITE_true),
-    mean_ITE = mean(ITE),
-    mean_Y = mean(Y),
-    mean_Tr = mean(Tr)
-  )
-
-# summarize dat_below_0.5
-dat_below_0.5_summary <- dat_below_0.5 %>%
-  summarise(
-    mean_Y_prob = mean(Y_prob),
-    mean_Y_prob_tram = mean(Y_prob_tram),
-    mean_ITE_true = mean(ITE_true),
-    mean_ITE = mean(ITE),
-    mean_Y = mean(Y),
-    mean_Tr = mean(Tr)
-  )
-
-
-# plot dat_below_0.5_summary true prob vs estimate
-ggplot(dat_below_0.5, aes(x = Y_prob, y = Y_prob_tram)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# plot dat_below_0.5_summary true prob vs estimate, color by Y
-ggplot(dat_below_0.5, aes(x = Y_prob, y = Y_prob_tram, color = X1)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-dat_below_0.5_X1_2 <- dat_below_0.5 %>%
-  filter(X1 < -2)
-
-# summarize dat_below_0.5_X1_2
-dat_below_0.5_X1_2_summary <- dat_below_0.5_X1_2 %>%
-  summarise(
-    mean_Y_prob = mean(Y_prob),
-    mean_Y_prob_tram = mean(Y_prob_tram),
-    mean_ITE_true = mean(ITE_true),
-    mean_ITE = mean(ITE),
-    mean_Y = mean(Y),
-    mean_Tr = mean(Tr)
-  )
-dat_below_0.5_X1_2_summary
-
-#plot X1 against X2
-ggplot(dat_below_0.5_X1_2, aes(x = X1, y = X2)) +
-  geom_point() +
-  # select other color palette
-  labs(x = "X1", y = "X2", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# plot True against estimated probabilities
-ggplot(dat_below_0.5_X1_2, aes(x = Y_prob, y = Y_prob_tram)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-
-# analyze for X1 c(-2, 1.5)
-
-dat <- test.results$data.dev.rs %>%
-  mutate(
-    X1_group = case_when(
-      X1 < -2 ~ "below",
-      X1 >= -2 & X1 <= 1.5 ~ "between",
-      X1 > 1.5 ~ "above"
-    )
-  )
-
-dat$Y_prob_tram <- Y_prob_tram_dag
-
-
-# plot the true probabilities Y_prob against the estimated Y_prob_tram_dag and color according to X1_group
-ggplot(dat, aes(x = Y_prob, y = Y_prob_tram, color = X1_group)) +
-  # geom_point() +
-  # make the points see through (like alpha?)
-  geom_point(alpha = 0.3) +
-  # select other color palette
-  scale_color_manual(values = c("below" = "red", "between" = "green", "above" = "blue")) +
-  geom_abline(slope = 1, intercept = 0, color = "red") +
-  labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Train Middle)") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-
-
-
-
-# check distribution of Y against X1 on treat and control (maybe reason for weird shift for treatment group)
-
-
-#train set
-
-treat <- dgp_data$test.compl.data$data.dev %>%
-  filter(Tr == 1) 
-contr <- dgp_data$test.compl.data$data.dev %>%
-  filter(Tr == 0)
-
-
-# fit gam for binary response Y with continuous predictor X1 on treat, 
-
-gam_model_treat <- gam(Y ~ s(X1)+ s(X2), data = treat, family = binomial(link="logit"), gamma=0.4)
-# select only plot for X1
-plot(gam_model_treat, main= "Y~s(X1) treated (train set)", 
-     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
-
-
-# fit gam for binary response Y with continuous predictor X1 on contr,
-gam_model_contr <- gam(Y ~ s(X1) + s(X2), data = contr, family = binomial(link="logit"), gamma=0.4)
-plot(gam_model_contr, main= "Y~s(X1) control (train set)", 
-     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
-
-
-# same on test set
-
-treat_test <- dgp_data$test.compl.data$data.val %>%
-  filter(Tr == 1)
-contr_test <- dgp_data$test.compl.data$data.val %>%
-  filter(Tr == 0)
-
-# fit gam for binary response Y with continuous predictor X1 on treat,
-gam_model_treat_test <- gam(Y ~ s(X1) + s(X2), data = treat_test, family = binomial(link="logit"), gamma=0.4)
-plot(gam_model_treat_test, main= "Y~s(X1) treated (test set)", 
-     xlab = "X1", cex.axis=0.8, cex.lab=0.8, cex.main=0.8, select=1)
-
-# fit gam for binary response Y with continuous predictor X1 on contr,
-gam_model_contr_test <- gam(Y ~ s(X1)+ s(X2), data = contr_test, family = binomial(link="logit"), gamma=0.4)
-plot(gam_model_contr_test)
 
 
