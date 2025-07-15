@@ -16,7 +16,7 @@ opts_chunk$set(
 
 
 
-\section{Experiment 1: TRAM-DAG (simulation study)}
+\section{Experiment 1: TRAM-DAG (simulation)}
 
 The results demonstrate that the TRAM-DAG framework can learn the true parameters and both linear and complex shifts from the data, enabling it to act as a generative model for predicting interventions and counterfactuals. It successfully reproduced observational and interventional distributions and predicted correct counterfactual outcomes.
 
@@ -33,7 +33,7 @@ We observed similar results to those reported by \citet{chen2025} when estimatin
 Poor calibration does not appear to explain the limited ITE performance, as calibration on the test set was good, as shown in Appendix~\ref{sec:calibrations_experiment2}, Figures~\ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG}. However, since the ground truth is unknown, it remains unclear whether the models fail to capture true treatment effect heterogeneity, or whether the underlying heterogeneity is too small, or driven by unobserved effect modifiers. We explore this further in Experiment 3 (ITE Simulation Study; see Sections~\ref{sec:methods_experiment3}, ~\ref{sec:results_experiment3}) and~\ref{sec:disc_experiment3}).
 
 
-\section{Experiment 3: ITE model robustness in RCTs (simulation study)} \label{sec:disc_experiment3}
+\section{Experiment 3: ITE model robustness in RCTs (simulation)} \label{sec:disc_experiment3}
 
 
 
@@ -98,7 +98,7 @@ But we also observed that when important effect-modifying covariates are missing
 
 
 
-\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)} \label{sec:disc_experiment4}
+\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation)} \label{sec:disc_experiment4}
 
 
 We analyzed ITE estimation under an observational setting (confounded) and under an RCT setting (randomized treatment allocation) in three different scenarios: direct and interaction treatment effect, only direct but no interaction effect, and no direct but with interaction effect. The TRAM-DAG could successfully estimate the ITE in Scenario 1 and Scenario 3 where interaction effects were present. There was no notable difference between the observational and RCT settings. Scatterplots of estimated ITEs vs. true ITEs showed good prediction accuracy (see Figures \ref{fig:scenario1_ite_scatter_train_test} and \ref{fig:scenario3_ite_scatter_train_test}). Also the ATE based on the mean of estimated ITEs was close to the ATE based on true ITEs in both scenarios (see Tables \ref{tab:scenario1_ate_comparison} and \ref{tab:scenario3_ate_comparison}). These results highlight TRAM-DAG's ability to compute counterfactuals for mediators and to estimate individualized treatment effects even in relatively complex DAG structures.

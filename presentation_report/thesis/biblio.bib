@@ -588,7 +588,7 @@ Penalization methods are not a ‘carte blanche’; they do not guarantee a reli
                   Yu Sun and
                   Kilian Q. Weinberger},
   title        = {On Calibration of Modern Neural Networks},
-booktitle    = {Proceedings of the 34th International Conference on Machine Learning},
+booktitle    = {Proceedings of the 34th International Conference on Machine Learning (ICML)},
   volume       = {70},
   pages        = {1321--1330},
 publisher = {Proceedings of Machine Learning Research},
@@ -605,7 +605,8 @@ title = {Deep IV: a flexible approach for counterfactual prediction},
 year = {2017},
 publisher = {JMLR.org},
 abstract = {Counterfactual prediction requires understanding causal relationships between so-called treatment and outcome variables. This paper provides a recipe for augmenting deep learning methods to accurately characterize such relationships in the presence of instrument variables (IVs)-sources of treatment randomization that are conditionally independent from the outcomes. Our IV specification resolves into two prediction tasks that can be solved with deep neural nets: a first-stage network for treatment prediction and a second-stage network whose loss function involves integration over the conditional treatment distribution. This Deep IV framework allows us to take advantage of off-the-shelf supervised learning techniques to estimate causal effects by adapting the loss function. Experiments show that it outperforms existing machine learning approaches.},
-booktitle = {Proceedings of the 34th International Conference on Machine Learning - Volume 70},
+booktitle = {Proceedings of the 34th International Conference on Machine Learning (ICML)},
+volume = {70},
 pages = {1414--1423},
 numpages = {10},
 location = {Sydney, NSW, Australia},
@@ -659,7 +660,7 @@ url = {https://doi.org/10.1016/S0140-6736(97)04011-7}
       eprint={2108.04939},
       archivePrefix={arXiv},
       primaryClass={stat.ME},
-      note         = {arXiv preprint 2108.04939, presented at the Workshop on the Neglected Assumptions in Causal Inference (NACI), 38th International Conference on Machine Learning (ICML), 2021},
+      note         = {arXiv preprint 2108.04939, presented at the Workshop on the Neglected Assumptions in Causal Inference (NACI), 38th International Conference on Machine Learning, 2021},
     url={https://arxiv.org/abs/2108.04939}, 
 }
 
@@ -698,7 +699,7 @@ issue_date = {12/1/2009},
 publisher = {JMLR.org},
 volume = {10},
 issn = {1532-4435},
-journal = {The Journal of Machine Learning Research},
+journal = {Journal of Machine Learning Research},
 month = dec,
 pages = {2295-2328},
 numpages = {34}
@@ -775,3 +776,90 @@ doi = {10.1007/s10985-015-9335-y}
     year = {2024},
     url = {https://www.R-project.org/},
   }
+
+
+@article{srivastava2014,
+author = {Srivastava, Nitish and Hinton, Geoffrey and Krizhevsky, Alex and Sutskever, Ilya and Salakhutdinov, Ruslan},
+title = {Dropout: A simple way to prevent neural networks from overfitting},
+year = {2014},
+issue_date = {January 2014},
+publisher = {JMLR.org},
+volume = {15},
+number = {1},
+issn = {1532-4435},
+abstract = {Deep neural nets with a large number of parameters are very powerful machine learning systems. However, overfitting is a serious problem in such networks. Large networks are also slow to use, making it difficult to deal with overfitting by combining the predictions of many different large neural nets at test time. Dropout is a technique for addressing this problem. The key idea is to randomly drop units (along with their connections) from the neural network during training. This prevents units from co-adapting too much. During training, dropout samples from an exponential number of different "thinned" networks. At test time, it is easy to approximate the effect of averaging the predictions of all these thinned networks by simply using a single unthinned network that has smaller weights. This significantly reduces overfitting and gives major improvements over other regularization methods. We show that dropout improves the performance of neural networks on supervised learning tasks in vision, speech recognition, document classification and computational biology, obtaining state-of-the-art results on many benchmark data sets.},
+journal = {Journal of Machine Learning Research},
+month = jan,
+pages = {1929--1958},
+numpages = {30},
+keywords = {regularization, neural networks, model combination, deep learning}
+}
+
+
+@incollection{prechelt2012,
+author="Prechelt, Lutz",
+editor="Orr, Genevi{\`e}ve B.
+and M{\"u}ller, Klaus-Robert",
+title="Early Stopping --- But When?",
+bookTitle="Neural Networks: Tricks of the Trade: Second Edition",
+year="2012",
+publisher="Springer",
+address="Berlin, Heidelberg",
+pages="53--67",
+abstract="Validation can be used to detect when overfitting starts during supervised training of a neural network; training is then stopped before convergence to avoid the overfitting (``early stopping''). The exact criterion used for validation-based early stopping, however, is usually chosen in an ad-hoc fashion or training is stopped interactively. This trick describes how to select a stopping criterion in a systematic fashion; it is a trick for either speeding learning procedures or improving generalization, whichever is more important in the particular situation. An empirical investigation on multi-layer perceptrons shows that there exists a tradeoff between training time and generalization: From the given mix of 1296 training runs using different 12 problems and 24 different network architectures I conclude slower stopping criteria allow for small improvements in generalization (here: about 4{\%} on average), but cost much more training time (here: about factor 4 longer on average).",
+isbn="978-3-642-35289-8",
+doi="10.1007/978-3-642-35289-8_5",
+url="https://doi.org/10.1007/978-3-642-35289-8_5"
+}
+
+
+@inproceedings{Ioffe2015,
+author = {Ioffe, Sergey and Szegedy, Christian},
+title = {Batch {N}ormalization: Accelerating deep network training by reducing internal covariate shift},
+year = {2015},
+publisher = {Proceedings of Machine Learning Research},
+abstract = {Training Deep Neural Networks is complicated by the fact that the distribution of each layer's inputs changes during training, as the parameters of the previous layers change. This slows down the training by requiring lower learning rates and careful parameter initialization, and makes it notoriously hard to train models with saturating nonlinearities. We refer to this phenomenon as internal covariate shift, and address the problem by normalizing layer inputs. Our method draws its strength from making normalization a part of the model architecture and performing the normalization for each training mini-batch. Batch Normalization allows us to use much higher learning rates and be less careful about initialization, and in some cases eliminates the need for Dropout. Applied to a state-of-the-art image classification model, Batch Normalization achieves the same accuracy with 14 times fewer training steps, and beats the original model by a significant margin. Using an ensemble of batch-normalized networks, we improve upon the best published result on ImageNet classification: reaching 4.82\% top-5 test error, exceeding the accuracy of human raters.},
+booktitle = {Proceedings of the 32nd International Conference on Machine Learning (ICML)},
+volume = {37},
+pages = {448--456},
+numpages = {9},
+location = {Lille, France}
+}
+
+
+@inproceedings{glorot2011,
+  title={Deep Sparse Rectifier Neural Networks},
+  author={Xavier Glorot and Antoine Bordes and Yoshua Bengio},
+  booktitle={Proceedings of the 14th International Conference on Artificial Intelligence and Statistics},
+  year={2011},
+  url={https://api.semanticscholar.org/CorpusID:2239473},
+publisher = {Proceedings of Machine Learning Research},
+volume = {15},
+pages = {315--323}
+}
+
+
+@article{rumelhart1986,
+  title={Learning representations by back-propagating errors},
+  author={David E. Rumelhart and Geoffrey E. Hinton and Ronald J. Williams},
+  journal={Nature},
+  year={1986},
+  volume={323},
+  pages={533-536},
+  url={https://api.semanticscholar.org/CorpusID:205001834}
+}
+
+
+@article{schmidhuber2015,
+title = {Deep learning in neural networks: An overview},
+journal = {Neural Networks},
+volume = {61},
+pages = {85-117},
+year = {2015},
+issn = {0893-6080},
+doi = {https://doi.org/10.1016/j.neunet.2014.09.003},
+url = {https://www.sciencedirect.com/science/article/pii/S0893608014002135},
+author = {J{\"u}rgen Schmidhuber},
+keywords = {Deep learning, Supervised learning, Unsupervised learning, Reinforcement learning, Evolutionary computation},
+abstract = {In recent years, deep artificial neural networks (including recurrent ones) have won numerous contests in pattern recognition and machine learning. This historical survey compactly summarizes relevant work, much of it from the previous millennium. Shallow and Deep Learners are distinguished by the depth of their credit assignment paths, which are chains of possibly learnable, causal links between actions and effects. I review deep supervised learning (also recapitulating the history of backpropagation), unsupervised learning, reinforcement learning \& evolutionary computation, and indirect search for short programs encoding deep and large networks.}
+}

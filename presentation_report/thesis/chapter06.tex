@@ -77,7 +77,7 @@ The parameters $\vartheta_k(\mathbf{x})$ depend on the predictors and determine 
 \vartheta_0(\mathbf{x}) \leq \vartheta_1(\mathbf{x}) \leq \dots \leq \vartheta_M(\mathbf{x}).
 \]
 
-To ensure monotonicity, the unbounded parameters $\hat{\vartheta}_k(\mathbf{x}) \in \mathbb{R}$ are first predicted (by the neural network) and then transformed using a cumulative sum of softplus-transformed values. This guarantees that the resulting coefficients are non-decreasing, and therefore that the transformation function $h_I(y \mid \mathbf{x})$ is smooth and strictly monotonically increasing in $y$.
+To ensure monotonicity, the unbounded parameters $\tilde{\vartheta}_k(\mathbf{x}) \in \mathbb{R}$ are first predicted (by the neural network) and then transformed using a cumulative sum of softplus-transformed values. This guarantees that the resulting coefficients are non-decreasing, and therefore that the transformation function $h_I(y \mid \mathbf{x})$ is smooth and strictly monotonically increasing in $y$.
 Bernstein polynomials can approximate a wide range of smooth functions, provided the degree $M$ is sufficiently large.
 
 
@@ -278,7 +278,9 @@ Dummy encoding ensures that discrete predictors can be incorporated into the dee
 
 \section{Scaling of continuous variables} \label{sec:scaling_continuous_variables}
 
-Neural networks work best when the input variables are standardized. 
+
+
+Neural networks work best when the input variables are standardized. While scaling (i.e., zero-mean and unit-variance normalization) removes the marginal variance pattern, \citet{reisach2021} showed that many structure learning algorithms rely heavily on this pattern and may suffer a drop in performance when it is eliminated. However, since our approach assumes a known DAG structure, this is not a concern in our setting. Therefore, we scale continuous input variables in TRAM-DAGs.
 
 A linear, monotonic, and invertible transformation of a predictor variable changes the interpretation of the coefficient. Scaling a predictor variable $X$ as $X_{\text{std}} = (X - \mu_X) / \sigma_X$ implies that the coefficient $\tilde{\beta}$ is interpreted as the change in log-odds for a one standard deviation increase in the predictor variable -- or equivalently, for a one unit increase in the standardized predictor. This differs from the interpretation of the original coefficient $\beta$, which represents the change in log-odds for a one-unit increase in the raw predictor variable.
 

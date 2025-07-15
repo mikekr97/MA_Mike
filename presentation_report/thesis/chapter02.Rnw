@@ -19,7 +19,7 @@ This chapter introduces the methodological foundations and experimental designs 
 
 \section{TRAM-DAGs} \label{sec:methods_tram_dags}
 
-The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in a flexible and, if desired, interpretable way. This enables the sampling of observational and interventional distributions, as well as to make counterfactual statements. The approach requires data and a known causal graph describing the underlying structure. It is assumed that there are no hidden confounders. TRAM-DAGs estimate, for each variable $X_i$, a transformation function $Z_i = h_i(X_i \mid pa(X_i))$, where $Z_i$ denotes the noise variable and $\text{pa}(X_i)$ are the causal parents of $X_i$. Crucially, this relationship can be inverted to yield the structural equation $X_i = h_i^{-1}(Z_i \mid pa(X_i))$. The monotonically increasing transformation functions $h_i$ represent the conditional distribution  $X_i \mid \text{pa}(X_i)$ on a latent scale $Z_i$. They are based on the framework of transformation models as introduced by \citet{hothorn2014} and were extended to deep TRAMs by \citet{sick2020}. The following summarize the key ideas of these models, which form the building blocks of TRAM-DAGs.
+The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in a flexible and, if desired, interpretable way. This enables the sampling of observational and interventional distributions, as well as to make counterfactual statements. The approach requires data and a known causal graph describing the underlying structure. It is assumed that there are no hidden confounders. TRAM-DAGs estimate, for each variable $X_i$, a transformation function $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$, where $Z_i$ denotes the noise variable and $\operatorname{pa}(X_i)$ are the causal parents of $X_i$. Crucially, this relationship can be inverted to yield the structural equation $X_i = h_i^{-1}(Z_i \mid \operatorname{pa}(X_i))$. The monotonically increasing transformation functions $h_i$ represent the conditional distribution  $X_i \mid \operatorname{pa}(X_i)$ on a latent scale $Z_i$. They are based on the framework of transformation models as introduced by \citet{hothorn2014} and were extended to deep TRAMs by \citet{sick2020}. The following summarize the key ideas of these models, which form the building blocks of TRAM-DAGs.
 
 
 \subsection{Transformation Models}
@@ -106,7 +106,7 @@ where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predic
 \medskip
 
 
-\textbf{Intercept:} The intercept defines the baseline shape of the transformation function when $\mathbf{x}_{L}^\top \boldsymbol{\beta} = 0$ and $f(\mathbf{x}_{C}) = 0$. For continuous outcomes, it is modeled using a smooth Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}), and for discrete outcomes via cut-points. The preliminary parameters $\hat{\vartheta}_k$ are the output nodes of a neural network, and subsequently transformed to be monotonically increasing $\vartheta_k$. A simple intercept (SI) assumes no dependency on predictors and uses only a constant input. A complex intercept (CI), by contrast, allows the parameters to vary as a function of selected predictors by feeding $\mathbf{x}$ into a neural network with hidden layers, producing predictor dependent parameters $\vartheta_k(\mathbf{x})$. This allows the baseline distribution to adapt flexibly to different covariate settings. Details on the computation of the Bernstein polynomial are provided in Appendix~\ref{sec:bernstein_polynomial}.
+\textbf{Intercept:} The intercept defines the baseline shape of the transformation function when $\mathbf{x}_{L}^\top \boldsymbol{\beta} = 0$ and $f(\mathbf{x}_{C}) = 0$. For continuous outcomes, it is modeled using a smooth Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}), and for discrete outcomes via cut-points. The preliminary parameters $\tilde{\vartheta}_k$ are the output nodes of a neural network, and subsequently transformed to be monotonically increasing $\vartheta_k$. A simple intercept (SI) assumes no dependency on predictors and uses only a constant input. A complex intercept (CI), by contrast, allows the parameters to vary as a function of selected predictors by feeding $\mathbf{x}$ into a neural network with hidden layers, producing predictor dependent parameters $\vartheta_k(\mathbf{x})$. This allows the baseline distribution to adapt flexibly to different covariate settings. Details on the computation of the Bernstein polynomial are provided in Appendix~\ref{sec:bernstein_polynomial}.
 
 \medskip
 
@@ -114,7 +114,7 @@ where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predic
 
 \medskip
 
-\textbf{Complex shift:} Non-linear dependencies between predictors and the transformation function can be modeled by the complex shift (CS) component. The corresponding predictors $\mathbf{x}_{C}$ are input into a deep neural network (with at least one hidden layer and non-linear activation functions such as ReLU or sigmoid), yielding a scalar output $f(\mathbf{x}_{C})$. This allows modeling of non-linear predictor effects, including interactions between predictors if input multiple predictors into the neural network module. See Appendix~\ref{sec:complex_shift} for an example of modeling an interaction with a complex shift for the purpose of estimating individualized treatment effects (ITEs).
+\textbf{Complex shift:} Non-linear dependencies between predictors and the transformation function can be modeled by the complex shift (CS) component. The corresponding predictors $\mathbf{x}_{C}$ are input into a deep neural network (with at least one hidden layer and non-linear activation functions), yielding a scalar output $f(\mathbf{x}_{C})$. This allows modeling of non-linear predictor effects, including interactions between predictors if input multiple predictors into the neural network module. See Appendix~\ref{sec:complex_shift} for an example of modeling an interaction with a complex shift for the purpose of estimating individualized treatment effects (ITEs).
 
 \medskip
 
@@ -123,11 +123,12 @@ where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predic
 
 \medskip
 
-The resulting distribution function of deep TRAMs is invariant to the choice of the inverse-link function $F_Z$ (latent distribution) in an unconditional \citep{hothorn2018} or fully flexible (CI) setting. However, once restrictions are introduced on the influence of the predictors -- such as LS or CS -- the model assumes a fixed scale of dependence. The choice of latent distribution may depend on (i) assumptions about the data-generating process, (ii) the conventional and widely used interpretation scale for parameters (e.g., log-odds ratios for discrete outcomes or log-hazard ratios in survival analysis), and (iii) the scale on which the negative log-likelihood (NLL) is minimized.
+The resulting distribution function of deep TRAMs is invariant to the choice of the inverse-link function $F_Z$ (latent distribution) in an unconditional \citep{hothorn2018} or fully flexible (CI) setting. However, once restrictions are introduced on the influence of the predictors -- such as LS or CS -- the model assumes a fixed scale of dependence. The choice of latent distribution may depend on (i) assumptions about the data-generating process, (ii) the conventional and widely used interpretation scale for parameters (e.g., log-odds ratios for discrete outcomes or log-hazard ratios in survival analysis), and (iii) a data-driven criterion such as selecting the distribution that minimizes the negative log-likelihood (NLL) on the observed data.
 
+%
 \medskip
 
-\textbf{Parameter estimation:} The weights of the neural networks are learned by minimizing the NLL of the conditional model. Starting from random weight initialization, the networks are trained using the Adam optimizer \citep{kingma2015}. Outputs of the modules are assembled to compute the NLL, and backpropagation is used to adjust weights iteratively. Deep learning techniques such as dropout, early stopping, and batch normalization can be applied to prevent overfitting and improve generalization. Nonlinear activation functions (e.g., ReLU or sigmoid) are used in hidden layers to capture complex relationships.
+\textbf{Parameter estimation:} The weights of the neural networks are learned by minimizing the NLL of the conditional model. Starting from random weight initialization, the networks are trained using the Adam optimizer \citep{kingma2015}. Outputs of the modules are assembled to compute the NLL, and backpropagation \citep{rumelhart1986} is used to adjust weights iteratively. Deep learning techniques such as dropout \citep{srivastava2014}, early stopping \citep{prechelt2012}, and batch normalization \citep{Ioffe2015} can be applied to prevent overfitting and improve generalization. Nonlinear activation functions (e.g., ReLU \citealp{glorot2011} or sigmoid \citealp{rumelhart1986}) are used in hidden layers to capture complex relationships. \citet{schmidhuber2015} provides an extensive historical overview of deep learning methods and their development.
 
 
 
@@ -161,7 +162,7 @@ This DAG, along with its assumed dependencies, can be represented by an adjacenc
 \label{eq:MA}
 \end{equation}
 
-To apply the TRAM-DAG framework to this example, it is assumed that observational data follow the structure defined by the adjacency matrix~\ref{eq:MA}. In practice, the DAG may be determined by domain knowledge or through a structure learning algorithm (see e.g. \citealp{zheng2018}). Given a DAG, the conditional distribution of each variable is estimated using a deep TRAM, which subsequently allows generative sampling and to make causal inference. The conditional distribution functions for this example are:
+Based on this DAG, each variable's conditional distribution is modeled using a deep TRAM, enabling generative sampling and causal inference. The corresponding conditional distributions are:
 
 \[
 \begin{aligned}
@@ -173,7 +174,6 @@ X_3 &\sim F_Z(h_I(x_3) + \mathrm{LS}_{x_1} + \mathrm{CS}_{x_2})
 
 
 \textbf{Constructing the modular neural network:} As described in Section~\ref{sec:deep_trams}, the transformation functions are constructed using a modular neural network. The inputs into the framework include the variables and the adjacency matrix~\ref{eq:MA}, which governs the information flow and ensures that connections match to the specified causal structure. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled prior to input. Further discussion of encoding and scaling is provided in Appendix~\ref{sec:encoding_discrete_variables} and~\ref{sec:scaling_continuous_variables}.
-While scaling (i.e., zero-mean and unit-variance normalization) removes the marginal variance pattern, \citet{reisach2021} showed that many structure learning algorithms rely heavily on this pattern and may suffer a drop in performance when it is eliminated. However, since our approach assumes a known DAG structure, this is not a concern in our setting.
 
 Once the data are preprocessed and the structure is specified, the architecture of the neural networks for the complex shift or complex intercept must be defined -- including choices such as depth, width, activation functions, and whether to use dropout or batch normalization. These decisions depend on the assumed complexity of the effects and the need to regularize against overfitting.
 
@@ -226,14 +226,16 @@ $
 % with the same process as for the observational sampling, with the only difference that the intervened variable $X_2$ stays constant.
 
 
-\textbf{Interventional sampling:} To sample from an interventional distribution, we apply the \textit{do}-operator as described by \citet{pearl1995} (originally referred to as "set"). The \textit{do}-operator fixes a variable at a specific value, thereby removing its causal dependencies. This allows to simulate interventions by holding that variable constant while sampling the remaining variables as described earlier in Algorithm~\ref{alg:sampling}. For example, suppose we intervene on $X_2$ and set it to a specific value $\alpha$, denoted as $\text{do}(X_2 = \alpha$. To sample from the resulting interventional distribution, we proceed as in observational sampling, with the only difference that $X_2$ is no longer sampled but fixed to the value $\alpha$. $X_1$ would not be affected by the intervention, as it is not a descendant of $X_2$ in the DAG. Therefore, sampling $X_3$ under this intervention would follow:
+%  do-operator (originally referred to as "set")
+
+\textbf{Interventional sampling:} To sample from an interventional distribution, we apply the \textit{do}-operator as described by \citet{pearl1995}. The \textit{do}-operator fixes a variable at a specific value, thereby removing its causal dependencies. This allows to simulate interventions by holding that variable constant while sampling the remaining variables as described earlier in Algorithm~\ref{alg:sampling}. For example, suppose we intervene on $X_2$ and set it to a specific value $\alpha$, denoted as $\text{do}(X_2 = \alpha)$. To sample from the resulting interventional distribution, we proceed as in observational sampling, with the only difference that $X_2$ is no longer sampled but fixed to the value $\alpha$. $X_1$ would not be affected by the intervention, as it is not a descendant of $X_2$ in the DAG. Therefore, sampling $X_3$ under this intervention would follow:
 
 \[
 x_3 = \max \left( \{0\} \cup \left\{ x : z_3 > h(x \mid x_1, \textcolor{red}{x_2 = \alpha}) \right\} \right) + 1.
 \]
 
 
-\textbf{Counterfactual queries:} In a counterfactual query, we are interested in what the value of a variable $X_i$ would have been, had another variable $X_j$ taken a different value than actually observed. \citet{pearl_book2009} describes a three-step procedure to answer such queries. In short, let $\mathbf{x}$ denote the observed values (a sample) of all variables in a DAG and let $\mathbf{z}$ denote the corresponding latent variables inferred via the transformation functions: $Z_k = h_k(x_k \mid \text{pa}(x_k))$. Then, in a counterfactual query where $X_j$ is set to a new value $\alpha$ (intervention), we retain the same latent values $\mathbf{z}$, but apply the transformation functions in a post-interventional DAG with $X_j := \alpha$ to compute the counterfactual outcomes for the remaining variables.
+\textbf{Counterfactual queries:} In a counterfactual query, we are interested in what the value of a variable $X_i$ would have been, had another variable $X_j$ taken a different value than actually observed. \citet{pearl_book2009} describes a three-step procedure to answer such queries. In short, let $\mathbf{x}$ denote the observed values (a sample) of all variables in a DAG and let $\mathbf{z}$ denote the corresponding latent variables inferred via the transformation functions: $z_k = h_k(x_k \mid \text{pa}(x_k))$. Then, in a counterfactual query where $X_j$ is set to a new value $\alpha$ (intervention), we retain the same latent values $\mathbf{z}$, but apply the transformation functions in a post-interventional DAG with $X_j := \alpha$ to compute the counterfactual outcomes for the remaining variables.
 The counterfactual estimation procedure is outlined in Algorithm~\ref{alg:single_cf} and visualized in Figure~\ref{fig:cf_viz}. Note that this visualization is simplified to illustrate only one parent variable ($X_j$); in practice, the set of parents $\text{pa}(X_i)$ may include additional predictors.
 
 \begin{algorithm}
@@ -249,9 +251,9 @@ The counterfactual estimation procedure is outlined in Algorithm~\ref{alg:single
 \vspace{0.3em}
 \State \textbf{Step 3 (Prediction):} Using the counterfactual DAG and the intervened value $X_j = \alpha$, go along the causal order and determine the counterfactual values for all descendants $X_k$ of $X_j$. This is done by evaluating
 \[
-x_k = h_k^{-1}(Z_k \mid \text{pa}^*(x_k)),
+x_k = h_k^{-1}(z_k \mid \text{pa}^*(x_k)),
 \]
-where the values of the parents $\text{pa}^*(x_k)$ may have changed due to the intervention.
+where $z_k$ is the latent value obtained in Step 1, and $\text{pa}^*(x_k)$ are the (possibly updated) parent values after the intervention.
 \end{algorithmic}
 \end{algorithm}
 
@@ -264,7 +266,7 @@ where the values of the parents $\text{pa}^*(x_k)$ may have changed due to the i
 
 
 
-While counterfactual probabilities (e.g., $P(X_i = x \mid \text{do}(X_j = \alpha), z_i)$) are well-defined in both continuous and discrete settings, determining the counterfactual realizations is generally only possible for continuous variables. In the discrete case, no unique latent value $z_k$ can be recovered from an observed category, as multiple $z_k$ values may map to the same outcome. Consequently, only the probabilities of counterfactual outcomes can be evaluated for discrete variables, not their exact values. This is a fundamental limitation of counterfactual reasoning in discrete settings.
+While counterfactual probabilities (e.g., $P(X_i = x \mid \text{do}(X_j = \alpha), z_i)$) are well-defined in both continuous and discrete settings, determining the counterfactual realizations is generally only possible for continuous variables. In the discrete case, no unique latent value $z_k$ can be recovered from an observed category, as multiple $z_k$ values may map to the same outcome. Consequently, only the probabilities of counterfactual outcomes can be evaluated for discrete variables, not their exact values. This is a fundamental limitation of counterfactual reasoning in discrete settings with continuous latent variables.
 
 % 
 % \textbf{Counterfactual queries:} In a counterfactual query, we are interested in what the value of a variable $X_i$ would have been, had another variable $X_j$ taken a different value than it actually did. \citet{pearl_book2009} describes a three-step procedure to answer such queries. Given a structural causal model $M$ and observed evidence $e$ (i.e., the values of all variables $\mathbf{x}$ in one observed sample sample), the goal is to compute the counterfactual value or probability of $Y = y$ under the hypothetical condition $X = x$.
@@ -568,7 +570,7 @@ In this thesis, although various quantitative evaluation metrics exist, we prima
 
 
 
-\section{Experiment 1: TRAM-DAG (simulation study)} \label{sec:methods_experiment1}
+\section{Experiment 1: TRAM-DAG (simulation)} \label{sec:methods_experiment1}
 
 This experiment demonstrates the application of TRAM-DAGs on a synthetic dataset, using the illustrative DAG previously shown in Figure~\ref{fig:tram_dag}. The objective is to show how TRAM-DAGs can learn structural equations from observational data by fitting a model to the joint distribution that resulted from the underlying causal structure.
 
@@ -697,7 +699,7 @@ We used the same data pre-processing steps as \citet{chen2025} to ensure compara
 
 
 
-\section{Experiment 3: ITE model robustness in RCTs (simulation study)} \label{sec:methods_experiment3}
+\section{Experiment 3: ITE model robustness in RCTs (simulation)} \label{sec:methods_experiment3}
 
 In this section, we perform a simulation study to estimate the ITE using different models in an RCT setting under various scenarios. The aim is to identify conditions under which ITE estimation fails, and whether such failure is model-agnostic -- i.e., driven by external factors such as unobserved covariates or the strength of the treatment effect, rather than by the model class itself. This may provide insight into why ITE estimation can fail in real-world applications, as demonstrated by \citet{chen2025} on the IST dataset and replicated in our own work in Experiment 2 (Section~\ref{sec:results_experiment2}). The simulation is based on a data-generating process (DGP) that resembles an RCT. We assume a binary outcome and a set of covariates that influence the outcome. There may also be treatment-covariate interactions that are responsible for heterogeneity in the treatment effect.
 
@@ -817,7 +819,7 @@ These simulation scenarios allow us to assess ITE estimation performance under c
 % https://epge.fgv.br/files/1125.pdf
 
 
-\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation study)} \label{sec:methods_experiment4}
+\section{Experiment 4: ITE estimation with TRAM-DAGs (simulation)} \label{sec:methods_experiment4}
 
 
 We claim that the TRAM-DAG framework can be effectively used for ITE estimation on observational data with confounding and mediating variables, provided that the identifiability assumptions are satisfied and the DAG is fully known. Therefor, we apply TRAM-DAGs in both a confounded and a randomized setting, using data simulated according to the DAGs shown in Figure~\ref{fig:ite_dag_observational}. The binary treatment ($X_4$) is the intervention variable, and the goal is to estimate the ITE for the continuous outcome $Y$.
