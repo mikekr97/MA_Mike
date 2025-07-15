@@ -1,4 +1,29 @@
-##### Mr Browns MAC ####
+
+
+###############################################################
+
+# Code for dummy encoding with TRAM-DAGs
+# using real data: Teleconnections
+
+# Original paper: https://journals.ametsoc.org/view/journals/bams/102/12/BAMS-D-20-0117.1.xml?tab_body=fulltext-display
+
+
+###############################################################
+
+
+# Info: In this code (and corresponding Utils) the loss etc. are hard-coded. 
+# The reason is that the use of the Meta Adjacency Matrix and that we fit 
+# all conditional transformation functions all in one model, and not as single
+# separate models, make it complicated, when to use a variable as predictor and
+# when as outcome. Depending on the situation, it would have to be encoded differently,
+# or rules had to be applied to automatically encode or decode the variables.
+# Such a rule is likely much easier when the transformation functions were 
+# modelled separately. Therefore, just for illustration how it works, I hard-coded
+# them here in this example.
+
+
+
+##### when starting a new session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
 }
@@ -9,31 +34,31 @@ if (length(args) == 0) {
   args <- c(1, 'ls')
 }
 
-# args <- c(4, 'cs')
+# linear shift
 F32 <- as.numeric(args[1])
 M32 <- args[2]
 print(paste("FS:", F32, "M32:", M32))
 
 
-#### A mixture of discrete and continuous variables ####
+#### Libraries ####
 library(tensorflow)
 library(keras)
 library(mlt)
 library(tram)
 library(MASS)
-library(tensorflow)
-library(keras)
 library(tidyverse)
-source('utils_tf_ordinal_dummy.R')    # new tf file for ordinal data (predictors)
+source('code/utils/utils_tf_ordinal_dummy.R')    # new tf file for ordinal data (predictors)
 
 #### For TFP
 library(tfprobability)
-source('utils_tfp_ordinal_dummy.R')
+source('code/utils/utils_tfp_ordinal_dummy.R')  # new tfp file for ordinal data (predictors)
 
-##### Flavor of experiment ######
 
-#### Saving the current version of the script into runtime
-DIR = 'runs/experiment_5_all_ordinal_dummy_encoded_real_data_linear/run'
+
+# DIR = 'runs/experiment_5_all_ordinal_dummy_encoded_real_data_linear/run'
+
+# run moved to "old_model_runs"
+DIR = 'runs/old_model_runs/experiment_5_all_ordinal_dummy_encoded_real_data_linear/run'
 if (!dir.exists(DIR)) {
   dir.create(DIR, recursive = TRUE)
 }
@@ -79,11 +104,14 @@ MA
 
 # fn = 'triangle_mixed_DGPLinear_ModelLinear.h5'
 # fn = 'triangle_mixed_DGPSin_ModelCS.h5'
+
 fn = file.path(DIR, paste0('triangle_mixed_', FUN_NAME, '_', MODEL_NAME))
+
 print(paste0("Starting experiment ", fn))
 
-xs = seq(-1,1,0.1)
 
+# visualize (linear) shift
+xs = seq(-1,1,0.1)
 plot(xs, f(xs), sub=fn, xlab='x2', ylab='f(x2)', main='DGP influence of x2 on x3')
 
 
@@ -184,12 +212,12 @@ raw_df <- data.frame(
 pairs(raw_df)
 
 
-# # Step 2: Convert Numeric Variables to ordinal
+# # Step 2: Convert Numeric Variables to ordinal (similarly as done in original paper)
 raw_df$ENSO_ordinal <- cut(raw_df$ENSO, breaks = quantile(raw_df$ENSO, probs = c(0, 1/3, 2/3, 1)), labels = c(1, 2, 3), include.lowest = TRUE)
 raw_df$IOD_ordinal <- cut(raw_df$IOD, breaks = quantile(raw_df$IOD, probs = c(0, 1/3, 2/3, 1)), labels = c(1, 2, 3), include.lowest = TRUE)
 raw_df$AU_binary <- cut(raw_df$AU, breaks = quantile(raw_df$AU, probs = c(0, 0.5, 1)), labels = c(1, 2), include.lowest = TRUE)
 
-# 
+# df of standardized and ordinal variables
 raw_df
 
 
@@ -209,7 +237,7 @@ train_df <- raw_df[train_indizes,]
 test_df <- raw_df[-train_indizes,]
 
 
-# create the data object
+# create the data object with dummy encoded variables
 
 dgp <- function(n_obs, doX=c(NA, NA, NA), seed=123, data = NULL) {
   
@@ -353,7 +381,7 @@ train$df_R$x1
 # can be reconstructed as
 
 
-# Reconstruct x1, x2, and x3
+# Reconstruct x1, x2, and x3 from dummy encoded variables
 x1_reconstructed <- as.matrix(train$df_R_encoded[, c("x1_t1", "x1_t2")]) %*% c(1, 2) + 1
 x1_reconstructed
 # x2_reconstructed <- as.matrix(train$df_R_encoded[, c("x2_t1", "x2_t2")]) %*% c(1, 2) + 1
@@ -384,7 +412,12 @@ for (i in 1:nrow(MA)){ #Maximum number of coefficients (BS and Levels - 1 for th
 
 MA_encoded = ifelse(train$A_e, "ls", 0)
 
-param_model = create_param_model(MA, MA_encoded = MA_encoded,  hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS, train = train)
+# create model
+param_model = create_param_model(MA, MA_encoded = MA_encoded,  
+                                 hidden_features_I=hidden_features_I, 
+                                 len_theta=len_theta, 
+                                 hidden_features_CS=hidden_features_CS, 
+                                 train = train)
 
 # input the samples into the model
 # h_params = param_model(train$df_orig)
@@ -453,7 +486,6 @@ if (file.exists(fnh5)){
 }
 
 par(mfrow=c(1,1))
-#pdf(paste0('loss_',fn,'.pdf'))
 epochs = length(train_loss)
 plot(1:length(train_loss), train_loss, type='l', main='Normal Training (green is valid)', ylim = c(2.45, 13))
 lines(1:length(train_loss), val_loss, type = 'l', col = 'green')
@@ -507,7 +539,7 @@ comp
 
 
 
-# do the same plot for all 5 weights previously saved
+# plot the learned parameters over epochs vs. estimates by polr() and glm()
 p <- ggplot(ws, aes(x=1:nrow(ws))) + 
   geom_line(aes(y=w12, color='x1.1 --> x2')) + 
   geom_line(aes(y=w22, color='x1.2 --> x2')) + 
@@ -534,41 +566,15 @@ if (TRUE){
   ggsave(file_path, plot = p, width = 8, height = 6/2)
 }
 
-###### Coefficient Plot for Paper #######
-# if (FALSE){
-#   p = ggplot(ws, aes(x=1:nrow(ws))) + 
-#     geom_line(aes(y=w12, color="beta12")) + 
-#     geom_line(aes(y=w13, color="beta13")) + 
-#     geom_line(aes(y=w23, color="beta23")) + 
-#     geom_hline(aes(yintercept=2, color="beta12"), linetype=2) +
-#     geom_hline(aes(yintercept=0.2, color="beta13"), linetype=2) +
-#     geom_hline(aes(yintercept=-0.3, color="beta23"), linetype=2) +
-#     scale_color_manual(
-#       values=c('beta12'='skyblue', 'beta13'='red', 'beta23'='darkgreen'),
-#       labels=c(expression(beta[12]), expression(beta[13]), expression(beta[23]))
-#     ) +
-#     labs(x='Epoch', y='Coefficients') +
-#     theme_minimal() +
-#     theme(
-#       legend.title = element_blank(),   # Removes the legend title
-#       legend.position = c(0.85, 0.17),  # Adjust this to position the legend inside the plot (lower-right)
-#       legend.background = element_rect(fill="white", colour="black")  # Optional: white background with border
-#     )
-#   
-#   p
-#   file_name <- paste0(fn, "_coef_epoch.pdf")
-#   if (FALSE){
-#     file_path <- file.path("~/Library/CloudStorage/Dropbox/Apps/Overleaf/tramdag/figures", basename(file_name))
-#     ggsave(file_path, plot = p, width = 8, height = 6/2)
-#   }
-# }
-
 # estimated beta weights
 param_model$get_layer(name = "beta")$get_weights() * param_model$get_layer(name = "beta")$mask
 
 
+
+
 ##### Checking observational distribution ####
-# s = do_dag_struct(param_model, train$A, doX=c(NA, NA, NA), num_samples = 5000)
+
+
 ##### Checking observational distribution ####
 s = do_dag_struct(param_model, MA = train$A, MA_encoded = MA_encoded, doX=c(NA, NA, NA), num_samples = 5000, data = train)
 plot(table(train$df_R[,3])/sum(table(train$df_R[,3])), ylab='Probability ', 
@@ -579,11 +585,7 @@ points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
 table(s[,3]$numpy())/5000
 
 par(mfrow=c(1,3))
-# for (i in 1:2){
-#   hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X",i, " red: ours, black: data"), xlab='samples')
-#   #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
-#   lines(density(s[,i]$numpy()), col='red')
-# }
+
 for (i in 1:2){
   plot(table(train$df_orig$numpy()[,i])/sum(table(train$df_orig$numpy()[,i])),main=paste0("X",i, " red: ours, black: data"), xlab='samples')
   #hist(train$df_orig$numpy()[,i], freq=FALSE, 100,main=paste0("X_",i))
@@ -597,31 +599,7 @@ points(as.numeric(table(s[,3]$numpy()))/5000, col='red', lty=2)
 table(s[,3]$numpy())/5000
 par(mfrow=c(1,1))
 
-######### Simulation of do-interventions #####
-# doX=c(1, NA, NA)
-# dx0.2 = dgp(10000, doX=doX)
-# dx0.2$df_orig$numpy()[1:5,]
-# 
-# 
-# doX=c(0.7, NA, NA)
-# dx7 = dgp(10000, doX=doX)
-# #hist(dx0.2$df_orig$numpy()[,2], freq=FALSE,100)
-# mean(dx7$df_orig$numpy()[,2]) - mean(dx0.2$df_orig$numpy()[,2])  
-# mean(dx7$df_orig$numpy()[,3]) - mean(dx0.2$df_orig$numpy()[,3])  
-# 
-# s_dag = do_dag_struct(param_model, train$A, doX=c(0.2, NA, NA))
-# hist(dx0.2$df_orig$numpy()[,2], freq=FALSE, 50, main='X2 | Do(X1=0.2)', xlab='samples', 
-#      sub='Histogram from DGP with do. red:TRAM_DAG')
-# sample_dag_0.2 = s_dag[,2]$numpy()
-# lines(density(sample_dag_0.2), col='red', lw=2)
-# m_x2_do_x10.2 = median(sample_dag_0.2)
-# 
-# i = 3 
-# d = dx0.2$df_orig$numpy()[,i]
-# plot(table(d)/length(d), ylab='Probability ', 
-#      main='X3 | do(X1=0.2)',
-#      xlab='X3', ylim=c(0,0.6),  sub='Black DGP with do. red:TRAM_DAG')
-# points(as.numeric(table(s_dag[,3]$numpy()))/nrow(s_dag), col='red', lty=2)
+
 
 ###### Figure for paper ######
 if (TRUE){
@@ -690,7 +668,7 @@ if (TRUE){
   }
   
 }
-
+p
 
 
 

@@ -1,3 +1,15 @@
+
+###############################################################
+
+# Code for Experiment 4: ITE estimation with TRAM-DAGs (simulation study) - RCT
+
+# here we applied an S-learner TRAM-DAG to estimate ITEs in an RCT setting
+
+###############################################################
+
+
+
+
 ##### When starting a new R Session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
@@ -5,8 +17,6 @@ if (FALSE){
 
 
 
-
-#### A mixture of discrete and continuous variables ####
 library(tensorflow)
 library(keras)
 library(mlt)
@@ -26,7 +36,6 @@ source('code/utils/utils_tf.R')
 library(tfprobability)
 source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/ITE_RCT_simulation/run'
@@ -442,7 +451,7 @@ data_type = train$type
 
 ## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 
 # where the transformation function is the cut-point representing the probability P(X4)
-
+# (custom loss: struct_dag_loss_ITE_observational)
 
 
 ############################
@@ -461,53 +470,6 @@ data_type = train$type
 #   | X₆       | Insulin resistance (e.g., HOMA-IR)             | Continuous | Mediator   |
 #   | Y        | Cardiovascular risk score                      | Continuous | Outcome    |
 #   
-
-
-
-
-##### Check ITE based on median vs. based on expected values of potential outcomes:
-
-
-ATE_median <- median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
-  median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
-ATE_median
-
-ATE_mean <- mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
-  mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
-ATE_mean
-
-par(mfrow=c(1,2))
-hist(train$simulated_full_data$ITE_median, main = "ITE Median", xlab = "ITE Median", 
-     breaks = 50) #  , ylim= c(0, 1200)
-abline(v=ATE_median, lwd = 2)
-abline(v=mean(train$simulated_full_data$ITE_median), col = "red", lwd = 2, 
-       lty = 2)
-legend("topright", legend = c("ATE=median(Y|T=1)-median(Y|T=0) ", "ATE=mean(ITE_median)"), 
-       col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
-
-hist(train$simulated_full_data$ITE_expected, main = "ITE Expected", xlab = "ITE Expected", 
-     breaks = 50 )  #, ylim= c(0, 1200))
-abline(v=ATE_mean, lwd= 2)
-abline(v=mean(train$simulated_full_data$ITE_expected), col = "red", lwd = 2,
-       lty = 2)
-legend("topright", legend = c("ATE=mean(Y|T=1)-mean(Y|T=0) ", "ATE=mean(ITE_expected)"),
-       col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
-
-
-
-
-plot(train$simulated_full_data$ITE_median, train$simulated_full_data$ITE_expected, 
-     main = "ITE Median vs ITE Expected", 
-     xlab = "ITE Median", ylab = "ITE Expected",
-     pch = 19)
-abline(0, 1, col = "red", lwd = 2)  # Add a diagonal line for reference
-
-
-
-hist(train$simulated_full_data$Y, main = "Y (X7)", breaks=50, 
-     xlab = "Y (X7)", border = "black")
-
-
 
 
 
@@ -611,19 +573,51 @@ ATE_median_theoretical
 
 
 
-# y_tx <- train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]
-# y_ct <- train$simulated_full_data$Y[train$simulated_full_data$Tr == 0]
-# n_boot = 10000
-# # Bootstrap distribution of difference in medians
-# boot_diff <- replicate(n_boot, {
-#   sample_tx <- sample(y_tx, length(y_tx), replace = TRUE)
-#   sample_ct <- sample(y_ct, length(y_ct), replace = TRUE)
-#   median(sample_tx) - median(sample_ct)
-# })
+
+##### Check ITE based on median vs. based on expected values of potential outcomes:
+
 # 
-# # Compute 95% confidence interval
-# ATE.lb <- quantile(boot_diff, 0.025)
-# ATE.ub <- quantile(boot_diff, 0.975)
+# ATE_median <- median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
+#   median(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
+# ATE_median
+# 
+# ATE_mean <- mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 1]) - 
+#   mean(train$simulated_full_data$Y[train$simulated_full_data$Tr == 0])
+# ATE_mean
+# 
+# par(mfrow=c(1,2))
+# hist(train$simulated_full_data$ITE_median, main = "ITE Median", xlab = "ITE Median", 
+#      breaks = 50) #  , ylim= c(0, 1200)
+# abline(v=ATE_median, lwd = 2)
+# abline(v=mean(train$simulated_full_data$ITE_median), col = "red", lwd = 2, 
+#        lty = 2)
+# legend("topright", legend = c("ATE=median(Y|T=1)-median(Y|T=0) ", "ATE=mean(ITE_median)"), 
+#        col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
+# 
+# hist(train$simulated_full_data$ITE_expected, main = "ITE Expected", xlab = "ITE Expected", 
+#      breaks = 50 )  #, ylim= c(0, 1200))
+# abline(v=ATE_mean, lwd= 2)
+# abline(v=mean(train$simulated_full_data$ITE_expected), col = "red", lwd = 2,
+#        lty = 2)
+# legend("topright", legend = c("ATE=mean(Y|T=1)-mean(Y|T=0) ", "ATE=mean(ITE_expected)"),
+#        col = c("black", "red"), lwd = 2, cex = 0.8, bty = "n", lty = c(1,2))
+# 
+# 
+# 
+# 
+# plot(train$simulated_full_data$ITE_median, train$simulated_full_data$ITE_expected, 
+#      main = "ITE Median vs ITE Expected", 
+#      xlab = "ITE Median", ylab = "ITE Expected",
+#      pch = 19)
+# abline(0, 1, col = "red", lwd = 2)  # Add a diagonal line for reference
+# 
+# 
+# 
+# hist(train$simulated_full_data$Y, main = "Y (X7)", breaks=50, 
+#      xlab = "Y (X7)", border = "black")
+# 
+# 
+# 
 
 
 
@@ -636,20 +630,17 @@ ATE_median_theoretical
 len_theta_max = 20 # max number for intercept (ordinal)
 len_theta = 20 # number of coefficients of the Bernstein polynomials
 
-# Attention, number of nodes in each layer should be grater than the number of 
-# variable that have a complex influence (CI or CS) on other variables, because
-# with masking, some connections are "cut", so for 7 influencing variables, we 
-# need at least 7 nodes in the first layer, to ensure there are enough 
-# connections available. --> this is not an issue anymore, if the NN's were made 
-# separately for each node, compared to this masking approach here
+
 hidden_features_I = c(10, 10, 10) 
 hidden_features_CS = c(2, 5, 5, 2)
 
 
-param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS,
+param_model = create_param_model(MA, hidden_features_I=hidden_features_I, 
+                                 len_theta=len_theta, 
+                                 hidden_features_CS=hidden_features_CS,
                                  dropout = FALSE, batchnorm = FALSE, activation = "relu")
 optimizer = optimizer_adam(learning_rate = 0.001)
-param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational)
+param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational) # custom loss
 
 h_params <- param_model(train$dat.tf)
 
@@ -657,7 +648,7 @@ param_model$evaluate(x = train$dat.tf, y=train$dat.tf, batch_size = 7L)
 summary(param_model)
 
 # show activation function activation_68 --> Relu is used (before it was sigmoid)
-param_model$get_layer("activation_761")$get_config()
+# param_model$get_layer("activation_761")$get_config()
 
 
 
@@ -678,7 +669,7 @@ num_epochs <- 1000
 
 DIR_szenario <- file.path(DIR, MODEL_NAME)
 
-# if not exists yet
+# if not exists yet, create new subfolder for szenario
 if (!dir.exists(DIR_szenario)) {
   dir.create(DIR_szenario, recursive = TRUE)
 }
@@ -775,6 +766,11 @@ legend('topright', legend=c('training', 'validation'), col=c('black', 'blue'), l
 diff = max(epochs - 100,0)
 plot(diff:epochs, val_loss[diff:epochs], type = 'l', col = 'green', main='Last 50 epochs')
 lines(diff:epochs, train_loss[diff:epochs], type='l')
+
+
+############################
+# Check Observational and Interventional distributions
+############################
 
 
 
@@ -996,7 +992,7 @@ ggsave(file_name, plot = p, width = 6, height = 8, dpi = 300, device = "png")
 
 
 
-### analyze distributions
+### analyze distributions individually
 
 
 
@@ -1190,7 +1186,7 @@ ggplot(agg_bin, aes(x = pred_probability, y = obs_proportion)) +
 
 ##############################
 
-### estimate ITE on test set with patients that received T=0 and T=1
+### estimate ITE on train and test set
 
 samplesRdata <- file.path(DIR, MODEL_NAME, 'ITE_samples.RData')
 # file for this scenario:
@@ -1475,9 +1471,15 @@ dev.off()
 
 
 
-### not used anymore:
 
 
+
+
+
+
+
+
+### Following not used anymore:
 
 
 ###  Note: as result we get 1) the ITE_median_pred which is uses the median for
@@ -1492,7 +1494,7 @@ dev.off()
 ### is not ideal in some cases.
 
 
-# maybe check coloured for where the latent_obsZ was outside the 5% and 95% quantiles
+# maybe check colored for where the latent_obsZ was outside the 5% and 95% quantiles
 par(mfrow = c(1,2))
 
 plot_CATE_vs_ITE_group_median(

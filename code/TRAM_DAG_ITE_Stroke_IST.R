@@ -1,10 +1,21 @@
+
+###############################################################
+
+# Code for Experiment 2: Experiment 2: ITE on International Stroke Trial (IST) 
+
+# here we applied T-learner GLM, tuned RF and an S-learner TRAM-DAG
+
+###############################################################
+
+
+
+
 ##### When starting a new R Session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
 }
 
 
-#### A mixture of discrete and continuous variables ####
 library(tensorflow)
 library(keras)
 library(mlt)
@@ -19,7 +30,7 @@ library(splines)
 library(comets)
 
 
-#### For ITE (change to utils_ITE_IST_stroke_trial.R)
+#### For ITE
 source('code/utils/utils_ITE_IST_stroke_trial.R')
 # source('code/utils/ITE_utils.R')
 
@@ -30,7 +41,7 @@ source('code/utils/utils_tf.R')
 library(tfprobability)
 source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
+
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/TRAM_DAG_ITE_Stroke_IST/run'
@@ -1055,12 +1066,16 @@ save(ATE_summary_table, test.results.tram_plot, file = file.path(DIR, "IST_TRAM_
 
 
 
+
+
+
+
+
+
+
 #################################################
 # Following code was used for debugging, problem finding and re-calibration (with a GAM)
 #################################################
-
-
-
 
 
 

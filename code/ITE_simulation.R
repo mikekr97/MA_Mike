@@ -1,10 +1,23 @@
+
+
+###############################################################
+
+# Code for Experiment 3: ITE model robustness in RCTs (simulation study)
+
+# here we applied various ML models to estimate ITEs in different scenarios to test robustness
+
+###############################################################
+
+
+
+
+
 ##### When starting a new R Session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
 }
 
 
-#### A mixture of discrete and continuous variables ####
 library(tensorflow)
 library(keras)
 library(mlt)
@@ -24,7 +37,7 @@ source('code/utils/ITE_utils.R')
 # library(tfprobability)
 # source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
+
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/ITE_simulation/run'
@@ -345,38 +358,6 @@ plot_for_slides(model.results = model.results,
                 ylim_delta = 0.1)
 
 
-### check number of positive ITE_true and ITE in train and test set
-sum(model.results$data.dev.rs$ITE_true > 0)
-sum(model.results$data.dev.rs$ITE > 0)
-
-sum(model.results$data.val.rs$ITE_true > 0)
-sum(model.results$data.val.rs$ITE > 0)
-
-
-
-
-# ATE in the high ITE group as P(Y=1|ITE_true>0.2 T=1) - P(Y=1|ITE_true>0.2 T=0)
-dat_0.2 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]
-mean(dat_0.2[dat_0.2$Tr == 1,]$Y) - mean(dat_0.2[dat_0.2$Tr == 0,]$Y)
-
-# ATE in the low ITE group as P(Y=1|ITE_true<-0.5 T=1) - P(Y=1|ITE_true<-0.5 T=0)
-dat_0.5 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true < -0.5,]
-mean(dat_0.5[dat_0.5$Tr == 1,]$Y) - mean(dat_0.5[dat_0.5$Tr == 0,]$Y)
-
-
-# proportion of positive outcomes when the true ITE was positive (56%)
-sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,])
-
-# proportion of positive outcomes when the true ITE was negative (48%)
-sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,])
-
-
-# proportion of positive outcomes when the true ITE was > 0.2 (55%)
-sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,])
-
-# proportion of positive outcomes when the true ITE was <0.2 (48%)
-sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,])
-
 
 #### save results ####
 
@@ -450,6 +431,40 @@ dev.off()
 
 
 
+#### other checks
+
+
+### check number of positive ITE_true and ITE in train and test set
+sum(model.results$data.dev.rs$ITE_true > 0)
+sum(model.results$data.dev.rs$ITE > 0)
+
+sum(model.results$data.val.rs$ITE_true > 0)
+sum(model.results$data.val.rs$ITE > 0)
+
+
+
+
+# ATE in the high ITE group as P(Y=1|ITE_true>0.2 T=1) - P(Y=1|ITE_true>0.2 T=0)
+dat_0.2 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]
+mean(dat_0.2[dat_0.2$Tr == 1,]$Y) - mean(dat_0.2[dat_0.2$Tr == 0,]$Y)
+
+# ATE in the low ITE group as P(Y=1|ITE_true<-0.5 T=1) - P(Y=1|ITE_true<-0.5 T=0)
+dat_0.5 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true < -0.5,]
+mean(dat_0.5[dat_0.5$Tr == 1,]$Y) - mean(dat_0.5[dat_0.5$Tr == 0,]$Y)
+
+
+# proportion of positive outcomes when the true ITE was positive (56%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0,])
+
+# proportion of positive outcomes when the true ITE was negative (48%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0,])
+
+
+# proportion of positive outcomes when the true ITE was > 0.2 (55%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,])
+
+# proportion of positive outcomes when the true ITE was <0.2 (48%)
+sum(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,]$Y)/nrow(model.results$data.val.rs[model.results$data.val.rs$ITE_true < 0.2,])
 
 
 
@@ -470,7 +485,7 @@ dev.off()
 
 
 #################################################
-# Analysis as Holly T-learner GLM
+# Analysis as in Chen et. al 2025: T-learner GLM
 #################################################
 
 dgp_data <- data

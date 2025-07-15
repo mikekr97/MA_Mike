@@ -1,3 +1,15 @@
+
+###############################################################
+
+# Code for Experiment 1: TRAM-DAG (simulation study) 
+
+# simple example how a DAG can model functional relationships in a DAG
+
+###############################################################
+
+
+
+
 ##### Mr Browns MAC ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
@@ -25,7 +37,7 @@ source('code/utils/utils_tf.R')
 library(tfprobability)
 source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
+
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/TRAM_DAG_simulation/run'

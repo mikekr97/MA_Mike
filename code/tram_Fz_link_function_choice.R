@@ -1,5 +1,17 @@
 
 
+###############################################################
+
+# Code to show the impact of the choice of Fz link function on the model fit
+
+###############################################################
+
+
+# in transformation models, we have to make assumptions on the scale of effect,
+# if we want to maintain some degree of interpretability (e.g. linear shift).
+# here we show the effect on model fit, if the scale is misspecified (not according to dgp).
+
+
 library(tram)
 
 ### DGP based on Fz = logistic
@@ -100,3 +112,4 @@ plot_ecdf(model = fit_Colr, modelname = "Colr" )
 plot_ecdf(model = fit_BoxCox, modelname = "BoxCox" )
 plot_ecdf(model = fit_cox, modelname = "Coxph" )
 plot_ecdf(model = fit_lehmann, modelname = "Lehmann" )
+

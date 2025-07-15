@@ -8,7 +8,7 @@ output: html_document
 
 # Introduction
 
-The code for data processing is taken from (https://gitlab.uzh.ch/hongruyu.chen/causal_ml-for-ite). The aim is to use the same pre-processed data and apply our models to evaluate wheter we come to the same conclusions as Chen et al. (2025).
+The code for data processing is taken from (https://gitlab.uzh.ch/hongruyu.chen/causal_ml-for-ite). The aim is to use the same pre-processed data and apply our models to evaluate whether we come to the same conclusions as Chen et al. (2025).
 
 The individual patient data was downloaded from (https://trialsjournal.biomedcentral.com/articles/10.1186/1745-6215-12-101#Sec8) and saved in the file IST_dataset_2011.csv. In this script this raw file is processed to create the dataset for the ITE estimation.
 

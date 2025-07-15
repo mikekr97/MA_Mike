@@ -1,3 +1,17 @@
+
+
+###############################################################
+
+# Code for Experiment 4: ITE estimation with TRAM-DAGs (simulation study) - Observational
+
+# here we applied an S-learner TRAM-DAG to estimate ITEs in an Observational setting
+
+###############################################################
+
+
+
+
+
 ##### Execute, when starting a new R Session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
@@ -5,8 +19,6 @@ if (FALSE){
 
 
 
-
-#### A mixture of discrete and continuous variables ####
 library(tensorflow)
 library(keras)
 library(mlt)
@@ -58,7 +70,7 @@ MA =  matrix(c(
 
 # DGP for simulation as done by: https://pmc.ncbi.nlm.nih.gov/articles/PMC9291969/
 
-# sorce nodes by standard normal with corr 0.1
+# sorce nodes by standard normal with correlation 0.1
 # direct effects of covariates X1, X2, X3, X5, X6  unchanged in each szenario
 # effects of T->X5 and X5:->X6   unchanged in each szenario
 
@@ -385,7 +397,7 @@ data_type = train$type
 
 ## binary treatment is 0,1 encoded, but in the loss treated as ordinal variable 
 # where the transformation function is the cut-point representing the probability P(X4)
-
+# (custom loss: struct_dag_loss_ITE_observational)
 
 
 ############################
@@ -484,20 +496,17 @@ ATE_true_theoretical
 len_theta_max = 20 # max number for intercept (ordinal)
 len_theta = 20 # number of coefficients of the Bernstein polynomials
 
-# Attention, number of nodes in each layer should be grater than the number of 
-# variable that have a complex influence (CI or CS) on other variables, because
-# with masking, some connections are "cut", so for 7 influencing variables, we 
-# need at least 7 nodes in the first layer, to ensure there are enough 
-# connections available. --> this is not an issue anymore, if the NN's were made 
-# separately for each node, compared to this masking approach here
+
 hidden_features_I = c(10, 10, 10) 
 hidden_features_CS = c(2, 5, 5, 2)
 
 
-param_model = create_param_model(MA, hidden_features_I=hidden_features_I, len_theta=len_theta, hidden_features_CS=hidden_features_CS,
+param_model = create_param_model(MA, hidden_features_I=hidden_features_I, 
+                                 len_theta=len_theta, 
+                                 hidden_features_CS=hidden_features_CS,
                                  dropout = FALSE, batchnorm = FALSE, activation = "relu")
 optimizer = optimizer_adam(learning_rate = 0.001)
-param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational)
+param_model$compile(optimizer, loss=struct_dag_loss_ITE_observational) # custom loss
 
 h_params <- param_model(train$dat.tf)
 
@@ -505,7 +514,7 @@ param_model$evaluate(x = train$dat.tf, y=train$dat.tf, batch_size = 7L)
 summary(param_model)
 
 # show activation function activation_68 --> Relu is used (before it was sigmoid)
-param_model$get_layer("activation_761")$get_config()
+# param_model$get_layer("activation_761")$get_config()
 
 
 
@@ -524,8 +533,8 @@ num_epochs <- 1000
 # fnRdata = paste0(fn, '_E', num_epochs, 'early_stopping_CI.RData')   #
 
 
+# create subfolder for Scenario
 DIR_szenario <- file.path(DIR, MODEL_NAME)
-# create a folder named MODEL_NAME in DIR and save the image p in this folder with name 'sampling_distributions.png'
 if (!dir.exists(DIR_szenario)) {
     dir.create(DIR_szenario, recursive = TRUE)
 }
@@ -775,7 +784,7 @@ if (TRUE){
 
 
 
-library(ggplot2) # Make sure ggplot2 is loaded
+
 
 p <- ggplot(data = df) + # Explicitly pass df to ggplot() for clarity
   geom_histogram(data = subset(df, X != 4),
@@ -847,7 +856,7 @@ ggsave(file_name, plot = p, width = 6, height = 8, dpi = 300, device = "png")
 
 
 
-
+### analyze distributions individually
 
 
 # X5 observational
@@ -1054,7 +1063,8 @@ sqrt(mean((as.numeric(train$dat.tf[,7]) - as.numeric(predicted_y))^2))
 
 ##############################
 
-### estimate ITE on test set with patients that received T=0 and T=1
+
+### estimate ITE on train and test set
 
 samplesRdata <- file.path(DIR, MODEL_NAME, 'ITE_samples.RData')
 # file for this scenario:
@@ -1262,7 +1272,7 @@ dev.off()
 
 
 
-## Check predicted values of Y for original treatment allocation (same as plot above in skript):
+## Check predicted values of Y for original treatment allocation (same as plot above in script):
 y_sampled <- ifelse(train$simulated_full_data$Tr == 1, 
        results.dev$outcome_tx_median, 
        results.dev$outcome_ct_median)
@@ -1414,7 +1424,17 @@ dev.off()
 
 
 
-################# not used anymore
+
+
+
+
+
+
+
+
+
+
+################# Following not used anymore
 
 # breaks <- round(quantile(res.df.train$ITE_median_pred, probs = seq(0, 1, length.out = 7), na.rm = TRUE), 3)
 

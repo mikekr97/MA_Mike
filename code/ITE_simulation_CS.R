@@ -1,21 +1,24 @@
+
+###############################################################
+
+# Code for Appendix 6.6 Modeling interactions with complex shift (CS)
+
+# here we applied an S-learner TRAM-DAG to show how to model an interaction
+
+###############################################################
+
+
+
+
 ##### When starting a new R Session ####
 if (FALSE){
   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
 }
-# Get command-line arguments
-# args <- commandArgs(trailingOnly = TRUE)
-# if (length(args) == 0) {
-#   args <- c(3, 'cs')
-#   args <- c(1, 'ls')
-# }
-# F32 <- as.numeric(args[1])
-# M32 <- args[2]
-# print(paste("FS:", F32, "M32:", M32))
 
 
 # code copied and shortened from file TRAM_DAG_ITE_simulation_pt2_single_model_newDGP_CS_Relu.R
 
-#### A mixture of discrete and continuous variables ####
+
 library(tensorflow)
 library(keras)
 library(mlt)
@@ -35,7 +38,7 @@ source('code/utils/utils_tf.R')
 library(tfprobability)
 source('code/utils/utils_tfp.R')
 
-##### Flavor of experiment ######
+
 
 #### Saving the current version of the script into runtime
 DIR = 'runs/ITE_simulation_CS/run'
@@ -75,6 +78,8 @@ print(paste0("Starting experiment ", fn))
 ###############################################################################
 
 
+# the treatment X1 is ordinal encoded {levels 1,2} and also modeled, not only the outcome
+
 
 ##### DGP ########
 dgp <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123) {
@@ -83,7 +88,6 @@ dgp <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123) {
   
   # Data simulation
   
-  ## Case 1: continuous random variables
   
   # Define sample size
   n <- n_obs
@@ -258,15 +262,15 @@ mean(dgp_data$test.compl.data$data.dev.ct$Y)
 # percentage of patients with Y=1 in Treatment (train)
 mean(dgp_data$test.compl.data$data.dev.tx$Y)
 
-dgp_data$df_orig_test
-
-dgp_data$simulated_full_data
+# dgp_data$df_orig_test
+# 
+# dgp_data$simulated_full_data
 
 boxplot(Y_prob ~ Y, data = dgp_data$simulated_full_data)
 
 
 #################################################
-# Analysis as Holly T-learner GLM
+# Analysis for T-learner GLM (code from Chen et al. 2025)
 #################################################
 
 
@@ -436,10 +440,6 @@ param_model = create_param_model(MA, hidden_features_I=hidden_features_I,
                                  activation = "relu",
                                  batchnorm = TRUE)
 
-dag_maf_plot_new(masks_CS = , layer_sizes_CS)
-# 
-# ggsave("network_plot.pdf", dag_maf_plot_new(masks_CS, layer_sizes_CS), 
-# width = 4.5, height = 4)
 
 
 optimizer = optimizer_adam(learning_rate = 0.0005)
@@ -528,15 +528,11 @@ lines(diff:epochs, train_loss[diff:epochs], type='l')
 
 
 
-
-
-
-
 #################################################
 # calculate ITE_i for train and test set
 #################################################
 
-
+# function to calculate probabilty of Y=1 given the NN-parameters resulting from input Tr, X2, X3
 
 do_probability = function (h_params){
   #t_i = intervention_0_tf # (40000, 3)    # original data x1, x2, x3 for each obs
@@ -597,7 +593,7 @@ do_probability = function (h_params){
 
 # Treatment = 0
 
-# set the values of the first column of dgp_data$df_R_train to 0 and add 1 to the last column
+# set the values of the first column of dgp_data$df_R_train to 1 (control) and add 1 to the last column (ordinal encoded)
 train_df_T0 <- dgp_data$df_R_train %>%
   mutate(
     # x1 = 0,  # Set the first column (x1) to 0
@@ -614,7 +610,7 @@ h_params_ct <- param_model(train_tf_T0)
 
 
 # Treatment = 1
-# set the values of the first column of dgp_data$df_R_train to 1 and add 1 to the last column
+# set the values of the first column of dgp_data$df_R_train to 1 (control) and add 1 to the last column (ordinal encoded)
 train_df_T1 <- dgp_data$df_R_train %>%
   mutate(
     # x1 = 1,  # Set the first column (x1) to 1
@@ -702,7 +698,7 @@ png(filename = file_name, width = 1000, height = 2000, res = 300)
 
 
 #################################################
-# Analysis as Holly T-learner (TRAM-DAG)
+# Analysis similar to Chen et. al. 2025 (partly with their evaluation-metrics code)
 #################################################
 
 # combine results from TRAM-DAG to the Holly-GLM and the true data
@@ -832,12 +828,8 @@ ggplot(train_df, aes(x = Y_prob, y = Y_prob_tram, color = Treatment)) +
 
 
 
-
-
-
-# interaction glm
+# interaction glm as comparison
 glm_interaction <- glm(Y ~ Tr*X1 + X2 + Tr:X1, data = dgp_data$test.compl.data$data.dev, family = binomial(link="logit"))
-
 
 Y_prob_glm_interaction <- predict(glm_interaction, newdata = dgp_data$test.compl.data$data.dev, type = "response")
 
@@ -883,7 +875,7 @@ ggplot(test_df, aes(x = Y_prob, y = Y_prob_tram, color = Treatment)) +
 
 
 
-# interaction glm
+# interaction glm as comparison
 glm_interaction <- glm(Y ~ Tr*X1 + X2 + Tr:X1, data = dgp_data$test.compl.data$data.dev, family = binomial(link="logit"))
 
 
@@ -897,6 +889,7 @@ ggplot(test_df, aes(x = Y_prob, y = Y_prob_glm, color = as.factor(Tr))) +
   labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob GLM (Test)") +
   theme_minimal() +
   theme(legend.position = "top")
+
 
 # 
 # # Y_prob_glm_simple <- predict(glm_simple, newdata = dgp_data$test.compl.data$data.val, type = "response")
@@ -1042,9 +1035,9 @@ legend("topright", legend = c("CS", "DGP Effect"),
 
 
 
-#####################################3
+#################################
 # Calibration
-##################################33333
+#################################
 
 
 # generate a calibration set (newly generated train set with new SEED)
@@ -1056,109 +1049,6 @@ calibration_df <- calibration_dgp$test.compl.data$data.dev
 h_params_cal <- param_model(calibration_dgp$df_orig_train)
 Y_prob_cal <- as.numeric(do_probability(h_params_cal))
 calibration_df$Y_prob_cal <- Y_prob_cal
-
-
-
-# 
-# # plot true vs predicted probabilties
-# ggplot(calibration_df, aes(x = Y_prob, y = Y_prob_cal, color = Treatment)) +
-#   geom_point() +
-#   geom_abline(slope = 1, intercept = 0, color = "red") +
-#   labs(x = "True Probabilities", y = "Estimated Probabilities", title = "Prob TRAM-DAG (Calibration)") +
-#   theme_minimal() +
-#   theme(legend.position = "top")
-# 
-# # make calibration plot
-# library(gbm)
-# par(mfrow=c(1,1))
-# calibrate.plot(y=calibration_df$Y,
-#                p=calibration_df$Y_prob_cal,
-#                distribution = "bernoulli")
-# 
-# # make calibration plot from scratch with 10 bins
-# library(ggplot2)
-# library(dplyr)
-# 
-# # Set number of bins
-# bins <- 20
-# 
-# # Create equal-frequency bins based on predicted probabilities
-# calibration_df <- calibration_df %>%
-#   mutate(prob_bin = cut(
-#     Y_prob_cal,
-#     breaks = quantile(Y_prob_cal, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
-#     include.lowest = TRUE
-#   ))
-# 
-# # Compute average predicted probability and observed proportion in each bin
-# calibration_summary <- calibration_df %>%
-#   group_by(prob_bin) %>%
-#   summarise(
-#     mean_pred = mean(Y_prob_cal, na.rm = TRUE),
-#     mean_obs = mean(Y, na.rm = TRUE),
-#     n = n(),
-#     .groups = "drop"
-#   )
-# 
-# # Plot: Calibration curve
-# library(ggplot2)
-# library(dplyr)
-# 
-# # Set number of bins
-# bins <- 50
-# 
-# # Create equal-frequency bins based on predicted probabilities
-# calibration_df <- calibration_df %>%
-#   mutate(prob_bin = cut(
-#     Y_prob_cal,
-#     breaks = quantile(Y_prob_cal, probs = seq(0, 1, length.out = bins + 1), na.rm = TRUE),
-#     include.lowest = TRUE
-#   ))
-# 
-# # Compute average predicted probability and observed proportion in each bin
-# calibration_summary <- calibration_df %>%
-#   group_by(prob_bin) %>%
-#   summarise(
-#     mean_pred = mean(Y_prob_cal, na.rm = TRUE),
-#     mean_obs = mean(Y, na.rm = TRUE),
-#     n = n(),
-#     .groups = "drop"
-#   )
-# 
-# # Plot: Calibration curve
-# ggplot(calibration_summary, aes(x = mean_pred, y = mean_obs)) +
-#   geom_point(size = 2, color = "blue") +
-#   geom_line(color = "blue") +
-#   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-#   labs(
-#     title = paste("Calibration Plot (", bins, " bins)", sep = ""),
-#     x = "Mean Predicted Probability",
-#     y = "Observed Proportion"
-#   ) +
-#   theme_minimal()
-# 
-# 
-# 
-# # Plot: pred vs true curve curve
-# ggplot(calibration_df, aes(x = Y_prob_cal, y = Y_prob)) +
-#   geom_point(size = 2, color = "blue") +
-#   # geom_line(color = "blue") +
-#   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-#   labs(
-#     title = paste("Prediction vs True Plot", sep = ""),
-#     x = "Predicted Probability",
-#     y = "True Proportion"
-#   ) +
-#   theme_minimal()
-# 
-
-
-# library(probably)
-# 
-# calibration_output <- cal_estimate_isotonic(calibration_df,
-#                       truth = "Y",
-#                       estimate = "Y_prob_cal")
-# calibration_output$estimates
 
 
 # Recalibrate with GAM
@@ -1316,7 +1206,7 @@ ggplot(calibration_df, aes(x = Y_prob, y = Y_prob_cal)) +
 
 
 
-################### ITE with recalibrated
+################### ITE with recalibrated probabilities
 
 test_df
 
@@ -1373,7 +1263,7 @@ df_test_uncalibrated <- data.frame(
 
 
 
-# Recalibrated ITE
+# Recalibrated ITE (using the gam that was fitted on the independent calibration set probabilities)
 Y0_recal <- predict(fit_gam, newdata = data.frame(pred_probability = as.numeric(Y0)), type = "response")
 Y1_recal <- predict(fit_gam, newdata = data.frame(pred_probability = as.numeric(Y1)), type = "response")
 
