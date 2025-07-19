@@ -360,8 +360,44 @@ df <- test.results.logistic
 mean(df$data.dev.rs$OUTCOME6M[df$data.dev.rs$RXASP == "Y"]) - mean(df$data.dev.rs$OUTCOME6M[df$data.dev.rs$RXASP == "N"])
 mean(df$data.val.rs$OUTCOME6M[df$data.val.rs$RXASP == "Y"]) - mean(df$data.val.rs$OUTCOME6M[df$data.val.rs$RXASP == "N"])
 
-lm_dev <- lm(OUTCOME6M ~ RXASP, data = df$data.dev.rs)
-lm_val <- lm(OUTCOME6M ~ RXASP, data = df$data.val.rs)
+
+# function for Wald CI for Risk Difference
+compute_wald_ci_rd <- function(data, treatment_var, outcome_var, alpha = 0.05) {
+  df <- as.data.frame(data)  # ensure it's a data.frame
+  
+  # extract vectors
+  treat <- df[[treatment_var]]
+  outcome <- df[[outcome_var]]
+  
+  # check valid levels
+  if (!all(treat %in% c("Y", "N"))) stop("Treatment must be 'Y' or 'N'")
+  
+  # calculate group stats
+  p1 <- mean(outcome[treat == "Y"])
+  p0 <- mean(outcome[treat == "N"])
+  n1 <- sum(treat == "Y")
+  n0 <- sum(treat == "N")
+  
+  # risk difference
+  rd <- p1 - p0
+  
+  # standard error
+  se <- sqrt(p1 * (1 - p1) / n1 + p0 * (1 - p0) / n0)
+  
+  # z-score
+  z <- qnorm(1 - alpha / 2)
+  
+  # confidence interval
+  ci_lower <- rd - z * se
+  ci_upper <- rd + z * se
+  
+  return(c(mean = rd, lower = ci_lower, upper = ci_upper))
+}
+
+
+# ATE Observed
+wald_train <- compute_wald_ci_rd(df$data.dev.rs, treatment_var = "RXASP", outcome_var = "OUTCOME6M")
+wald_test  <- compute_wald_ci_rd(df$data.val.rs, treatment_var = "RXASP", outcome_var = "OUTCOME6M")
 
 
 
@@ -377,16 +413,14 @@ boot_result_val <- ITE_CI_bootstrap(ITE = test.results.logistic$data.val.rs$ITE,
 
 
 
-# make the table as Row (mean, lower, upper) and Column (ATE_obs_train, ATE_obs_test, ATE_est_train, ATE_est_test)
-
-# Construct the matrix with rows: mean, lower, upper
 ATE_summary_table <- data.frame(
   row.names = c("mean", "lower", "upper"),
-  ATE_obs_train = c(coef(lm_dev)[2], confint(lm_dev)[2, 1], confint(lm_dev)[2, 2]),
-  ATE_obs_test = c(coef(lm_val)[2], confint(lm_val)[2, 1], confint(lm_val)[2, 2]),
+  ATE_obs_train = wald_train,
+  ATE_obs_test  = wald_test,
   ATE_est_train = c(boot_result_dev$mean, boot_result_dev$ci_lower, boot_result_dev$ci_upper),
-  ATE_est_test = c(boot_result_val$mean, boot_result_val$ci_lower, boot_result_val$ci_upper)
+  ATE_est_test  = c(boot_result_val$mean, boot_result_val$ci_lower, boot_result_val$ci_upper)
 )
+
 
 # View the table
 print(ATE_summary_table)

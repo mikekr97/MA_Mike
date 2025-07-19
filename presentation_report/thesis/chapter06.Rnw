@@ -462,20 +462,20 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \clearpage
 
 
-\section{Experiment 3: Standard random forest for ITE estimation} \label{sec:default_rf_ite}
+\section{Experiment 3: Standard Random Forest for ITE Estimation} \label{sec:default_rf_ite}
 
-In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects. Here, we present results from a default (untuned) random forest model in Scenario~(1), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_glm_rf}.
+In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects (ITEs). Here, we present results from a default (untuned) random forest model in Scenario~(1), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_rf}.
 
-In the scatterplot of true vs. predicted probabilities for $\text{P}(Y_i = 1 \mid \mathbf{X}_i = \mathbf{x}_i, T_i = t_i)$ in the training set, it is visible that the model does not predict probabilities accurately and is therefore poorly calibrated. This poor calibration also affects the estimated ITEs.
+The scatterplot of true vs. predicted probabilities for $\text{P}(Y_i = 1 \mid \mathbf{X}_i = \mathbf{x}_i, T_i = t_i)$ in the training set shows that the model is poorly calibrated, with predicted probabilities deviating substantially from the true values. This miscalibration carries over to the ITE estimates. The ITE-ATE plot further illustrates that the estimated ITEs are not well aligned with the observed treatment effects, in both the training and test sets.
 
-By comparison, the results of the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) show that the model is better calibrated and the estimated ITEs are close to the true ITEs. These results highlight the importance of model tuning for ITE estimation, as poor calibration can lead to biased estimates of individualized treatment effects.
+In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) achieves better calibration and more accurate ITE estimates. These results highlight the importance of proper model tuning for reliable ITE estimation, as poor calibration can lead to biased estimates.
 
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_observed.png}
-\caption{DAG for Scenario~(1), where all variables are observed and both treatment and interaction effects are strong. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\caption{DAG for Scenario~(1), where all variables are observed and both treatment and interaction effects are strong. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
 \label{fig:fully_observed_dag_rf_appendix}
 \end{figure}
 
@@ -484,7 +484,7 @@ By comparison, the results of the tuned random forest (Figure~\ref{fig:fully_tun
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_rf_tlearner.png}
 \caption{Results of the default random forest in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $\text{P}(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
-\label{fig:fully_observed_glm_rf}
+\label{fig:fully_observed_rf}
 \end{figure}
 
 

@@ -1,0 +1,104 @@
+% LaTeX file for Chapter 05
+
+
+\chapter{Conclusions}
+
+
+
+In this thesis, we further investigated the application of TRAM-DAGs as a flexible approach to estimate structural equations in a known DAG. We explained how to incorporate ordinal predictors, how to model interactions, and what the scaling of variables implies for interpretability. Furthermore, we explored the estimation of individualized treatment effects (ITEs), showing that TRAM-DAGs can also be applied to estimate ITEs in relatively complex DAG structures. In simulation experiments, we examined potential limitations and challenges in ITE estimation. 
+
+\medskip
+
+Our findings included that TRAM-DAGs were able to successfully recover structural equations when the DAG was fully known and all variables were observed. They also worked well for ITE estimation in simulation settings. The simulation experiments further revealed limitations in ITE estimation, especially in the presence of unobserved effect modifiers. We concluded that unmeasured effect-modifying variables pose a significant challenge and that the ignorability assumption alone may not be enough to ensure unbiased estimates. This or weak treatment effect heterogeneity might explain why ITE estimation failed in the real-world application on the International Stroke Trial. We also found that proper calibration of causal machine learning models is important to achieve accurate ITE estimates but that calibration alone may not be sufficient for valid predictions.
+
+
+\medskip
+
+TRAM-DAGs offer several advantages. The model inherently knows when to adjust for covariates based on the DAG structure and the learned functions. Structural causal models, in contrast to classical regression approaches, account for all known relationships and can consistently address confounding. Classical regression models risk adjusting for the wrong covariates, which may lead to biased estimates. TRAM-DAGs are generative causal models that, once fitted to a correct DAG, allow sampling from observational, interventional, and counterfactual distributions. Their ability to combine flexible components with interpretable structure makes them well suited for practical use cases where both predictive power and transparency matter.
+
+\medskip
+
+However, there are also some limitations. While we aimed to make the simulation scenarios as realistic as possible while still retaining some interpretability, they may not fully reflect the complexity of real-world data. However, applying and evaluating models like TRAM-DAGs on real data for causal questions such as ITE estimation is inherently difficult, as the true effects are usually unknown. TRAM-DAGs also rely on neural networks, which require time to train, depending on network complexity, sample size, and computational resources. And although TRAM-DAGs offer flexibility, we still need to make assumptions -- for example, about the scale on which conditional effects occur -- if we want to retain some level of interpretability.
+
+\medskip
+
+Future work could apply TRAM-DAGs to other real-world datasets, potentially also including semi-structured data, to fully exploit the potential of their modular neural network structure. It would also be valuable to further investigate ITE estimation in the presence of unmeasured interaction variables.
+
+\medskip
+Overall, this thesis contributes to the growing field of causal inference, especially in observational data and personalized interventions. We hope to have provided some insights into the capabilities of neural causal models and the challenges of ITE estimation.
+
+% 
+% - summary of thesis
+% 
+% In this thesis, we further investigated the application of TRAM-DAGs as a flexible approach to estimate structural equations in a given DAG. We also showed explained how to incorporate ordinal predictors, how to model interacitons, or what scaling of variables implies on interpretability. Furhtermore, we dived into the estimation of indiviudalized treatment effects, where we showed that TRAM-DAGs can be used as estimation tool also in relatively complex DAG structures.  In simulation experiments we further analyzed possible limitations or difficulties in ITE estimation - where we came to the conclusion that unmeasured effect modifying variables pose a significant challenge and that the ignorability assumption may not be enough to ensure unbiased estimates.
+% 
+% 
+% - key findings
+% 
+% TRAM-DAGs could successfully recover structural equations if the dag is fully known and fully observed, and that it can also very well be applied for ITE estimation.
+% In simulation experiments we further analyzed possible limitations or difficulties (pitfalls) in ITE estimation - where we came to the conclusion that unmeasured effect modifying variables pose a significant challenge.
+% this, or weak heterogeneity, may have been a reason why ITE estimation failed in the real world application of the International Stroke Trial. also Calibration of causal ML models is key to achieve an accurate ITE estimation, however, not enough to ensure valid predictions.
+% 
+% - implications
+% 
+% TRAM-DAGs  are good because:
+% 
+% My comments:
+% Benefit of TRAM-DAGS: our model knows when to adjust due to the causal graph and learned functions. With classical regression approaches, there is the danger of wrongly adjusting for covariates and therefore obtaining misleading parameter estimates for inference. A tram dag is a generative causal model because once fitted it can be used to generate samples from the distributions (including interventional and counterfactual.). Hybrid modelling (interpretable, flexible, etc) is a unique capability of this model, to our knowledge. " chatgpt: combining the robustness of structural causal modeling with the representational power of modern neural networks. Furthermore, the ability to selectively impose interpretability on certain components makes the model suitable for real-world tasks requiring both transparency and flexibility."
+% 
+% Also include something like the following from \citep{nichols2007} as another reason to apply SCM's (which TRAM-DAGs are) instead of just adjusting. like that we just fit the whole thing what is known, and it basically takes care of counfounders and everything.
+%  "The literature on structural equations models is extensive, and a system of equations may encode a complicated conceptual causal model,
+% with many causal arrows drawn to and from many variables. The present exercise of
+% identifying the causal impact of some limited set of variables XT on a single outcome
+% y can be seen as restricting our attention in such a complicated system to just one
+% equation, and identifying just some subset of causal effects."
+% 
+% and they are highly customizable depending on the usecase. they can be used for ITE estimation.
+% 
+% - limitations
+% 
+% Although we tried to make simulation scenarios as realistic as possible, while maintaining interpretability, they may not fully capture the complexities of real-world data. And analyzing models on real-world data for causal questions such as ITE estimation is inherently challenging as the ground truth is unknown.
+% 
+% TRAM-DAGs may offer flexibility and interpretability, but relying on neural networks, the learning process takes time, depending e.g. on network complexity, number of samples or computational power available for training.
+% 
+% Although very flexible we still have to make assumptions if we maintain some interpretability -- such as the scale on which the conditional effects of predictors may occur.
+% 
+% 
+% - future directions
+% 
+% Future work could explore the application of TRAM-DAGs to real-world datasets, possibly also with semi-structured data to fully exploit TRAM-DAGs potential  as a modular neutal network structure. It may also be valuable to further study ITE estimation in presence of unmeasured interaction variables.
+% 
+% 
+% - closing words
+% 
+% Overall, this thesis contributes to the evolving field of causal inference under observational data and in context of personalized interventions. We hope to having provided some insights on the capabilities of neural causal models in this regards and on possible Issues in ITE estimation.
+% 
+% 
+
+
+
+
+% Discuss all of the following subjects also include literature and reasoning and explanation (maybe also move a part to methods) (include basically anything that we encountered): ghost interactions (literature from hoogland paper (2021?) and non-collapsibility from susanne and torsten). Overfitting of certain models in differenct settings. We need enough true heterogeneity so that the model can actually detect something, complex models might just overfit else. And the relevant variables observed, else models seem to have problems to allocate the observed heterogeneity. complex models tend to predict too much heterogeneity (if there is no heterogeneity), however in the case where an interaction variable was not observed, also the complex model predicted too narrow heterogeneity (see tuned-rf scenario 2 unobserved). Talk about S learner and T learner and the difference in performance or things we have to consider? Tram dag s learner seems to also work well when fully observed. We used QTE for last experiment, but Expected potential outcomes would also be possible with sampling or numerical integration (lucas mentioned that.) ITE based on Expected is certainly more generally known etc. but in certain applictions /problems QTE might be a better choice. Because of computational simplicity we used QTE.
+
+
+
+% Benefit of TRAM-DAGS: our model knows when to adjust due to the causal graph and learned functions. With classical regression approaches, there is the danger of wrongly adjusting for covariates and therefore obtaining misleading parameter estimates for inference. A tram dag is a generative causal model because once fitted it can be used to generate samples from the distributions (including interventional and counterfactual.). Hybrid modelling (interpretable, flexible, etc) is a unique capability of this model, to our knowledge. " chatgpt: combining the robustness of structural causal modeling with the representational power of modern neural networks. Furthermore, the ability to selectively impose interpretability on certain components makes the model suitable for real-world tasks requiring both transparency and flexibility."
+
+%  for interpretation see pearl book 2009 p. 366. the key is to say leaving all other variables "untouched" and not "constant". he also talks about the connection to the do-operator.
+
+% ignorability alone is not sufficient for the estimation of individual effects;
+% 
+% % - Maybe a good conclusion: because this problematic with missing effect modifiers in RCT data can be a motivation to work with observational data where the dag is very detailed specified with all confounders and interactions, then a tram-dag can be applied. However, there we also have the problem, that important variables are probably also not known/measured...
+% 
+% 
+% %  i think nichols2007 (or maybe the one russian with IV and QTE). stated that while structural causal models provide  the full picture, approaches that aim to estimate treatment effects by sole conditioning/controling for certain variables only look at a very isolated part in the system. this could be an argument for TRAM-DAGs
+% 
+% 
+% % we answered the four research questions posed in the introduction. We showed tram dags capabilities and how it works with ordinal predictors (appendix), how it models interactions (appendix, experiment 2 and 4).. 
+% refer to all 4 reseatch questions briefely to show accomplishements.
+
+
+% The poor performance in the IST dataset was likely due to true weak heterogeneity or due to unobserved variables. We come to this conclusion because of our simulations in experiment 3 that revealed these possible problems.
+
+
+% We showed how TRAM-DAGS can be applied do estimate the causal relationships in a given fully observed DAG. We pointed out the importance of individualized treatment effects, for example in personnalized medicine or targeted marketing. Calibration of causal ML models is key to achieve an accurate ITE estimation. Also the trade off between complexity and generalizability becomes more important in this application compared to sole predictive modelling. We pointed out potential pitfalls that can emerge in real world settings and should be paid attention towards. These can be for example too little heterogeneity or general poor effect of the treatment, or the fact that there could be unobserved effect modifiers (treatment-covariate interactions). In terms of effect modifiers, methods in literature have already been proposed such as instrumental variables (IV) or Negative Controls (?) where additional variables in a special dependency to the treatment and exposure are used to adjust for unobserved variables (confounders or effect modifiers?). However, it strongly depends on the setting and it is not guaranteed that there exist such supporting variables. We claim that if we know the structure of the DAG, with TRAM-DAGs we can estimate the ITE regardless if we have a RCT or observational data. The only requirement is that the DAG is correct and fully observed, i.e. no unobserved confounders or effect modifiers exist. And since the average treatment effect (ATE) is the average of the individual treatment effects (ITE), we can also estimate the ATE from the ITEs. This implies that running an expensive RCT is not necessary if we have a good observational dataset and know the DAG structure. Our last experiment supports this claim. We used the medians of the potential outcomes to calculate the ITE, however, if the ITE was calculated based on the expected values, it would be directly comparable to the ATE from the RCT in terms of the difference in means, which might be a more classical measure. 
