@@ -91,13 +91,30 @@ I want to thank my supervisors and all the people I had the chance to work and s
 
 
 
-This thesis investigates the use of TRAM-DAGs \citep{sick2025} as a flexible approach for estimating structural equations in known directed acyclic graphs (DAGs). TRAM-DAGs offer several advantages: the model inherently knows when to control for covariates based on the DAG, is highly customizable in terms of flexibility and interpretability, and allows sampling from observational, interventional, and counterfactual distributions. We show how to incorporate ordinal predictors, model interactions, and examine how variable scaling affects interpretability.
+This thesis explores the use of TRAM-DAGs, a flexible neural network-based framework for estimating complex causal relationships in known directed acyclic graphs (DAGs). TRAM-DAGs allow sampling from observational, interventional, and counterfactual distributions when the full DAG is known. We applied TRAM-DAGs to both simulated data and a real-world randomized controlled trial, with a focus on individualized treatment effect (ITE) estimation.
 
-A main focus was the estimation of individualized treatment effects (ITEs) using a variety of causal machine learning (ML) models. In simulation studies, we analyzed limitations in ITE estimation and found that unmeasured effect modifiers can severely impact estimation accuracy, and that the ignorability assumption alone may not ensure unbiased results -- a concern that has also been noted in prior research \citep{vegetabile2021}. The limitations found may also help explain the poor ITE estimation performance observed in the real-world application on the International Stroke Trial dataset \citep{chen2025}. We further demonstrated that TRAM-DAGs can be used for ITE estimation in relatively complex DAG structures, provided that the DAG is fully known and all variables are observed.
+We show how TRAM-DAGs can be used with continuous and ordinal or categorical predictor variables, investigate how variable scaling affects interpretability, and demonstrate how interactions between variables can be modeled. A key part of this work involved applying different causal machine learning models -- including TRAM-DAGs, logistic regression, and random forests -- to estimate ITEs on the International Stroke Trial (IST) dataset. In line with findings by \citet{chen2025}, none of the models produced ITE estimates that generalized to the test data.
 
-While promising, TRAM-DAGs require training time due to their reliance on neural networks and, when aiming for interpretability, certain assumptions about the model structure. Future work could explore applications to more real-world data, potentially including semi-structured inputs, and further investigate ITE estimation in the presence of unmeasured interactions.
+To explore possible reasons for this poor performance, we conducted simulation experiments under varying conditions. These revealed that, while models must be well calibrated and overfitting should be avoided, this alone may not suffice to guarantee valid ITE estimates. Weak treatment-covariate interaction effects and especially unmeasured effect modifiers were found to be critical challenges. When such variables are unobserved, the ignorability assumption alone may not ensure unbiased estimation -- an issue also highlighted by \citet{vegetabile2021}. These factors may help explain the limited model performance observed in the IST dataset.
 
-This thesis contributes to the field of causal inference under observational data and to the estimation of personalized treatment effects using causal ML models.
+We also applied TRAM-DAGs in randomized and confounded simulation settings with relatively complex DAGs and found that, when the full DAG was observed and interaction effects were present, TRAM-DAGs accurately recovered causal relationships and provided unbiased ITE estimates.
+
+While promising, our work has limitations. The simulation scenarios may not fully capture real-world complexity, and evaluating ITE estimates on real data remains challenging since ground truth is unknown. The neural network-based TRAM-DAGs require training time and rely on modeling assumptions -- e.g., regarding the scale of conditional effects -- when parameter interpretability is desired.
+
+TRAM-DAGs offer a customizable modeling framework that enables the specification of both flexibility and interpretability, making them suitable for real-world causal inference tasks. Future work could apply TRAM-DAGs to more diverse datasets, including semi-structured data, and further investigate ITE estimation in the presence of unmeasured effect modifiers.
+
+
+
+% This thesis investigates the use of TRAM-DAGs \citep{sick2025} as a flexible approach for estimating structural equations in known directed acyclic graphs (DAGs). TRAM-DAGs offer several advantages: the model inherently knows when to control for covariates based on the DAG, is highly customizable in terms of flexibility and interpretability, and allows sampling from observational, interventional, and counterfactual distributions. We show how to incorporate ordinal predictors, model interactions, and examine how variable scaling affects interpretability.
+% 
+% A main focus was the estimation of individualized treatment effects (ITEs) using a variety of causal machine learning (ML) models. In simulation studies, we analyzed limitations in ITE estimation and found that unmeasured effect modifiers can severely impact estimation accuracy, and that the ignorability assumption alone may not ensure unbiased results -- a concern that has also been noted in prior research \citep{vegetabile2021}. The limitations found may also help explain the poor ITE estimation performance observed in the real-world application on the International Stroke Trial dataset \citep{chen2025}. We further demonstrated that TRAM-DAGs can be used for ITE estimation in relatively complex DAG structures, provided that the DAG is fully known and all variables are observed.
+% 
+% While promising, TRAM-DAGs require training time due to their reliance on neural networks and, when aiming for interpretability, certain assumptions about the model structure. Future work could explore applications to more real-world data, potentially including semi-structured inputs, and further investigate ITE estimation in the presence of unmeasured interactions.
+% 
+% This thesis contributes to the field of causal inference under observational data and to the estimation of personalized treatment effects using causal ML models.
+
+
+
 
 % This thesis investigates the use of TRAM-DAGs as a flexible approach for estimating structural equations in known DAGs. TRAM-DAGs offer several advantages: the model knows when to adjust based on the DAG, avoids incorrect covariate adjustment, and allows sampling from observational, interventional, and counterfactual distributions. Their ability to combine interpretability with flexibility makes them well suited for practical use.
 % We show how to incorporate ordinal predictors, model interactions, and how variable scaling affects interpretability. A main focus was the estimation of individualized treatment effects (ITEs), using a variety of causal machine learning (ML) models.
@@ -171,7 +188,7 @@ This thesis contributes to the field of causal inference under observational dat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\input{chapter05}
+% \input{chapter05} % not used anymore
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

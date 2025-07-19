@@ -32,7 +32,7 @@ TRAM_DAG_IST_ATE_table <- ATE_summary_table
 
 
 
-\chapter{Experiment 2: ITE on International Stroke Trial (IST)}
+\chapter{Experiment 2: ITE on International Stroke Trial (IST)} \label{ch:exp2}
 
 
 
