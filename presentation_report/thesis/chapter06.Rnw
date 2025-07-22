@@ -411,7 +411,7 @@ After training the TRAM-DAG, we can visualize the resulting learned complex shif
 \end{figure}
 
 
-The fitted TRAM-DAG was then used to estimate the individualized treatment effect (ITE) for each sample $i$, defined as $\text{ITE}_i(\mathbf{x}_i) = P(Y_i = 1 \mid T = 1, \mathbf{X}_i = \mathbf{x}_i) - P(Y_i = 1 \mid T = 0, \mathbf{X}_i = \mathbf{x}_i)$. We estimated the ITEs on the test set using the trained TRAM-DAG. In the uncalibrated model, the predicted ITEs did not perfectly match the true ITEs -- although the difference was only a small deviation. Therefore, we recalibrated the model by fitting a generalized additive model (GAM) on a separate calibration dataset using the predicted probabilities from the TRAM-DAG. The recalibrated ITEs aligned well with the true ITEs. The results are shown in Figure~\ref{fig:ITE_interaction}.
+The fitted TRAM-DAG was then used to estimate the individualized treatment effect (ITE) for each sample $i$, defined as $\text{ITE}(\mathbf{x}_i) = P(Y_i = 1 \mid T = 1, \mathbf{X} = \mathbf{x}_i) - P(Y_i = 1 \mid T = 0, \mathbf{X} = \mathbf{x}_i)$. We estimated the ITEs on the test set using the trained TRAM-DAG. In the uncalibrated model, the predicted ITEs did not perfectly match the true ITEs -- although the difference was only a small deviation. Therefore, we recalibrated the model by fitting a generalized additive model (GAM) on a separate calibration dataset using the predicted probabilities from the TRAM-DAG. The recalibrated ITEs aligned well with the true ITEs. The results are shown in Figure~\ref{fig:ITE_interaction}.
 
 This example demonstrates how TRAM-DAGs can be used to model interactions, which are crucial for accurate ITE estimation when applying the model as an S-learner.
 
@@ -466,7 +466,7 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 
 In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects (ITEs). Here, we present results from a default (untuned) random forest model in Scenario~(1), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_rf}.
 
-The scatterplot of true vs. predicted probabilities for $\text{P}(Y_i = 1 \mid \mathbf{X}_i = \mathbf{x}_i, T_i = t_i)$ in the training set shows that the model is poorly calibrated, with predicted probabilities deviating substantially from the true values. This miscalibration carries over to the ITE estimates. The ITE-ATE plot further illustrates that the estimated ITEs are not well aligned with the observed treatment effects, in both the training and test sets.
+The scatterplot of true vs. predicted probabilities for $P(Y_i = 1 \mid \mathbf{X} = \mathbf{x}_i, T = t_i)$ in the training set shows that the model is poorly calibrated, with predicted probabilities deviating substantially from the true values. This miscalibration carries over to the ITE estimates. The ITE-ATE plot further illustrates that the estimated ITEs are not well aligned with the observed treatment effects, in both the training and test sets.
 
 In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) achieves better calibration and more accurate ITE estimates. These results highlight the importance of proper model tuning for reliable ITE estimation, as poor calibration can lead to biased estimates.
 
@@ -483,7 +483,7 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_rf_tlearner.png}
-\caption{Results of the default random forest in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $\text{P}(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the default random forest in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:fully_observed_rf}
 \end{figure}
 
@@ -495,7 +495,7 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 
 \section{Experiment 3: Calibration plots} \label{sec:calibration_tuned_rf}
 
-Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Section \ref{sec:results_experiment3} where we presented the true probabilities of the event $\text{P}(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to improved generalization it leads to a better calibration on the test set.
+Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Section \ref{sec:results_experiment3} where we presented the true probabilities of the event $P(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to improved generalization it leads to a better calibration on the test set.
 
 \begin{figure}[htbp]
 \centering

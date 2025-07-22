@@ -13,9 +13,9 @@
 
 
 ##### When starting a new R Session ####
-if (FALSE){
-  reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
-}
+# if (FALSE){
+#   reticulate::use_python("C:/ProgramData/Anaconda3/python.exe", required = TRUE)
+# }
 
 
 library(tensorflow)
@@ -176,7 +176,7 @@ dgp_simulation <- function(n_obs=20000, doX=c(NA, NA, NA, NA), SEED=123,
 # Scenario 4: other setting, results look similar as in IST trial
 # Scenario 5: fully observed, weak main & interaction effect (same as scenario 1 but small effects) 
 
-scenario <- 6
+scenario <- 2
 
 
 
@@ -441,8 +441,11 @@ sum(model.results$data.dev.rs$ITE > 0)
 sum(model.results$data.val.rs$ITE_true > 0)
 sum(model.results$data.val.rs$ITE > 0)
 
-
-
+## take all individuals with positive true ITE in train set
+indiv_pos_ite <- model.results$data.dev.rs[model.results$data.dev.rs$ITE_true > 0,]
+# scatterplot of estimated vs. true ITE
+plot(indiv_pos_ite$ITE_true, indiv_pos_ite$ITE)
+plot(indiv_pos_ite$Y, indiv_pos_ite$ITE)
 
 # ATE in the high ITE group as P(Y=1|ITE_true>0.2 T=1) - P(Y=1|ITE_true>0.2 T=0)
 dat_0.2 <- model.results$data.val.rs[model.results$data.val.rs$ITE_true > 0.2,]

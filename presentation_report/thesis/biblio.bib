@@ -194,6 +194,20 @@ abstract = { Problems with inferring causal relationships from nonexperimental d
   doi          = {10.48550/arXiv.2503.16206}
 }
 
+@article{kook2022,
+title = {Deep and interpretable regression models for ordinal outcomes},
+journal = {Pattern Recognition},
+volume = {122},
+pages = {108263},
+year = {2022},
+issn = {0031-3203},
+doi = {https://doi.org/10.1016/j.patcog.2021.108263},
+url = {https://www.sciencedirect.com/science/article/pii/S003132032100443X},
+author = {Lucas Kook and Lisa Herzog and Torsten Hothorn and Oliver D{\"u}rr and Beate Sick},
+keywords = {Deep learning, Interpretability, Distributional regression, Ordinal regression, Transformation models},
+abstract = {Outcomes with a natural order commonly occur in prediction problems and often the available input data are a mixture of complex data like images and tabular predictors. Deep Learning (DL) models are state-of-the-art for image classification tasks but frequently treat ordinal outcomes as unordered and lack interpretability. In contrast, classical ordinal regression models consider the outcome’s order and yield interpretable predictor effects but are limited to tabular data. We present ordinal neural network transformation models (ontrams), which unite DL with classical ordinal regression approaches. ontrams are a special case of transformation models and trade off flexibility and interpretability by additively decomposing the transformation function into terms for image and tabular data using jointly trained neural networks. The performance of the most flexible ontram is by definition equivalent to a standard multi-class DL model trained with cross-entropy while being faster in training when facing ordinal outcomes. Lastly, we discuss how to interpret model components for both tabular and image data on two publicly available datasets.}
+}
+
 
 @book{pearl_book2009,
 author = {Pearl, Judea},
@@ -877,3 +891,43 @@ numpages = {10},
  volume = {30},
  year = {2017}
 }
+
+
+@book{hernan2025,
+  title={Causal Inference: What If},
+  author={Hernan, M.A. and Robins, J.M.},
+  isbn={9781420076165},
+  lccn={2022050839},
+  series={Chapman \& Hall/CRC Press},
+  url={https://books.google.ch/books?id=_KnHIAAACAAJ},
+  year={2025},
+  publisher={CRC Press}
+}
+
+
+
+
+@article{elwert2014,
+   author = "Elwert, Felix and Winship, Christopher",
+   title = "Endogenous Selection Bias: The Problem of Conditioning on a Collider Variable", 
+   journal= "Annual Review of Sociology",
+   year = "2014",
+   volume = "40",
+   number = "Volume 40, 2014",
+   pages = "31-53",
+   doi = "https://doi.org/10.1146/annurev-soc-071913-043455",
+   url = "https://www.annualreviews.org/content/journals/10.1146/annurev-soc-071913-043455",
+   publisher = "Annual Reviews",
+   issn = "1545-2115",
+   type = "Journal Article",
+   keywords = "confounding",
+   keywords = "causality",
+   keywords = "directed acyclic graphs",
+   keywords = "identification",
+   keywords = "selection",
+   abstract = "Endogenous selection bias is a central problem for causal inference. Recognizing the problem, however, can be difficult in practice. This article introduces a purely graphical way of characterizing endogenous selection bias and of understanding its consequences (Hernán et al. 2004). We use causal graphs (direct acyclic graphs, or DAGs) to highlight that endogenous selection bias stems from conditioning (e.g., controlling, stratifying, or selecting) on a so-called collider variable, i.e., a variable that is itself caused by two other variables, one that is (or is associated with) the treatment and another that is (or is associated with) the outcome. Endogenous selection bias can result from direct conditioning on the outcome variable, a post-outcome variable, a post-treatment variable, and even a pre-treatment variable. We highlight the difference between endogenous selection bias, common-cause confounding, and overcontrol bias and discuss numerous examples from social stratification, cultural sociology, social network analysis, political sociology, social demography, and the sociology of education.",
+  }
+
+
+
+

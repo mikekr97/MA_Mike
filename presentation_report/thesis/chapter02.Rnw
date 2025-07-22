@@ -14,17 +14,17 @@ opts_chunk$set(
 
 \chapter{Methods}
 
-This chapter introduces the methodological foundations for the experiments used in this thesis. Section~\ref{sec:methods_tram_dags} presents the concept and functionality of TRAM-DAGs, along with the necessary theoretical background. Section~\ref{sec:methods_ite} provides the framework for estimating individualized treatment effects.  These methods form the basis for the experiments and analyses that follow in the subsequent chapters.
+This chapter introduces the methodological foundations for the experiments used in this thesis. Section~\ref{sec:methods_tram_dags} presents the concept and functionality of TRAM-DAGs, along with the necessary theoretical background. Section~\ref{sec:methods_ite} provides the framework for estimating individualized treatment effects.  These methods form the basis for the experiments and analyses that follow in Chapter~\ref{ch:experiments}.
 
 % Sections~\ref{sec:methods_experiment1}--\ref{sec:methods_experiment4} describe the setup of the four experiments conducted to address the research questions outlined in Section~\ref{sec:goals_contributions}.
 
 
 \section{TRAM-DAGs} \label{sec:methods_tram_dags}
 
-The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in a flexible and, if desired, interpretable way. This enables the sampling of observational and interventional distributions, as well as to make counterfactual statements. The approach requires data and a known causal graph describing the underlying structure. It is assumed that there are no hidden confounders. TRAM-DAGs estimate, for each variable $X_i$, a transformation function $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$, where $Z_i$ denotes the noise variable and $\operatorname{pa}(X_i)$ are the causal parents of $X_i$. Crucially, for continuous variables, this relationship can be inverted to yield the structural equation $X_i = h_i^{-1}(Z_i \mid \operatorname{pa}(X_i))$. The monotonically increasing transformation functions $h_i$ represent the conditional distribution  $X_i \mid \operatorname{pa}(X_i)$ on a latent scale $Z_i$. They are based on the framework of transformation models as introduced by \citet{hothorn2014} and were extended to deep TRAMs by \citet{sick2020}. The following summarize the key ideas of these models, which form the building blocks of TRAM-DAGs.
+The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in a flexible and, if desired, interpretable way. This enables the sampling of observational and interventional distributions, as well as make counterfactual statements. The approach requires data and a known causal graph describing the underlying structure. It is assumed that there are no hidden confounders. TRAM-DAGs estimate, for each variable $X_i$, a transformation function $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$, where $Z_i$ denotes the noise variable and $\operatorname{pa}(X_i)$ are the causal parents of $X_i$. Crucially, for continuous variables, this relationship can be inverted to yield the structural equation $X_i = h_i^{-1}(Z_i \mid \operatorname{pa}(X_i))$. The monotonically increasing transformation functions $h_i$ represent the conditional distribution  $X_i \mid \operatorname{pa}(X_i)$ on a latent scale $Z_i$. They are based on the framework of transformation models as introduced by \citet{hothorn2014} and were extended to deep TRAMs by \citet{sick2020}. The following summarizes the key ideas of these models, which form the building blocks of TRAM-DAGs.
 
 
-\subsection{Transformation Models}
+\subsection{Transformation Models} \label{sec:trams}
 
 
 % Transformation models are a flexible class of distributional regression models applicable to various data types. They can be regarded as generalizations of standard models such as linear regression, logistic regression, or proportional odds models, while also allowing for the modeling of outcome distributions that do not belong to a known parametric family. This is achieved by modeling components of the transformation function in a flexible, semi-parametric way, thereby reducing the strength of assumptions required about the underlying data-generating process. The basic form of transformation models can be described by 
@@ -32,13 +32,13 @@ The goal of TRAM-DAGs is to estimate the structural equations of a given DAG in 
 Transformation models are a flexible class of distributional regression models that can be applied to various data types. A linear transformation model is given by
 
 \begin{equation}
-F_{Y \mid \mathbf{x}}(y) = F_Z(h(y \mid \mathbf{x})) =  F_Z(h_I(y) - \mathbf{x}^\top \boldsymbol{\beta})
+F_{Y \mid \mathbf{X}=\mathbf{x}}(y) = F_Z(h(y \mid \mathbf{x})) =  F_Z(h_I(y) - \mathbf{x}^\top \boldsymbol{\beta})
 \label{eq:transformation_model}
 \end{equation}
 
-where $F_{Y \mid \mathbf{x}}(y)$ is the conditional cumulative distribution function (CDF) of the outcome variable $Y$ given the predictors $\mathbf{x}$. The transformation function $h(y \mid \mathbf{x})$ maps the outcome variable $y$ onto the latent scale of variable $Z$, and $F_Z$ is the CDF of $Z$, the so-called inverse-link function that maps $h(y \mid \mathbf{x})$ to probabilities. In its simplest form, as shown in Equation~\ref{eq:transformation_model}, the transformation function can be split into an intercept part $h_I(y)$ and a linear shift component $\mathbf{x}^\top \boldsymbol{\beta}$, where $\mathbf{x}$ are the predictors and $\boldsymbol{\beta}$ the corresponding coefficients.
+where $F_{Y \mid \mathbf{X}=\mathbf{x}}(y)$ is the conditional cumulative distribution function (CDF) of the outcome variable $Y$ given the predictors $\mathbf{X}=\mathbf{x}$. The transformation function $h(y \mid \mathbf{x})$ maps the outcome variable $y$ onto the latent scale of variable $Z$, and $F_Z$ is the CDF of $Z$, the so-called inverse-link function that maps $h(y \mid \mathbf{x})$ to probabilities. In its simplest form, as shown in Equation~\ref{eq:transformation_model}, the transformation function can be split into an intercept part $h_I(y)$ and a linear shift component $\mathbf{x}^\top \boldsymbol{\beta}$, where $\mathbf{x}$ are the predictors and $\boldsymbol{\beta}$ the corresponding coefficients.
 
-If the latent distribution $Z$ is chosen to be the standard logistic, each coefficient $\beta_i$ can be interpreted as log-odds ratio: an increase of one unit in the predictor $x_i$, while holding other predictors unchanged, increases the log-odds (latent scale) of the outcome $Y$ by $\beta_i$. After applying the inverse link function $F_Z$, this can induce a non-linear change to the conditional distribution of $Y$ on the original scale. Further discussion on the choice of latent distribution and the interpretation of coefficients is provided in Appendix~\ref{sec:interpretation_linear_coefficients}.
+If the latent distribution $Z$ is chosen to be the standard logistic, each coefficient $\beta_i$ can be interpreted as log-odds ratio: an increase of one unit in the predictor $x_i$, while holding other predictors unchanged, increases the log-odds (latent scale) of the outcome $Y$ by $\beta_i$. After applying the inverse-link function $F_Z$, this can induce a non-linear change to the conditional distribution of $Y$ on the original scale. Further discussion on the choice of latent distribution and the interpretation of coefficients is provided in Appendix~\ref{sec:interpretation_linear_coefficients}.
 
 For a continuous outcome $Y$, the intercept $h_I(y)$ is represented by a Bernstein polynomial, which is a flexible and monotonically increasing function:
 
@@ -47,7 +47,7 @@ h_I(y) = \frac{1}{M + 1} \sum_{k=0}^{M} \vartheta_k \, \text{B}_{k, M}(y),
 \label{eq:methods_bernstein_polynomial}
 \end{equation}
 
-where $\vartheta_k, k = 0, \ldots, M$ are the coefficients and $\text{B}_{k, M}(y)$ are the corresponding Bernstein basis polynomials. The coefficients $\vartheta_k$ are constrained to be monotonically increasing to ensure that the transformation function $h_I(y)$ is strictly increasing. More details on the technical implementation of Bernstein polynomial in the context of deep-TRAMs are provided in the Appendix~\ref{sec:bernstein_polynomial}
+where $\vartheta_k, k = 0, \ldots, M$ are the coefficients and $\text{B}_{k, M}(y)$ are the corresponding Bernstein basis polynomials. The coefficients $\vartheta_k$ are constrained to be monotonically increasing to ensure that the transformation function $h_I(y)$ is strictly increasing. More details on the technical implementation of the Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}) in the context of deep-TRAMs are provided in the Appendix~\ref{sec:bernstein_polynomial}
 
 
 
@@ -58,6 +58,7 @@ For a discrete outcome $Y$, the intercept $h_I$ is represented by a set of cut-p
 
 \begin{equation}
 P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \boldsymbol{\beta}), \quad k = 1, 2, \ldots, K - 1.
+\label{eq:discrete_tram}
 \end{equation}
 
 
@@ -68,7 +69,7 @@ A visual representation for a continuous and discrete (ordinal) outcome is shown
 \begin{figure}[H]
 \centering
 \includegraphics[width=1\textwidth]{img/tram_cont_ord.png}
-\caption{Left: Example of a transformation model for a continuous outcome $Y$ with a smooth transformation function. Right: Example of a transformation model for an ordinal outcome $Y$ with 4 levels. The transformation function consists of cut-points separating the levels of the outcome.
+\caption{Left: Example of a transformation model for a continuous outcome $Y$ (Equation~\ref{eq:transformation_model}) with a smooth transformation function. Right: Example of a transformation model for an ordinal outcome $Y$ (Equation~\ref{eq:discrete_tram}) with 4 levels. The transformation function consists of cut-points separating the levels of the outcome.
 In both cases the latent distribution $Z$ is the standard logistic and the predictors $\mathbf{x}$ induce a linear (vertical) shift of the transformation function. Plots adapted from visualizations similar to those used in \citet{sick2025}.}
 \label{fig:tram_cont_ord}
 \end{figure}
@@ -82,7 +83,7 @@ The parameters $\boldsymbol{\beta}$ and $\boldsymbol{\vartheta}$ are estimated b
 \label{eq:nll_tram}
 \end{equation}
 
-where $f_{Y \mid \mathbf{X} = \mathbf{x}}(y_i)$ is the conditional density function of the outcome $Y$ given the predictors $\mathbf{x}$ of the $i$-th observation under the current parameterization. A full derivation is provided in Appendix \ref{sec:nll}.
+where $f_{Y \mid \mathbf{X} = \mathbf{x}_i}(y_i)$ is the conditional density function of the outcome $Y$ given the predictors $\mathbf{x}$ of the $i$-th observation under the current parameterization. A full derivation is provided in Appendix \ref{sec:nll}.
 
 Throughout this thesis, these transformation models form the foundation for estimating conditional distributions of variables within the TRAM-DAG framework. Unless stated otherwise, the latent distribution $F_Z$ is chosen to be the standard logistic, resulting in a logistic transformation model.
 
@@ -90,39 +91,42 @@ Throughout this thesis, these transformation models form the foundation for esti
 
 \subsection{Deep TRAMs} \label{sec:deep_trams}
 
-The transformation models introduced earlier were extended into deep TRAMs using a modular neural network architecture \citep{sick2020}. The goal is to obtain a parameterized transformation function of the form
+The transformation models introduced in Section~\ref{sec:trams} were extended into deep TRAMs using a modular neural network architecture \citep{sick2020}. The goal is to obtain a parameterized transformation function of the form
 
 \begin{equation}
 h(y \mid \mathbf{x}_L, \mathbf{x}_C ) = h_I(y) + \mathbf{x}_L^\top \boldsymbol{\beta} + f(\mathbf{x}_C),
 \label{eq:deep_tram_old}
 \end{equation}
 
-where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predictors with a linear effect on the transformation function, and $\mathbf{x}_{C}$ are those with a potentially complex, non-linear influence. The parameters for each component of the model -- intercept, linear shift, and complex shift -- are obtained by a neural network module. The user can assign predictors to these components depending on the assumed structure of the data and the desired flexibility. Figure~\ref{fig:deep_tram} illustrates an example of a transformation function with these tree components (SI-LS-CS). For simplicity, it shows the simple intercept (SI) case where the intercept does not depend on predictors.
+where $h_I(y)$ is the intercept (simple or complex), $\mathbf{x}_{L}$ are predictors with a linear effect on the transformation function, and $\mathbf{x}_{C}$ are those with a potentially complex, non-linear influence. The parameters for each component of the model -- intercept, linear shift, and complex shift -- are obtained by a neural network module. The user can assign predictors to these components depending on the assumed structure of the data and the desired flexibility. Figure~\ref{fig:deep_tram} illustrates an example of a transformation function (Equation~\ref{eq:deep_tram_old}) with these three components (SI-LS-CS). For simplicity, it shows the simple intercept (SI) case where the intercept does not depend on predictors.
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{img/deep_tram.png}
-\caption{Modular deep transformation model (deep TRAM). The transformation function $h(y \mid \mathbf{x})$ is constructed from the outputs of three neural networks: intercept (SI/CI), linear shift (LS), and complex shift (CS). The intercept module (left) shows the simple intercept (SI) case and could be extended to a complex intercept (CI) by feeding predictors into the module and adding hidden layers and nonlinear activation functions.}
+\caption{Modular deep transformation model (deep TRAM). The transformation function $h(y \mid \mathbf{x})$ (Equation~\ref{eq:deep_tram_old}) is constructed from the outputs of three neural networks: intercept (SI/CI), linear shift (LS), and complex shift (CS). The intercept module (left) shows the simple intercept (SI) case and could be extended to a complex intercept (CI) by feeding predictors into the module and adding hidden layers with nonlinear activation functions.}
 \label{fig:deep_tram}
 \end{figure}
 
 \medskip
 
 
-\textbf{Intercept:} The intercept defines the baseline shape of the transformation function when $\mathbf{x}_{L}^\top \boldsymbol{\beta} = 0$ and $f(\mathbf{x}_{C}) = 0$. For continuous outcomes, it is modeled using a smooth Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}), and for discrete outcomes via cut-points. The preliminary parameters $\tilde{\vartheta}_k$ are the output nodes of a neural network, and subsequently transformed to be monotonically increasing $\vartheta_k$. A simple intercept (SI) assumes no dependency on predictors and uses only a constant input. A complex intercept (CI), by contrast, allows the parameters to vary as a function of selected predictors by feeding $\mathbf{x}$ into a neural network with hidden layers, producing predictor dependent parameters $\vartheta_k(\mathbf{x})$. This allows the baseline distribution to adapt flexibly to different covariate settings. Details on the computation of the Bernstein polynomial are provided in Appendix~\ref{sec:bernstein_polynomial}.
+\textbf{Intercept:} The intercept defines the baseline shape of the transformation function when $\mathbf{x}_{L}^\top \boldsymbol{\beta} = 0$ and $f(\mathbf{x}_{C}) = 0$. For continuous outcomes, it is modeled using a smooth Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}), and for discrete outcomes via cut-points. The preliminary parameters $\tilde{\vartheta}_k$ are the output nodes of a neural network, and subsequently transformed into monotonically increasing parameters $\vartheta_k$. A simple intercept (SI) assumes no dependency on predictors and uses only a constant input. A complex intercept (CI), by contrast, allows the parameters to vary as a function of selected predictors by feeding $\mathbf{x}$ into a neural network with hidden layers, producing predictor-dependent parameters $\vartheta_k(\mathbf{x})$. This allows the baseline distribution to adapt flexibly to different covariate settings. Details on the computation of the Bernstein polynomial (Equation~\ref{eq:methods_bernstein_polynomial}) are provided in Appendix~\ref{sec:bernstein_polynomial}.
 
 \medskip
 
-\textbf{Linear shift:} Predictors with an assumed linear influence on the transformation funciton are modeled via the linear shift (LS) component. Here, a neural network without hidden layers and without bias nodes receives $\mathbf{x}_{L}$ as input and returns a linear combination $\mathbf{x}_{L}^\top \boldsymbol{\beta}$ as output. This results in a vertical, linear shift of the transformation function. The parameters $\boldsymbol{\beta}$ are interpretable coefficients, and in the case of a logistic transformation model, represent log-odds ratios. See Appendix~\ref{sec:interpretation_linear_coefficients} for more details.
+\textbf{Linear shift:} Predictors with an assumed linear influence on the transformation function are modeled via the linear shift (LS) component. Here, a neural network without hidden layers and without bias nodes receives $\mathbf{x}_{L}$ as input and returns a linear combination $\mathbf{x}_{L}^\top \boldsymbol{\beta}$ as output. This results in a vertical, linear shift of the transformation function. The parameters $\boldsymbol{\beta}$ are interpretable coefficients, and in the case of a logistic transformation model, represent log-odds ratios. See Appendix~\ref{sec:interpretation_linear_coefficients} for more details.
 
 \medskip
 
-\textbf{Complex shift:} Non-linear dependencies between predictors and the transformation function can be modeled by the complex shift (CS) component. The corresponding predictors $\mathbf{x}_{C}$ are input into a deep neural network (with at least one hidden layer and non-linear activation functions), yielding a scalar output $f(\mathbf{x}_{C})$. This allows modeling of non-linear predictor effects, including interactions between predictors if input multiple predictors into the neural network module. See Appendix~\ref{sec:complex_shift} for an example of modeling an interaction with a complex shift for the purpose of estimating individualized treatment effects (ITEs).
+\textbf{Complex shift:} Non-linear dependencies between predictors and the transformation function can be modeled by the complex shift (CS) component. The corresponding predictors $\mathbf{x}_{C}$ are input into a deep neural network (with one or more hidden layers and non-linear activation functions), yielding a scalar output $f(\mathbf{x}_{C})$. This allows modeling of non-linear predictor effects, including interactions between predictors if multiple predictors are input into the neural network module. See Appendix~\ref{sec:complex_shift} for an example of modeling an interaction with a complex shift for the purpose of estimating individualized treatment effects (ITEs).
 
 \medskip
 
-\textbf{Level of complexity:} A key advantage of the deep TRAM architecture is that users can specify the role of each predictor: linear (LS), complex (CS), or influencing the shape of the transformation function (CI). For example, \citet{herzog2023} predicted the ordinal functional outcome three months after stroke by combining structured tabular data with image features (via a CNN) as predictors. This flexible design allows the integration of different data modalities into a single model.
+% \textbf{Level of complexity:} A key advantage of the deep TRAM architecture is that users can specify the role of each predictor: linear (LS), complex (CS), or influencing the shape of the transformation function (CI). For example, \citet{herzog2023} predicted the ordinal functional outcome three months after stroke by combining structured tabular data with image features (via a CNN) as predictors. This flexible design allows the integration of different data modalities into a single model.
+
+\textbf{Level of complexity:} A key advantage of the deep TRAM architecture is that users can specify the role of each predictor: linear (LS), complex (CS), or influencing the shape of the transformation function (CI). For example, \citet{kook2022} demonstrated the use of deep transformation models with flexible components for ordinal outcomes and multi-modal data. \citet{herzog2023} later applied this framework in the medical domain, predicting ordinal stroke outcomes by combining structured tabular data with image features (via a CNN). This design enables the integration of different data modalities into a single model.
+
 
 
 \medskip
@@ -132,7 +136,7 @@ The resulting distribution function of deep TRAMs is invariant to the choice of 
 %
 \medskip
 
-\textbf{Parameter estimation:} The weights of the neural networks are learned by minimizing the NLL of the conditional model. Starting from random weight initialization, the networks are trained using the Adam optimizer \citep{kingma2015}. Outputs of the modules are assembled to compute the NLL, and backpropagation \citep{rumelhart1986} is used to adjust weights iteratively. Deep learning techniques such as dropout \citep{srivastava2014}, early stopping \citep{prechelt2012}, and batch normalization \citep{Ioffe2015} can be applied to prevent overfitting and improve generalization. Nonlinear activation functions (e.g., ReLU \citealp{glorot2011} or sigmoid \citealp{rumelhart1986}) are used in hidden layers to capture complex relationships. \citet{schmidhuber2015} provides an extensive historical overview of deep learning methods and their development.
+\textbf{Parameter estimation:} The weights of the neural networks are learned by minimizing the NLL (Equation~\ref{eq:nll_tram}) of the conditional model. Starting from random weight initialization, the networks are trained using the Adam optimizer \citep{kingma2015}. Outputs of the modules are assembled to compute the NLL, and backpropagation \citep{rumelhart1986} is used to adjust weights iteratively. Deep learning techniques such as dropout \citep{srivastava2014}, early stopping \citep{prechelt2012}, and batch normalization \citep{Ioffe2015} can be applied to prevent overfitting and improve generalization. Nonlinear activation functions (e.g., ReLU \citealp{glorot2011} or sigmoid \citealp{rumelhart1986}) are used in hidden layers to capture complex relationships. \citet{schmidhuber2015} provides an extensive historical overview of deep learning methods and their development.
 
 
 
@@ -141,19 +145,19 @@ The resulting distribution function of deep TRAMs is invariant to the choice of 
 
 
 
-In TRAM-DAGs, deep transformation models are applied within a causal setting. We assume a pre-specified DAG that represents the causal dependencies among variables. 
-Figure~\ref{fig:tram_dag} illustrates the basic idea using a simple DAG with three variables and no hidden confounders. Each node's conditional distribution is modeled using a deep TRAM given its parent variables in the DAG. The assumed influence of the parent variables must be specified as CI, LS or CS. In this example, $X_1$ is a continuous source node (i.e., without parents) and its transformation function consists only of a simple intercept (SI). $X_2$ is also continuous and depends on $X_1$ by a linear shift (LS). $X_3$ is an ordinal variable with four levels; its transformation function is influenced linearly by $X_1$ (LS) and non-linearly by $X_2$ (CS). The cut-points $h(x_{3,k} \mid x_1, x_2)$ represent the cumulative log-odds of levels $k = 1, 2, 3$ of $X_3$. The probability of the highest category ($k = 4$) is the complement of the cumulative probability of the first three.
+In TRAM-DAGs, deep transformation models (see Section~\ref{sec:deep_trams}) are applied within a causal setting. We assume a pre-specified DAG that represents the causal dependencies among variables. 
+Figure~\ref{fig:tram_dag} illustrates the basic idea using a simple DAG with three variables and no hidden confounders. Each node's conditional distribution is modeled using a deep TRAM, given its parent variables in the DAG. The assumed influence of the parent variables must be specified as CI, LS or CS. In this example, $X_1$ is a continuous source node (i.e., without parents) and its transformation function consists only of a simple intercept (SI). $X_2$ is also continuous and depends on $X_1$ by a linear shift (LS). $X_3$ is an ordinal variable with four levels; its transformation function is influenced linearly by $X_1$ (LS) and non-linearly by $X_2$ (CS). The cut-points $h(x_{3,k} \mid x_1, x_2)$ represent the cumulative log-odds of levels $k = 1, 2, 3$ of $X_3$. The probability of the highest category ($k = 4$) is the complement of the cumulative probability of the first three.
 
 
 % include image /img/tram_dag.png
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{img/tram_dag.png}
-\caption{Example of a TRAM-DAG with three variables: $X_1$, $X_2$, and $X_3$. Each variable's distribution is modeled conditionally on its parents using deep TRAMs. Arrows indicate the causal dependencies.}
+\caption{Example of a TRAM-DAG with three variables: $X_1$, $X_2$, and $X_3$. Each variable's distribution is modeled conditionally on its parents using deep TRAMs. Arrows indicate the causal dependencies. Plots adapted from visualizations similar to those used in \citet{sick2025}.}
 \label{fig:tram_dag}
 \end{figure}
 
-This DAG, along with its assumed dependencies, can be represented by a meta-adjacency matrix (Equation~\ref{eq:MA}), where rows indicate sources and columns indicate targets of causal influence:
+The DAG in Figure~\ref{fig:tram_dag}, along with its assumed dependencies, can be represented by a meta-adjacency matrix (Equation~\ref{eq:MA}), where rows indicate sources and columns indicate targets of causal influence:
 
 
 \begin{equation}
@@ -178,26 +182,27 @@ Based on this DAG, each variable's conditional distribution is modeled using a d
 % \end{aligned}
 % \]
 
-%
-\textbf{Constructing the modular neural network:} As described in Section~\ref{sec:deep_trams}, the transformation functions are implemented using a modular neural network. The network takes as input the observed variables $\mathbf{x}$ and the meta-adjacency matrix~\ref{eq:MA}, which encodes the assumed causal structure. This matrix acts as a binary mask that restricts information flow to follow the directed edges of the graph, ensuring that only causal parent-to-child relationships are modeled. As a result, spurious dependencies such as $X_2 \rightarrow X_1$ are prevented. This masking approach is inspired by the Masked Autoregressive Flow (MAF) framework \citep{papamakarios2017}, where connectivity within the network is masked to control which inputs each output can depend on.
+\medskip 
 
-Before training the model, the input data must be appropriately preprocessed. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled prior to input. Further discussion of encoding and scaling is provided in Appendix~\ref{sec:encoding_discrete_variables} and~\ref{sec:scaling_continuous_variables}.
+\textbf{Constructing the modular neural network:} As described in Section~\ref{sec:deep_trams}, the transformation functions are implemented using a modular neural network. The network takes as input the observed variables $\mathbf{x}$ and the meta-adjacency matrix (Equation~\ref{eq:MA}), which encodes the assumed causal structure. This matrix acts as a binary mask that restricts information flow to follow the directed edges of the graph, ensuring that only causal parent-to-child relationships are modeled. As a result, spurious dependencies such as $X_2 \rightarrow X_1$ are prevented. This masking approach is inspired by the Masked Autoregressive Flow (MAF) framework \citep{papamakarios2017}, where connectivity within the network is masked to control which inputs each output can depend on.
+
+Before training the model, the input data must be appropriately pre-processed. Discrete variables with few categories are dummy encoded, and continuous variables should be scaled prior to input. Further discussion of encoding and scaling is provided in Appendix~\ref{sec:encoding_discrete_variables} and~\ref{sec:scaling_continuous_variables}.
 
 Once the data are preprocessed and the structure is specified, the architecture of the neural networks for the complex shift or complex intercept must be defined -- including choices such as depth, width, activation functions, and whether to use dropout or batch normalization. These decisions depend on the assumed complexity of the effects and the need to regularize against overfitting.
 
-Each node's transformation function is assembled from the outputs of its three modular components: the intercept (SI or CI), linear shift (LS), and complex shift (CS). Model training is performed by minimizing the NLL, optimizing all parameters at the same time. The estimated parameters $\boldsymbol{\beta}$ in the linear shift are interpretable as log-odds ratios corresponding to a one-unit increase in the respective parent variable, holding all other parent variables unchanged.
+Each node's transformation function (Equation~\ref{eq:deep_tram_old}) is assembled from the outputs of its three modular components: the intercept (SI or CI), linear shift (LS), and complex shift (CS). Model training is performed by minimizing the NLL (Equation~\ref{eq:nll_tram}), optimizing all parameters at the same time. The estimated parameters $\boldsymbol{\beta}$ in the linear shift are interpretable as log-odds ratios corresponding to a one-unit increase in the respective parent variable, holding all other parent variables unchanged.
 
 
 
 
 \subsection{Sampling from TRAM-DAGs} \label{methods:sampling}
 
-Once a TRAM-DAG is fitted on data, it can be used to sample from the observational or interventional distribution, or to perform counterfactual queries. The structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the inverse of the conditional transformation functions, i.e., $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$, since the transformation function maps from observed values to the latent scale: $Z_i = h(X_i \mid \text{pa}(X_i))$.
+Once a TRAM-DAG is fitted on data, it can be used to sample from the observational or interventional distribution, or to perform counterfactual queries. For continuous outcomes, the structural equations $X_i = f(Z_i, \text{pa}(X_i))$ are represented by the inverse of the conditional transformation functions, i.e., $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$, since the transformation function maps from observed values to the latent scale: $Z_i = h(X_i \mid \text{pa}(X_i))$.
 
 
 \medskip
 
-\textbf{Observational sampling:} The sampling process from the observational distribution is described in Algorithm~\ref{alg:sampling} and illustrated in Figure~\ref{fig:sampling}. In each iteration, one complete sample of all variables in the DAG is generated -- i.e. a sample from the joint observational distribution.
+\textbf{Observational sampling:} The sampling process from the observational distribution is described in Algorithm~\ref{alg:sampling} and illustrated in Figure~\ref{fig:sampling}. In each iteration, one complete sample of all variables in the DAG is generated -- i.e., a sample from the joint observational distribution.
 
 \begin{algorithm}
 \caption{Generate a complete sample from the observational distribution}
@@ -220,7 +225,7 @@ $
 \begin{figure}[H]  % before [H]
 \centering
 \includegraphics[width=1\textwidth]{img/sampling.png}
-\caption{One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text{pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable. See Algorithm~\ref{alg:sampling} for details.}
+\caption{One sampling iteration for the three variables from the estimated transformation functions $h(x_i \mid \text{pa}(x_i))$. The latent values $z_i$ are sampled from the standard logistic distribution. The values $x_i$ are determined by applying the inverse of the transformation function for continuous variables or by finding the corresponding category for the ordinal variable. See Algorithm~\ref{alg:sampling} for details. Plots adapted from visualizations similar to those used in \citet{sick2025}.}
 \label{fig:sampling}
 \end{figure}
 
@@ -271,13 +276,13 @@ where $z_k$ is the latent value obtained in Step 1, and $\text{pa}^*(x_k)$ are t
 \begin{figure}[!ht]
 \centering
 \includegraphics[width=0.65\textwidth]{img/counterfactuals.png}
-\caption{Illustration of a counterfactual query for variable $X_i$, had its parent $X_j$ taken a different value, following the three-step procedure: (1) abduction of the latent value $z_i$ from the observed outcome, (2) intervention by setting $X_j = \alpha$, (3) prediction of the counterfactual outcome using the same $z_i$ and the modified transformation function. This simplified example assumes a single parent variable; in practice, $\text{pa}(X_i)$ may include multiple predictors.}
+\caption{Illustration of a counterfactual query for variable $X_i$, had its parent $X_j$ taken a different value, following the three-step procedure: (1) abduction of the latent value $z_i$ from the observed outcome, (2) intervention by setting $X_j = \alpha$, (3) prediction of the counterfactual outcome using the same $z_i$ and the modified transformation function. This simplified example assumes a single parent variable; in practice, $\text{pa}(X_i)$ may include multiple predictors. Plot adapted from visualizations similar to those used in \citet{sick2025}.}
 \label{fig:cf_viz}
 \end{figure}
 
 
 
-While interventional distributions (e.g., $P(X_i = x \mid \text{do}(X_j = \alpha), z_i)$) are well-defined in both continuous and discrete settings, determining the counterfactual realizations is generally only possible for continuous variables. In the discrete case, no unique latent value $z_k$ can be recovered from an observed category, as multiple $z_k$ values may map to the same outcome. 
+While interventional distributions (e.g., $P(X_i = x_i \mid \text{do}(X_j = \alpha), z_i)$) are well-defined in both continuous and discrete settings, determining the counterfactual realizations is generally only possible for continuous variables. In the discrete case, no unique latent value $z_k$ can be recovered from an observed category, as multiple $z_k$ values may map to the same outcome. 
 % Consequently, only the probabilities of counterfactual outcomes can be evaluated for discrete variables, not their exact values. This is a fundamental limitation of counterfactual reasoning in discrete settings with continuous latent variables.
 
 % 
@@ -412,50 +417,53 @@ While interventional distributions (e.g., $P(X_i = x \mid \text{do}(X_j = \alpha
 
 % RCTs are considered the gold standard for estimating the causal effect of a treatment due to their ability to eliminate confounding through randomization \citep{little2000}. However, RCTs typically aim to estimate the average treatment effect (ATE), which summarizes the effect of the treatment across the entire study population. This approach overlooks individual-level variation in treatment response: depending on their unique characteristics, some individuals may benefit substantially, others not at all, or even be harmed. 
 
-While the homogeneous treatment effect refers to the part of the effect that is equal for all patients, the heterogeneous treatment effect (HTE) describes the variation in treatment effects across individuals or subgroups. One reason for treatment effect heterogeneity is the presence of interaction variables \citep{hoogland2021}, also referred to as effect modifiers \citep{christensen2021}, which influence how the treatment effect varies depending on individual characteristics. However, even in the absence of explicit interaction terms, treatment effects can still exhibit heterogeneity in certain model classes, such as logistic regression \citep{hoogland2021}, or in other subclasses of transformation models. This phenomenon is further explored in Experiment 4 and will be discussed in detail in Section~\ref{sec:disc_experiment4}.
+While the homogeneous treatment effect refers to the part of the effect that is equal for all patients, the heterogeneous treatment effect (HTE) describes the variation in treatment effects across individuals or subgroups. One reason for treatment effect heterogeneity is the presence of interaction variables \citep{hoogland2021}, also referred to as effect modifiers \citep{christensen2021}, which influence how the treatment effect varies depending on individual characteristics. However, even in the absence of explicit interaction terms, treatment effects can still exhibit heterogeneity in certain model classes, such as logistic regression \citep{hoogland2021}, or in other subclasses of transformation models. This phenomenon is further explored in Experiment 4 and will be discussed in detail in Section~\ref{sec:exp4_sc2}.
 
 In personalized medicine and informed decision-making, individual-level treatment effects are also of interest besides population averages. The individual treatment effect compares the potential outcomes for an individual~$i$ under two different treatment options: the potential outcome $Y_i(1)$ under treatment, and $Y_i(0)$ under control, as defined by Rubin's potential outcomes framework~\citep{rubin2005}. The individual treatment effect is typically defined as the difference between the two potential outcomes:
 
 
 \begin{equation}
 Y_i(1) - Y_i(0).
+\label{eq:ind_tr_ef}
 \end{equation}
 
 
 
-However, for any individual, only one of these two potential outcomes can be observed -- the other one remains counterfactual. This is known as the fundamental problem of causal inference \citep{holland1986}, which implies that the individual treatment effect is inherently unobservable. Estimating causal effects from observed data requires untestable assumptions to ensure identifiability, in contrast to standard predictive modeling.
+However, for any individual, only one of these two potential outcomes can be observed -- the other one remains counterfactual. This is known as the fundamental problem of causal inference \citep{holland1986}, which implies that the individual treatment effect (Equation~\ref{eq:ind_tr_ef}) is inherently unobservable. Estimating causal effects from observed data requires untestable assumptions to ensure identifiability, in contrast to standard predictive modeling.
 
 
 \medskip 
 
 % ...assumpitons to link observed data with unobserved counterfactuals
-\textbf{Assumptions for Identifiability:} A central assumption is consistency, which requires that the observed outcome equals the potential outcome under the treatment actually received: $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$. The Stable Unit Treatment Value Assumption (SUTVA) assumes no interference between units and that treatments are well-defined \citep{rubin1980}. The most critical assumption is ignorability (or unconfoundedness), which states that, conditional on observed covariates $X$, the treatment assignment is independent of the potential outcomes \citep{rosenbaum1983}:
+\textbf{Assumptions for identifiability:} A central assumption is consistency, which requires that the observed outcome equals the potential outcome under the treatment actually received: $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$. The Stable Unit Treatment Value Assumption (SUTVA) assumes no interference between units and that treatments are well-defined \citep{rubin1980}. The most critical assumption is ignorability (or unconfoundedness), which states that, conditional on observed covariates $\mathbf{X}$, the treatment assignment is independent of the potential outcomes \citep{rosenbaum1983}:
 
 \begin{equation}
-(Y(1), Y(0)) \perp T \mid X.
+(Y(1), Y(0)) \perp T \mid \mathbf{X}.
+\label{eq:ignorability}
 \end{equation}
 
-This implies that there are no unmeasured confounders affecting both treatment assignment and outcomes. In an RCT, this condition is typically satisfied by design. In contrast, for observational data, all relevant confounders must be measured and conditioned on. Additionally, the positivity assumption requires that every individual has a non-zero probability of receiving each treatment level:
+Equation~\ref{eq:ignorability} implies that there are no unmeasured confounders affecting both treatment assignment and outcomes. In an RCT, this condition is typically satisfied by design. In contrast, for observational data, the covariate set $\mathbf{X}$ must contain a valid adjustment set to appropriately control for confounding. Additionally, care must be taken to avoid adjusting for collider variables, as this can introduce selection bias (see \citet{elwert2014} and \citet{hernan2025}). Finally, the positivity assumption requires that every individual has a non-zero probability of receiving each treatment level:
 
 \begin{equation}
-0 < P(T = 1 \mid X = x) < 1 \quad \text{for all } x.
+0 < P(T = 1 \mid \mathbf{X} = \mathbf{x}) < 1 \quad \text{for all } \mathbf{x}.
 \end{equation}
 
 \medskip
 
-While the individual treatment effect is inherently unobservable, its expectation conditional on covariates can be identified under the assumptions above. This quantity is referred to as the conditional average treatment effect (CATE), or individualized treatment effect (ITE). In this thesis, we use the term ITE to denote this estimand. For an individual with covariates \( \mathbf{X}_i = \mathbf{x}_i \), the ITE can be identified as:
+While the individual treatment effect is inherently unobservable, its expectation conditional on covariates can be identified under the assumptions above. This quantity is referred to as the conditional average treatment effect (CATE), or individualized treatment effect (ITE). In this thesis, we use the term ITE to denote this estimand. For an individual with covariates \( \mathbf{X} = \mathbf{x}_i \), the ITE can be identified as:
 
 \medskip
 
 
 
 \begin{align}
-\text{ITE}_i(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid \mathbf{X}_i = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i] 
- - \mathbb{E}[Y_i(0) \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by ignorability)} \notag \\[0.5em]
-&= \mathbb{E}[Y_i \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i] 
- - \mathbb{E}[Y_i \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by consistency)}
+\label{eq:ite}
+\text{ITE}(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+&= \mathbb{E}[Y_i(1) \mid \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+&= \mathbb{E}[Y_i(1) \mid T = 1, \mathbf{X} = \mathbf{x}_i] 
+ - \mathbb{E}[Y_i(0) \mid T = 0, \mathbf{X} = \mathbf{x}_i] \quad \text{(by ignorability)} \notag \\[0.5em]
+&= \mathbb{E}[Y_i \mid T = 1, \mathbf{X} = \mathbf{x}_i] 
+ - \mathbb{E}[Y_i \mid T = 0, \mathbf{X} = \mathbf{x}_i] \quad \text{(by consistency)}
 \end{align}
 
 
@@ -489,12 +497,13 @@ While the individual treatment effect is inherently unobservable, its expectatio
 
 \medskip
 
-In the case of a binary outcome $Y$, where the expected value corresponds to the probability that $Y = 1$, the ITE for an individual with covariates $\mathbf{X}_i = \mathbf{x}_i$, under the identifiability assumptions, is given by:
+In the case of a binary outcome $Y$, where the expected value corresponds to the probability that $Y = 1$, the ITE for an individual with covariates $\mathbf{X} = \mathbf{x}_i$, under the identifiability assumptions, is given by:
 
 \medskip
 
 \begin{equation}
-\text{ITE}_i(\mathbf{x}_i) = P(Y_i = 1 \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i) - P(Y_i = 1 \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i).
+\text{ITE}(\mathbf{x}_i) = P(Y_i = 1 \mid T = 1, \mathbf{X} = \mathbf{x}_i) - P(Y_i = 1 \mid T = 0, \mathbf{X} = \mathbf{x}_i).
+\label{eq:ITE_binary}
 \end{equation}
 
 \medskip
@@ -561,10 +570,19 @@ If $Y = 1$ indicates recovery, a positive ITE means that the individual is expec
 
 % An example of ITE estimation using a TRAM-DAG is provided in Appendix~\ref{appendix:ite_tram_example}.
 
+\textbf{ITE estimation:} In practice, the ITE (Equation~\ref{eq:ite}) is estimated by fitting a model to the observed data and then predicting the outcome under both treatment conditions. For binary outcomes, this requires a model that predicts the probability of $Y = 1$ under treatment and control (i.e., the expected value of a binary outcome; see Equation~\ref{eq:ITE_binary}). For continuous outcomes, a model is required that directly predicts the expected value of each potential outcome. Alternatively, one may compute the difference in the predicted medians of the potential outcomes, corresponding to the quantile treatment effect (QTE) at the median (Equation~\ref{eq:qte}). This is illustrated in the simulation example in Experiment~4 (see Section~\ref{ch:exp4}). An overview of the models used for ITE estimation is provided below.
 
-\textbf{Models for ITE Estimation:} \label{sec:ite_models} A variety of methods exist to estimate ITEs. In this thesis, we focus on metalearners, specifically the T-learner and S-learner frameworks \citep{kunzel2019}. These methods are model-agnostic, meaning that any predictive algorithm can be used as a base model. There exists a variety of other approaches to model ITEs. The T-learner fits \textbf{t}wo separate models: one on the treated group and on the control group. If the treatment was assigned randomly, counfounding should not be a problem. The ITE for an individual is then estimated as the difference between the predicted outcomes from these two models. In contrast, the S-learner fits a \textbf{s}ingle model on all individuals, incorporating the treatment indicator as an additional covariate to distinguish between treatment conditions. Therefore, the S-learner requires a model that is complex enough, to capture interaction effects between treatment and covariates. The experiments in this thesis were conducted using S- and T-learners that were based on TRAM-DAGs, logistic regression, logistic lasso regression, and random forests. Applied as S-learners, TRAM-DAGs with complex shift or complex intercept terms allow for flexible modeling of treatment effect heterogeneity. 
 
-Accurate ITE estimation requires models that generalize well, which in turn means avoiding overfitting. Since ITEs are computed as differences between two outcome predictions, even small errors can accumulate. \citet{hoogland2021} emphasize the need to balance model complexity with data availability to avoid overfitting. They also highlight that estimating risk differences is inherently more challenging than predicting single outcomes. Furthermore, calibration is crucial when ITEs are derived from predicted potential outcomes \citep{hoogland2024}. While neural networks may be accurate, they often produce poorly calibrated probabilities \citep{guo2017}, which can mislead treatment effect estimation. Similarly, conventional models like logistic regression can overfit in small samples or high-dimensional settings, leading to extreme predictions. Penalization methods such as lasso shrink coefficients to improve generalization \citep{riley2021}, though studies have shown that they can perform inconsistently in low-sample scenarios \citep{calster2020}. These factors are important to consider when ITEs.
+\medskip
+
+\textbf{Models for ITE estimation:} \label{sec:ite_models} While many other approaches for ITE estimation exist, this thesis focuses on two widely used types of metalearners: the T-learner and the S-learner \citep{kunzel2019}. These methods are model-agnostic, meaning that any predictive algorithm can be used as a base model. The T-learner fits \textbf{t}wo separate models: one on the treated group and one on the control group. If the treatment was assigned randomly, confounding should not be a problem. The ITE for an individual is then estimated as the difference between the predicted outcomes from these two models (as in Equation~\ref{eq:ite}). In contrast, the S-learner fits a \textbf{s}ingle model on all individuals, incorporating the treatment indicator as an additional covariate to distinguish between treatment conditions. Therefore, the S-learner requires a model that is complex enough to capture interaction effects between treatment and covariates. 
+
+The experiments in this thesis were conducted using both S- and T-learners. For binary outcomes, we used models based on logistic regression, logistic lasso regression, random forests, and TRAM-DAGs to predict the probabilities of $Y = 1$ for the potential outcomes (see Experiments~2 and~3; Sections~\ref{ch:exp2} and~\ref{ch:experiment3}). For continuous outcomes, we used TRAM-DAGs, which—when applied as S-learners—can flexibly model treatment effect heterogeneity when specified with complex shift or complex intercept terms. For simplicity, the ITEs for continuous outcomes were computed as the difference in the predicted medians of the potential outcomes (Equation~\ref{eq:qte}), although estimation based on expected values would also have been possible, as discussed in the ITE estimation procedure in Experiment~4 (see Section~\ref{sec:methods_experiment4}).
+
+
+
+Accurate ITE estimation requires models that generalize well, which in turn means avoiding overfitting. Since ITEs are computed as differences between two outcome predictions, even small errors can accumulate. \citet{hoogland2021} emphasize the need to balance model complexity with data availability to avoid overfitting. They also highlight that estimating risk differences is inherently more challenging than predicting single outcomes. Furthermore, calibration is crucial when ITEs are derived from predicted potential outcomes \citep{hoogland2024}. While neural networks may be accurate, they often produce poorly calibrated probabilities \citep{guo2017}, which can mislead treatment effect estimation. Similarly, conventional models like logistic regression can overfit in small samples or high-dimensional settings, leading to extreme predictions. Penalization methods such as lasso shrink coefficients to improve generalization \citep{riley2021}, though studies have shown that they can perform inconsistently in low-sample scenarios \citep{calster2020}. These factors are important to consider when estimating ITEs.
+
 When using random forests as S-learners, care must be taken to ensure that the treatment variable is included in the splits. Proper tuning of hyperparameters like tree depth and variable selection (e.g., \texttt{mtry}) may be necessary to avoid overfitting.
 In summary, model choice for ITE estimation should consider the complexity of treatment-outcome relationships, sample size, and calibration needs. While complex models like TRAM-DAGs and random forests can capture complicated heterogeneity, simpler models may offer more robust performance in smaller datasets or where treatment-covariate interactions are straightforward.
 
@@ -608,8 +626,8 @@ In summary, model choice for ITE estimation should consider the complexity of tr
 
 \medskip
 
-\textbf{Validation of ITE Estimation:} \label{sec:ite_validation} \citet{hoogland2024} examined a variety of evaluation methods for assessing discrimination and calibration in ITE estimation. They emphasize that accurate prediction of potential outcomes should be considered a prerequisite for reliable ITE modeling. Furthermore, as in standard prediction modeling, proper validation should ideally be performed on independent (out-of-sample) data.
-In this thesis, although various quantitative evaluation metrics exist, we primarily relied on visual validation tools. One such approach is the ITE-ATE plot, where individuals are grouped based on their predicted ITEs. Within each ITE-subgroup, the empirical ATE is calculated using observed outcomes. Depending on the context, the empirical ATE is calculated on the same scale as the predicted ITEs -- for example, as a risk difference for binary outcomes or an absolute difference for continuous outcomes. If the ITE estimates are well-calibrated, the observed ATEs should align the predicted values, resulting in a calibration curve that lies along the identity line. Additionally, in simulation experiments where the true ITEs are known, estimation accuracy was assessed by directly comparing predicted and true effects. Furthermore, model calibration in terms of predictive performance $P(Y \mid \mathbf{X} = \mathbf{x})$ was evaluated using calibration plots. As an additional check, the average of the estimated ITEs across the population should equal the estimated ATE, i.e., $\mathbb{E}[\text{ITE}(X)] = \text{ATE}$. Large deviations from this condition may indicate systematic bias. However, satisfying this equality does not guarantee that the estimated ITEs are accurate at the individual level. All evaluations were conducted both on the training data and on a separate hold-out test set.
+\textbf{Validation of ITE estimation:} \label{sec:ite_validation} \citet{hoogland2024} examined a variety of evaluation methods for assessing discrimination and calibration in ITE estimation. They emphasize that accurate prediction of potential outcomes should be considered a prerequisite for reliable ITE modeling. Furthermore, as in standard prediction modeling, proper validation should ideally be performed on independent (out-of-sample) data.
+In this thesis, although various quantitative evaluation metrics exist, we primarily relied on visual validation tools. One such approach is the ITE-ATE plot (see, e.g., Figure~\ref{fig:IST_density_ITE_ATE_glm_tlearner}), where individuals are grouped based on their predicted ITEs. Within each ITE-subgroup, the empirical ATE is calculated using observed outcomes. Depending on the context, the empirical ATE is calculated on the same scale as the predicted ITEs -- for example, as a risk difference for binary outcomes or an absolute difference for continuous outcomes. If the ITE estimates are well-calibrated, the observed ATEs should align with the predicted values, resulting in a calibration curve that lies along the identity line. Additionally, in simulation experiments where the true ITEs are known, estimation accuracy was assessed by directly comparing predicted and true effects. Furthermore, model calibration in terms of predictive performance $P(Y \mid \mathbf{X} = \mathbf{x})$ was evaluated using calibration plots. As an additional check, the average of the estimated ITEs across the population should equal the estimated ATE, i.e., $\mathbb{E}[\text{ITE}(X)] = \text{ATE}$. Large deviations from this condition may indicate systematic bias. However, satisfying this equality does not guarantee that the estimated ITEs are accurate at the individual level. All evaluations were conducted both on the training data and on a separate hold-out test set.
 
 % It should be noted, that when estimating the ITEs , the mean of the ITEs across the population should equal the ATE, i.e., $\mathbb{E}[\tau(X)] = \text{ATE}$. However, if one estimated ITEs whose average is equal to the ATE in a population, this does not neccesarily mean that the estimated ITEs are correct. 
 % 

@@ -161,7 +161,7 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
 
 
 
-\begin{frame}{RCT vs. Observational Data}
+\begin{frame}{TRAM-DAGs: Motivation}
 
 \vspace{1cm}
 
@@ -199,27 +199,28 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
 
 
 
-\begin{frame}{Pearl's Causality Ladder}
+\begin{frame}{TRAM-DAGs: Motivation}
+
+\textbf{Pearl's Causality Ladder}
+
+\vspace{-0.5cm}
 
 \begin{columns}
 
 % Left side: Text (60%)
-\begin{column}{0.60\textwidth}
+\begin{column}{0.63\textwidth}
 
-\textbf{Observational (seeing)} \\
-$P(Y=1 \mid E=1)$ \\
+Observational: $P(Y=1 \mid E=1)$ \\
 {\footnotesize \textit{"Probability of heart disease given that the person exercises"}}
 
 \vspace{0.4cm}
 
-\textbf{Interventional (doing)} \\
-$P(Y=1 \mid \text{do}(E=1))$ \\
+Interventional: $P(Y=1 \mid \text{do}(E=1))$ \\
 {\footnotesize \textit{"Probability of heart disease if we made people start exercising"}} 
 
 \vspace{0.4cm}
 
-\textbf{Counterfactual (imagining)} \\
- $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
+Counterfactual: $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
 {\footnotesize \textit{"Would someone who does not exercise and has heart disease still have it if they had exercised?"}}
 
 \end{column}
@@ -278,22 +279,27 @@ $P(Y=1 \mid \text{do}(E=1))$ \\
 % 
 % @
 % \end{frame}
-\begin{frame}{Structural Causal Model}
+\begin{frame}{TRAM-DAGs: Background}
 
-\textbf{SCM:} Describes the causal mechanism and probabilistic uncertainty
+\textbf{Structural Causal Model:} Describes the causal mechanism and probabilistic uncertainty
 
 \vspace{0.2cm}
 
 \begin{itemize}
     \item $X_i$ = observed variable
-    \item $U_i$ = noise distribution
+    \item $Z_i$ = noise distribution
+    \item $f_i$ = deterministic function: $X_i = f_i(Z_i, \text{pa}_i)$
     % \item $f$ = in our case: $X_2 = f(X_1, U) = h^{-1}(U_{\text{logis}} - \mathbf{x}^\top \boldsymbol{\beta})$
 \end{itemize}
+
+$\rightarrow$ We want a model that estimates $X_i = f_i(Z_i, \text{pa}_i)$ in a flexible and interpretable way!
 
 \vfill
 
 \centering
-\includegraphics[width=1\textwidth]{img/SCM.png}
+\includegraphics[width=0.85\textwidth]{img/SCM.png}
+
+
 
 \end{frame}
 
@@ -301,77 +307,84 @@ $P(Y=1 \mid \text{do}(E=1))$ \\
 
 
 
+% 
+% \begin{frame}{Estimating Functional Form}
+% 
+% % Statistical Methods
+% \begin{columns}
+% \begin{column}{0.75\textwidth}
+% \textbf{Statistical methods:}
+% \begin{itemize}
+%     \item E.g. linear/logistic regression
+%     \item Predefined form, risk of bias if misspecified
+% \end{itemize}
+% \end{column}
+% \begin{column}{0.23\textwidth}
+% \includegraphics[width=\textwidth]{img/conditional_distributions.png}
+% \end{column}
+% \end{columns}
+% 
+% \vspace{0.3cm}
+% 
+% % Neural Networks
+% \begin{columns}
+% \begin{column}{0.75\textwidth}
+% \textbf{Neural networks:}
+% \begin{itemize}
+%     \item E.g. feed-forward NNs, normalizing flows, VACAs
+%     \item Flexible, but "black-box", data-type limitations
+% \end{itemize}
+% \end{column}
+% \begin{column}{0.23\textwidth}
+% \includegraphics[width=\textwidth]{img/neural_network.png}
+% \end{column}
+% \end{columns}
+% 
+% \vspace{0.3cm}
+% 
+% % TRAM-DAGs
+% \begin{columns}
+% \begin{column}{0.75\textwidth}
+% \textbf{TRAM-DAGs:}
+% \begin{itemize}
+%     \item Compromise: flexibility + interpretability
+%     \item Mixed data types
+% \end{itemize}
+% \end{column}
+% \begin{column}{0.23\textwidth}
+% \includegraphics[width=\textwidth]{img/TRAM_Raw.png}
+% \end{column}
+% \end{columns}
+% 
+% \end{frame}
 
-\begin{frame}{Estimating Functional Form}
 
-% Statistical Methods
-\begin{columns}
-\begin{column}{0.75\textwidth}
-\textbf{Statistical methods:}
-\begin{itemize}
-    \item E.g. linear/logistic regression
-    \item Predefined form, risk of bias if misspecified
-\end{itemize}
-\end{column}
-\begin{column}{0.23\textwidth}
-\includegraphics[width=\textwidth]{img/conditional_distributions.png}
-\end{column}
-\end{columns}
 
-\vspace{0.3cm}
 
-% Neural Networks
-\begin{columns}
-\begin{column}{0.75\textwidth}
-\textbf{Neural networks:}
-\begin{itemize}
-    \item E.g. feed-forward NNs, normalizing flows, VACAs
-    \item Flexible, but "black-box", data-type limitations
-\end{itemize}
-\end{column}
-\begin{column}{0.23\textwidth}
-\includegraphics[width=\textwidth]{img/neural_network.png}
-\end{column}
-\end{columns}
 
-\vspace{0.3cm}
 
-% TRAM-DAGs
-\begin{columns}
-\begin{column}{0.75\textwidth}
-\textbf{TRAM-DAGs:}
-\begin{itemize}
-    \item Compromise: flexibility + interpretability
-    \item Mixed data types
-\end{itemize}
-\end{column}
-\begin{column}{0.23\textwidth}
-\includegraphics[width=\textwidth]{img/TRAM_Raw.png}
-\end{column}
-\end{columns}
+\begin{frame}{TRAM-DAGs: Background}
 
+Proposed framework: TRAM-DAGs \citep{sick2025}
+
+  \centering
+  \includegraphics[width=1\linewidth]{img/TRAM_DAG.png}
 \end{frame}
 
 
 
+\begin{frame}{TRAM-DAGs: Background}
 
-
-
-
-
-
-\begin{frame}{Transformation Models}
-
-Flexible distributional regression method \citep{hothorn2014}
+\textbf{Transformation Models}: Flexible distributional regression method \citep{hothorn2014}
 
 \vspace{0.4cm}
 
-\textbf{Continuous } $Y \in \mathbb{R}$: 
+\textsb{Continuous } $Y \in \mathbb{R}$: 
 \[
 F_{Y \mid \mathbf{X} = \mathbf{x}}(y) = F_Z(h(y) + \mathbf{x}^\top \boldsymbol{\beta})
 \]
 
-\textbf{Discrete } $Y \in \{y_1, y_2, \ldots, y_K\}$: 
+\textsb{Discrete } $Y \in \{y_1, y_2, \ldots, y_K\}$: 
 \[
 P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \boldsymbol{\beta}), \quad k = 1, 2, \ldots, K - 1
 \]
@@ -379,7 +392,7 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
 \vspace{0.4cm}
 
 \begin{itemize}
-    \item $F_Z$: CDF of the standard logistic distribution
+    \item $F_Z$: CDF of the latent distribution (e.g. standard logistic)
     \item $h$: Transformation function, monotonically increasing
     \item $\mathbf{x}$: Predictors
 \end{itemize}
@@ -389,78 +402,80 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
 
 
 
-
-
-\begin{frame}{Transformation Models}
-
-\begin{columns}
-
-% Left column: Continuous Y
-\begin{column}{0.48\textwidth}
-\textbf{Continuous $Y$:}
-
-{\small
-\vspace{0.2cm}
-Intercept: Bernstein polynomial
-\vspace{0.2cm}
-
-\scalebox{0.85}{$
-h_I(y) = \frac{1}{M + 1} \sum_{k=0}^{M} \vartheta_k \, \text{B}_{k, M}(y)
-$}
-
-\vspace{0.2cm}
-
-\scalebox{0.85}{$
-h(y \mid \mathbf{x}) = h_I(y) - \mathbf{x}^\top \boldsymbol{\beta}
-$}
-}
-
-\end{column}
-
-% Right column: Discrete/Ordinal Y
-\begin{column}{0.48\textwidth}
-\textbf{Discrete/Ordinal $Y$:}
-
-{\small
-
-\vspace{0.2cm}
-Intercept: Cut-off value
-\vspace{0.2cm}
-
-\scalebox{0.85}{$
-h_I(y_k) = \vartheta_k
-$}
-
-\vspace{0.2cm}
-
-\scalebox{0.85}{$
-h(y_k \mid \mathbf{x}) = h_I(y_k) - \mathbf{x}^\top \boldsymbol{\beta}
-$}
-}
-
-\end{column}
-
-\end{columns}
-
-\vspace{0.3cm}
-\centering
-\includegraphics[width=0.9\textwidth]{img/TRAM_Cont_Ord.png}
-
-\end{frame}
-
-
-
+% 
+% 
+% \begin{frame}{Transformation Models}
+% 
+% \begin{columns}
+% 
+% % Left column: Continuous Y
+% \begin{column}{0.48\textwidth}
+% \textbf{Continuous $Y$:}
+% 
+% {\small
+% \vspace{0.2cm}
+% Intercept: Bernstein polynomial
+% \vspace{0.2cm}
+% 
+% \scalebox{0.85}{$
+% h_I(y) = \frac{1}{M + 1} \sum_{k=0}^{M} \vartheta_k \, \text{B}_{k, M}(y)
+% $}
+% 
+% \vspace{0.2cm}
+% 
+% \scalebox{0.85}{$
+% h(y \mid \mathbf{x}) = h_I(y) - \mathbf{x}^\top \boldsymbol{\beta}
+% $}
+% }
+% 
+% \end{column}
+% 
+% % Right column: Discrete/Ordinal Y
+% \begin{column}{0.48\textwidth}
+% \textbf{Discrete/Ordinal $Y$:}
+% 
+% {\small
+% 
+% \vspace{0.2cm}
+% Intercept: Cut-off value
+% \vspace{0.2cm}
+% 
+% \scalebox{0.85}{$
+% h_I(y_k) = \vartheta_k
+% $}
+% 
+% \vspace{0.2cm}
+% 
+% \scalebox{0.85}{$
+% h(y_k \mid \mathbf{x}) = h_I(y_k) - \mathbf{x}^\top \boldsymbol{\beta}
+% $}
+% }
+% 
+% \end{column}
+% 
+% \end{columns}
+% 
+% \vspace{0.3cm}
+% \centering
+% \includegraphics[width=0.9\textwidth]{img/TRAM_Cont_Ord.png}
+% 
+% \end{frame}
+% 
 
 
 
 
 
-\begin{frame}{Deep TRAMs}
+\begin{frame}{TRAM-DAGs: Background}
+
+\textbf{Extended to Deep TRAMs} \citep{sick2020}
   \begin{itemize}
-    \item Extended to Deep TRAMs \citep{sick2020}
-    \item Flexible components
-    \item Minimize the NLL through NN optimization
+  \item Customizable transformation model using neural networks (NNs)
+  \item Minimizing negative log-likelihood (NLL) via NN optimization
   \end{itemize}
+
+\vspace{0.2cm}
+\textsb{Effects of predictors:} LS (Linear Shift), CS (Complex Shift), CI (Complex Intercept)
 
   \vfill
   \centering
@@ -471,18 +486,16 @@ $}
 
 
 
-\begin{frame}{TRAM-DAGs}
-
-  \centering
-  \includegraphics[width=1\linewidth]{img/TRAM_DAG.png}
-\end{frame}
 
 
 
 
 
 
-\begin{frame}{Simulation Example}
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\textbf{Setup:}
+
   \begin{itemize}
     \item We have:
     \begin{itemize}
@@ -541,7 +554,11 @@ $}
 
 
 
-\begin{frame}{Data Generating Process (DGP)}
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\textbf{Data-generating process (DGP):}
+
+\vspace{-1cm}
 
 \begin{columns}
 
@@ -658,7 +675,12 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 % 
 
 
-\begin{frame}{Construct Model: Modular Neural Network}
+
+
+
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\textbf{Construct Model: Modular Neural Network}
 
 \begin{columns}
 
@@ -667,21 +689,21 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 \vspace{0.1cm}
 
-\textbf{Inputs:} \\ Observations + assumed structure
+\textsb{Inputs:} Observations + assumed structure
 
-\vspace{0.4cm}
+\vspace{0.2cm}
 
-\textbf{Outputs:}
+\textsb{Outputs:}
 \begin{itemize}
     \item Simple Intercepts (SI): $\textcolor{violet}{\vartheta}$
     \item Linear Shifts (LS): $\textcolor{red}{\beta_{12}X_1}, \textcolor{red}{\beta_{13}X_2}$
     \item Complex Shift (CS):  $\textcolor{blue}{f(X_2)}$
 \end{itemize}
 
-\vspace{0.4cm}
-\textbf{Transformation Functions:}
+\vspace{0.2cm}
+\textsb{Assemble transformation functions:}
 \begin{align*}
-& \boxed{h(X_i \mid pa(X_i)) = \text{SI} + \text{LS} + \text{CS}} \\
+& \boxed{h(X_i \mid \text{pa}(X_i)) = \text{SI} + \text{LS} + \text{CS}} \\
 & h(X_1) = \textcolor{violet}{h_I(X_1)} \\
 & h(X_2 \mid X_1) = \textcolor{violet}{h_I(X_2)} + \textcolor{red}{\beta_{12} X_1} \\
 & h(X_{3,k} \mid X_1, X_2) = \textcolor{violet}{\vartheta_k} + \textcolor{red}{\beta_{13} X_1} + \textcolor{blue}{f(X_2)} 
@@ -714,11 +736,11 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 % \end{frame}
 
 
-\begin{frame}{Experiment 1: TRAM-DAGs (model learning)}
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
 
 % no centering
 
-20,000 training samples
+\textbf{Model fitting:} 20,000 training samples, 400 epochs
 {
 \centering
   \includegraphics[width=1\linewidth]{img/experiment1/exp1_loss_parameters.png}
@@ -730,7 +752,7 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 
 
-\begin{frame}{Sampling from the Fitted TRAM-DAG (observational)}
+\begin{frame}{Sampling from the Fitted TRAM-DAG}
 
 \begin{columns}
 
@@ -780,33 +802,35 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 \end{frame}
 
 
+% 
+% 
+% \begin{frame}{Sampling from the Fitted TRAM-DAG (interventional)}
+% 
+% \textbf{Interventional sampling:} \\
+% 
+% \begin{itemize}
+%     \item Do-intervention: \( \textcolor{red}{\text{do}(x_2 = \alpha})\)
+%     \item Sample from the interventional-distribution:
+% \end{itemize}
+% \[
+% x_3 = \min \left\{ x : z_3 \le h(x \mid x_1, \textcolor{red}{x_2 = \alpha}) \right\}
+% \]
+% 
+% \centering
+% \includegraphics[width=0.5\linewidth]{img/interventional.png}
+% 
+% 
+% \end{frame}
 
 
-\begin{frame}{Sampling from the Fitted TRAM-DAG (interventional)}
 
-\textbf{Interventional sampling:} \\
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
 
-\begin{itemize}
-    \item Do-intervention: \( \textcolor{red}{\text{do}(x_2 = \alpha})\)
-    \item Sample from the interventional-distribution:
-\end{itemize}
-\[
-x_3 = \min \left\{ x : z_3 \le h(x \mid x_1, \textcolor{red}{x_2 = \alpha}) \right\}
-\]
-
-\centering
-\includegraphics[width=0.5\linewidth]{img/interventional.png}
-
-
-\end{frame}
-
-
-
-\begin{frame}{Experiment 1: TRAM-DAGs (sampling distributions)}
+\textbf{Sampled observational and interventional distributions:}
 
   \centering
-  \includegraphics[width=0.9\linewidth]{img/experiment1/exp1_observational_distribution.png}
-  \includegraphics[width=0.9\linewidth]{img/experiment1/exp1_interventional_distribution.png}
+  \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_observational_distribution.png}
+  \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_interventional_distribution.png}
 
 \end{frame}
 
@@ -832,7 +856,7 @@ x_3 = \min \left\{ x : z_3 \le h(x \mid x_1, \textcolor{red}{x_2 = \alpha}) \rig
 
 
 
-\begin{frame}{Experiment 1: TRAM-DAGs (counterfactuals)}
+\begin{frame}{Experiment 1: TRAM-DAGs (simulation)}
 
 How to determine a counterfactual value for $X_2$, given some observation?
 
@@ -846,7 +870,7 @@ How to determine a counterfactual value for $X_2$, given some observation?
 
 
 
-\begin{frame}{Experiment 1: TRAM-DAGs (counterfactuals)}
+\begin{frame}{Experiment 1: TRAM-DAGs (simulation)}
 
 \textbf{Counterfactuals:} Counterfactual value of $X_2$ under varying $X_1$
 
@@ -858,16 +882,16 @@ How to determine a counterfactual value for $X_2$, given some observation?
 
 
 
-\begin{frame}{Experiment 1: TRAM-DAGs (Discussion)}
+\begin{frame}{Experiment 1: TRAM-DAGs (simulation)}
 
 
-With TRAM-DAGs we can:
+\textbf{Discussion:} With TRAM-DAGs we can
 
 \begin{itemize}
-    \item Estimate the functional form of the edges in the DAG
-    \item Customize flexibility (SI/CI, LS, CS)
-    \item Sample from the fitted model
-    \item Estimate counterfactuals
+    \item estimate the functional form of the edges in the DAG
+    \item customize flexibility and interpretability (SI/CI, LS, CS)
+    \item sample from the fitted model (observational/interventional)
+    \item estimate counterfactuals
 \end{itemize}
 \end{frame}
 
@@ -912,17 +936,20 @@ Fundamental problem of causal inference $\rightarrow$ We cannot observe both pot
 \textbf{Assumptions for identifiability of causal effects from observed data:}
 
 \begin{enumerate}
-    \item \textbf{Consistency:} Observed outcome equals the potential outcome under the treatment actually received: $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$
-    \item \textbf{Ignorability/Unconfoundedness:} Treatment assignment is independent of potential outcomes given observed covariates: $(Y(1), Y(0)) \perp T \mid X$
-    \item \textbf{Overlap/Positivity:} Every individual has a positive probability of receiving each treatment level: $0 < P(T = 1 \mid X = x) < 1 \quad \text{for all } x.$
-    \item \textbf{No interference:} The treatment of one individual does not affect the potential outcomes of another individual.
+    \item \textsb{Consistency:} $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$ \\
+    Observed outcome equals the potential outcome under the treatment actually received
+    \item \textsb{Ignorability/Unconfoundedness:} $(Y(1), Y(0)) \perp T \mid X$ \\
+    Treatment assignment is independent of potential outcomes given observed covariates
+    \item \textsb{Overlap/Positivity:} $0 < \text{P}(T = 1 \mid X = x) < 1 \quad \text{for all } x$ \\
+    Every individual has a positive probability of receiving each treatment level
+    \item \textsb{No interference:} The treatment of one individual does not affect the potential outcomes of another individual.
 \end{enumerate}
 
 \end{frame}
 
 
-\begin{frame}{Individualized Treatment Effect (ITE): Estimand}
 
+\begin{frame}{Individualized Treatment Effect (ITE): Estimand}
 
 \textbf{If assumptions for identifiability are satisfied:}
 
@@ -930,30 +957,66 @@ Fundamental problem of causal inference $\rightarrow$ We cannot observe both pot
 \text{ITE}_i(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
 &= \mathbb{E}[Y_i(1) \mid \mathbf{X}_i = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
 &= \mathbb{E}[Y_i(1) \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
- - \mathbb{E}[Y_i(0) \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by ignorability)} \notag \\[0.5em]
+  - \mathbb{E}[Y_i(0) \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \\
+&\quad \quad \text{(by ignorability)} \notag \\[0.5em] % Added a new line for the comment with indentation
 &= \mathbb{E}[Y_i \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
- - \mathbb{E}[Y_i \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by consistency)}
+  - \mathbb{E}[Y_i \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \notag \\
+&\quad \quad \text{(by consistency)} \notag % Added a new line for the comment with indentation
 \end{align}
+
 
 
 For a binary outcome:
 
+\vspace{-0.5cm}
+
 \begin{equation}
-\text{ITE}_i(\mathbf{x}_i) = P(Y_i = 1 \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i) - P(Y_i = 1 \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i).
+\text{ITE}_i(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i).
 \end{equation}
 
 \end{frame}
+
+% 
+% \begin{frame}{Individualized Treatment Effect (ITE): Estimand}
+% 
+% 
+% \textbf{If assumptions for identifiability are satisfied:}
+% 
+% \begin{align}
+% \text{ITE}_i(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
+% &= \mathbb{E}[Y_i(1) \mid \mathbf{X}_i = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
+% &= \mathbb{E}[Y_i(1) \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
+%  - \mathbb{E}[Y_i(0) \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by ignorability)} \notag \\[0.5em]
+% &= \mathbb{E}[Y_i \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
+%  - \mathbb{E}[Y_i \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \quad \text{(by consistency)}
+% \end{align}
+% 
+% 
+% For a binary outcome:
+% 
+% \begin{equation}
+% \text{ITE}_i(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i).
+% \end{equation}
+% 
+% \end{frame}
 
 
 
 \begin{frame}{Individualized Treatment Effect (ITE): Models}
 
 
-\textbf{How we estimated the potential outcomes?}
+\textbf{How we estimated the potential outcomes $\mathbb{E}[Y_i \mid T_i = t_i, \mathbf{X}_i = \mathbf{x}_i]$?} 
 
 \begin{itemize}
-    \item T-learners: Two separate models, estimated on treated and control groups (logistic regression, tuned random forest)
-    \item S-learners: One model, with treatment as a feature (TRAM-DAGs)
+    \item \textsb{T-learners:} Two models, separately estimated on treated and control groups
+      \begin{itemize}
+        \item Logistic regression
+        \item Random forest (with hyperparameter tuning)
+      \end{itemize}
+    \item \textsb{S-learners:} One model, with treatment as a feature
+      \begin{itemize}
+        \item TRAM-DAGs (with complex intercept; fully flexible)
+      \end{itemize}
 \end{itemize}
 
 
@@ -966,9 +1029,11 @@ For a binary outcome:
 
 \begin{frame}{Experiment 2: ITE on International Stroke Trial (IST)}
 
-\citet{chen2025} showed that results of models used for ITE estimation did not generalize to the test set.
 
-\textbf{International Stroke Trial (IST):}
+\textbf{Background/Motivation:} \citet{chen2025} showed that results of models used for ITE estimation did not generalize to the test set.
+
+
+\textsb{International Stroke Trial (IST):}
 
 \begin{itemize}
     \item Large RCT on stroke patients (19,435 patients, 21 baseline covariates)
@@ -976,7 +1041,9 @@ For a binary outcome:
     \item Binary treatment and outcome
 \end{itemize}
 
-\textbf{Goal:} Estimate ITE with T-learners (logistic regression, tuned random forest) and S-learner (TRAM-DAGs) on IST data.
+
+
+\textsb{Research question:} Do we reach similar conclusion as \citet{chen2025} when estimating ITEs with T-learners (logistic regression, tuned random forest) and S-learner (TRAM-DAGs) on IST dataset.
 
 \end{frame}
 
@@ -994,9 +1061,9 @@ For a binary outcome:
 % 
 
 
-\begin{frame}{Experiment 2: ITE on International Stroke Trial (IST): Results}
+\begin{frame}{Experiment 2: ITE on International Stroke Trial (IST)}
 
-Results with T-learner tuned random forest (comets package):
+\textbf{Results:} with T-learner tuned random forest (\texttt{comets} package \citep{comets}):
 
 % Below: image
 \includegraphics[width=\textwidth]{img/Experiment2/IST_tuned_rf_tlearner_density_ITE_ATE.png}
@@ -1005,13 +1072,14 @@ Results with T-learner tuned random forest (comets package):
 
 
 
-\begin{frame}{Experiment 2: ITE on International Stroke Trial (IST): Discussion}
+\begin{frame}{Experiment 2: ITE on International Stroke Trial (IST)}
 
-Our interpretation:
+\textbf{Discussion:}
 
 \begin{itemize}
-    \item Similar results as \citet{chen2025}
-    \item Some models suggest a range of ITEs, but do not generalize to the test set (no effect)
+    \item We obtained similar results as \citet{chen2025}
+    \item Some models suggest a range of ITEs, but these ITEs do not generalize to the test set (no effect)
+    \item We do not know why, since ground truth is unknown
 \end{itemize}
 
 \end{frame}
@@ -1081,14 +1149,19 @@ Our interpretation:
 
 
 
-\begin{frame}{Experiment 3: Simulation of ITE estimation robustness}
+\begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
 
-\textbf{Goal:}
+\textbf{Motivation:} ITE estimation failed on the real-world RCT of the International Stroke Trial (IST). We want to know why.
 
+
+\textsb{Research question:} What factors contribute to the failure of ITE estimation in causal ML models? %, and under which conditions can reliable estimates be obtained?
+
+\textsb{Setup:}
 \begin{itemize}
     \item Simulate different RCT scenarios to understand when ITE estimation fails
-    \item Apply simple model (logistic regression) and complex model(tuned random forest)
+    \item Apply simple model (logistic regression; matching DGP) and non-parametric model (tuned random forest)
 \end{itemize}
+
 
 \end{frame}
 
@@ -1150,7 +1223,7 @@ Results with T-learner logistic regression (glm):
 
 \begin{frame}{Simulation Case 1: Fully Observed}
 
-Results with T-learner Random Forest (comets package):
+Results with T-learner tuned random forest (\texttt{comets} package):
 
 % Below: image
 \includegraphics[width=\textwidth]{img/observed_tuned_rf.png}
@@ -1218,7 +1291,7 @@ Results with T-learner logistic regression (glm):
 
 \begin{frame}{Simulation Case 2: Unobserved Interaction}
 
-Results with T-learner Random Forest (comets):
+Results with T-learner tuned random forest (\texttt{comets} package):
 
 % Below: image
 \includegraphics[width=\textwidth]{img/unobserved_tuned_rf.png}
@@ -1286,7 +1359,7 @@ Results with T-learner logistic regression (glm):
 
 \begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
 
-Results with T-learner Random Forest (comets package):
+Results with T-learner Random Forest (\texttt{comets} package):
 
 % Below: image
 \includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}
@@ -1297,9 +1370,10 @@ Results with T-learner Random Forest (comets package):
 
 
 
-\begin{frame}{ITE simulation: Interpretation}
+\begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
 
-\textbf{My interpretation:} 
+\textbf{Discussion:} 
+
 \begin{itemize}
     \item When a high predicted treatment effect (ITE) corresponds to a high observed effect in the train set (strong discrimination), but not in the test set, it might be due to \textbf{unobserved interaction variables} or \textbf{weak treatment effects}.
     \item This is more likely to occur with complex models, as they tend to overfit when the interaction is not observed.
@@ -1405,16 +1479,16 @@ Results with T-learner Random Forest (comets package):
 
 
 
-\begin{frame}{TRAM-DAGs: Estimate Potential Outcomes}
-
-If we observe a $X5$ under $Tr=0$, we can determine the counterfactual $X5$ under $Tr=1$ with the observed latent value $z_j$:
-
-\centering
-\includegraphics[width=0.7\textwidth]{img/counterfactual_X5.png}
-
-\end{frame}
-
-
+% \begin{frame}{TRAM-DAGs: Estimate Potential Outcomes}
+% 
+% If we observe a $X5$ under $Tr=0$, we can determine the counterfactual $X5$ under $Tr=1$ with the observed latent value $z_j$:
+% 
+% \centering
+% \includegraphics[width=0.7\textwidth]{img/counterfactual_X5.png}
+% 
+% \end{frame}
+% 
+% 
 
 
 
@@ -1480,39 +1554,91 @@ If we observe a $X5$ under $Tr=0$, we can determine the counterfactual $X5$ unde
 
 
 
+\begin{frame}{Conclusion: Key Findings \& Outlook}
 
-\begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
-
-
-
-% Comparison of ATE in RCT with $\E(\text{ITE}_{predicted})$
-
-
-\textbf{ATE TRAM-DAG:} estimated as $\operatorname{mean}(\text{ITE}_{predicted})$:
-
-
--0.619 (-0.627 to -0.617)
-
-\vspace{1em}
-
-\textbf{ATE from RCT (randomized:)} estimated as \\ 
-observed $\operatorname{median}(Y \mid T = 1)$ - $\operatorname{median}(Y \mid T = 0)$:
-
--0.637 (-0.662 to -0.610)
-
-
-\vspace{1em}
-
-\begin{itemize}
-    \item confidence intervals obtained by bootstrapping
+\textbf{TRAM-DAGs:}
+\begin{itemize}\setlength\itemsep{4pt}
+  \item Flexible and customizable; recovers known causal structure
+  \item Captures interactions between variables
 \end{itemize}
 
+\textbf{ITE Estimation:}
+\begin{itemize}\setlength\itemsep{4pt}
+  \item Calibration is crucial
+  \item Sensitive to missing effect modifiers or weak heterogeneity
+  \item TRAM-DAGs yield unbiased ITEs when DAG is correct and heterogeneity exists
+\end{itemize}
 
+\textbf{Limitations:}
+Simulations simplify reality; modeling assumptions affect interpretability (e.g., scale of effects)
 
-
-
+\textbf{Recommendations:}
+Apply TRAM-DAGs to real-world data; study ITE estimation under unobserved effect modifiers
 
 \end{frame}
+
+
+
+
+
+\begin{frame}{Outlook}
+
+% check findings in thesis
+
+\textbf{Findings: TRAM-DAGs}
+
+\begin{itemize}
+\item Customizable; accurately recovers causal relationships in known DAG
+% \item Customizable in terms of flexibility/interpretability
+\item Can model interactions between variables
+\end{itemize}
+
+\textbf{Findings: Individualized treatment effects (ITE)}
+
+\begin{itemize}
+\item Calibration is important for ITE prediction
+% \item ITE estimation on International Stroke Trial failed
+\item Missing effect modifiers (or weak heterogeneity) are problematic
+\item TRAM-DAGs estimate unbiased ITEs in complex DAG if fully known and heterogeneity in treatment effects is present
+\end{itemize}
+
+\textbf{Limitations:} Simulations may not represent real-world complexity, TRAM-DAGs require modeling assumptions -- for instance, regarding the scale of conditional effects -- if interpretability is to be preserved
+
+
+\textbf{Recommendations:} Apply TRAM-DAGs on real-world data; ITE estimation under unobserved effect modifiers
+
+\end{frame}
+
+
+% 
+% \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
+% 
+% 
+% 
+% % Comparison of ATE in RCT with $\E(\text{ITE}_{predicted})$
+% 
+% 
+% \textbf{ATE TRAM-DAG:} estimated as $\operatorname{mean}(\text{ITE}_{predicted})$:
+% 
+% 
+% -0.619 (-0.627 to -0.617)
+% 
+% \vspace{1em}
+% 
+% \textbf{ATE from RCT (randomized:)} estimated as \\ 
+% observed $\operatorname{median}(Y \mid T = 1)$ - $\operatorname{median}(Y \mid T = 0)$:
+% 
+% -0.637 (-0.662 to -0.610)
+% 
+% 
+% \vspace{1em}
+% 
+% \begin{itemize}
+%     \item confidence intervals obtained by bootstrapping
+% \end{itemize}
+% 
+% 
+% \end{frame}
 
 
 
