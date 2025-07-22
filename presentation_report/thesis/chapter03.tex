@@ -12,9 +12,9 @@ In this chapter, we present four experiments, each designed to address one of th
     \item \textbf{Experiment 2} recreates the ITE estimation study by \citet{chen2025} on the RCT data from the International Stroke Trial (IST). We apply three causal ML models, including TRAM-DAGs, to assess whether we reach similar conclusions -- namely, that the estimated ITEs do not generalize to independent test data (see Section~\ref{ch:exp2}).
 
 
-    \item \textbf{Experiment 3} investigates, via simulation, which factors may cause ITE estimation to fail, as observed in the IST dataset (see Section~\ref{ch:experiment3}). Specifically, we simulate an RCT with a binary outcome under three scenarios: (1) an ideal case with full observability and strong heterogeneity (Section~\ref{sec:exp3_sc1}), (2) a case with an unobserved effect modifier (Section~\ref{sec:exp3_sc2}), and (3) a case with weak heterogeneity (Section~\ref{sec:exp3_sc3}).
-
-    \item \textbf{Experiment 4} explores whether TRAM-DAGs can provide unbiased ITE estimates in complex settings, assuming the full DAG is observed. We conduct a simulation study with a continuous outcome under both randomized and confounded conditions, using a complex DAG structure. If TRAM-DAGs yield unbiased estimates, this supports their utility for ITE estimation in realistic scenarios (see Section~\ref{ch:exp4}).
+     \item \textbf{Experiment 3} investigates, via simulation, which factors may cause ITE estimation to fail, as observed in the IST dataset (see Section~\ref{ch:experiment3}). Specifically, we simulate an RCT with a binary outcome under three scenarios: (3.1) an ideal case with full observability and strong heterogeneity (Section~\ref{sec:exp3_sc1}), (3.2) a case with an unobserved effect modifier (Section~\ref{sec:exp3_sc2}), and (3.3) a case with weak heterogeneity (Section~\ref{sec:exp3_sc3}).
+     
+    \item \textbf{Experiment 4} explores whether TRAM-DAGs can provide unbiased ITE estimates in complex settings, assuming the full DAG is observed. We conduct a simulation study with a continuous outcome under both randomized and confounded conditions, using a complex DAG structure. The simulations are conducted under three scenarios: (4.1) an ideal case with direct treatment effect and interaction effects (Section~\ref{sec:exp4_sc1}), (4.2) a case including a direct effect but without interaction effects (Section~\ref{sec:exp4_sc2}), and (4.3) a case with interaction effects but no direct effect (Section~\ref{sec:exp4_sc3}). If TRAM-DAGs yield unbiased estimates, this supports their utility for ITE estimation in realistic scenarios (see Section~\ref{ch:exp4}).
 
 \end{itemize}
 
@@ -43,7 +43,7 @@ The controlled simulation setting allows us to interpret the learned model compo
 
 \subsection{Setup} \label{sec:methods_experiment1}
 
-We visualized the model fitting in terms of the training loss and subsequently showed and interpreted the learned components of the transformation functions, such as intercepts, linear and complex shifts. Finally, we drew samples from the estimated distributions to obtain observational and interventional distributions. We also conducted counterfactual queries on the learned model.
+We visualized the model fitting in terms of the training loss and subsequently showed and interpreted the learned components of the transformation functions (Equation~\ref{eq:deep_tram_old}), such as intercepts, linear and complex shifts. Finally, we drew samples from the estimated distributions to obtain observational and interventional distributions. We also conducted counterfactual queries on the learned model.
 
 \medskip
 
@@ -64,7 +64,7 @@ We visualized the model fitting in terms of the training loss and subsequently s
   };
   \draw[->, thick] (img.east) -- (matrix.west);
 \end{tikzpicture}
-\caption{Causal graph (left) and meta-adjacency matrix (right) for Experiment 1. The transformation function of $X_2$ depends on $X_1$ via a linear shift (LS). The transformation function of $X_3$ depends on $X_1$ via a linear shift (LS) and on $X_2$ via a complex shift (CS).}
+\caption{Causal graph (left) and meta-adjacency matrix (right) for Experiment 1 (Section~\ref{ch:exp1}). The transformation function of $X_2$ depends on $X_1$ via a linear shift (LS). The transformation function of $X_3$ depends on $X_1$ via a linear shift (LS) and on $X_2$ via a complex shift (CS).}
 \label{fig:dag_and_matrix}
 \end{figure}
 
@@ -96,7 +96,7 @@ This simulation allows us to assess whether the TRAM-DAG model can correctly rec
 
 \medskip
 
-\textbf{Model:} Given the meta-adjacency matrix and the simulated observations, we construct a modular neural network based on the TRAM-DAG framework. The complex shift from $X_2$ to $X_3$ is modeled using a neural network with 4 hidden layers and 2 nodes per layer, as illustrated in Figure~\ref{fig:exp1_CS}. A total of 20,000 samples are generated according to the defined DGP to fit the model. The model is trained for 400 epochs using the Adam optimizer \citep{kingma2015} with a learning rate of 0.005.
+\textbf{Model:} Given the meta-adjacency matrix and the simulated observations, we construct a modular neural network based on the TRAM-DAG framework. The complex shift from $X_2$ to $X_3$ is modeled using a neural network with 4 hidden layers and 2 nodes per layer, as illustrated in Figure~\ref{fig:exp1_CS}. A total of 20,000 samples are generated according to the defined DGP to fit the model. We train the model for 400 epochs using the Adam optimizer \citep{kingma2015} with a learning rate of 0.005.
 
 
 % include the figure for CS
@@ -104,7 +104,7 @@ This simulation allows us to assess whether the TRAM-DAG model can correctly rec
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.5\linewidth]{img/exp1_CS.pdf}
-\caption{Neural network architecture for the complex shift on $X_3$ from $X_2$. The complex shift is modeled by a neural network with 4 hidden layers of shape (2, 2, 2, 2), using non-linear activation functions (sigmoid).}
+\caption{Neural network architecture for the complex shift on $X_3$ from $X_2$ in Experiment 1 (Section~\ref{ch:exp1}). The complex shift is modeled by a neural network with 4 hidden layers of shape (2, 2, 2, 2), using non-linear activation functions (sigmoid).}
 \label{fig:exp1_CS}
 \end{figure}
 
@@ -122,7 +122,7 @@ This simulation allows us to assess whether the TRAM-DAG model can correctly rec
 
 We evaluate whether TRAM-DAGs can recover the structural equations and distributions used in the data-generating process described in Section~\ref{sec:methods_experiment1}. Below, we present the training process and inspect the estimated parameters, distributions, and counterfactual predictions.
 
-Figure \ref{fig:exp1_loss_parameters} shows the loss and the estimated parameters for the linear shifts over epochs during training. The loss was minimized during training and the estimated parameters $\beta_{12}$ and $\beta_{13}$ converged to the true values used in the DGP. The linear shift parameters are the interpretable part of the model (log-odds ratios). From the fitted model, we generated samples from the observational distribution, as shown in Figure \ref{fig:exp1_observational_distribution}. The TRAM-DAG can recover the observational distribution as its samples align with the data that was used to fit the model. Then we drew samples from the interventional distribution, where $X_2 = 1$ is fixed, as shown in Figure \ref{fig:exp1_interventional_distribution}. Fixing $X_2$ leads to a distributional change in $X_3$, which was also captured by the model. The TRAM-DAG learns the linear shifts ($\beta_{12}$, $\beta_{13}$) and the complex shift $f(X_2)$, which are shown in Figure \ref{fig:exp1_shifts}. Figure~\ref{fig:exp1_intercepts} presents the intercepts learned for each of the nodes. For comparison, we added the estimated intercept functions from the Continuous Outcome Logistic Regression (Colr() function from the \texttt{tram} package \citep{hothorn2018}) for $X_1$ and $X_2$, and the true values used in the DGP for the ordinal variable $X_3$ (three cut-points for the four levels). Since the transformation functions for $X_1$ and $X_2$ contain no complex terms, they match the default form used in Colr(). Finally, Figure~\ref{fig:exp1_counterfactuals} shows the counterfactuals for $X_2$ estimated by the TRAM-DAG for varying values of $X_1$. The counterfactuals are the predicted values of $X_2$ had $X_1$ taken other values instead of the initially observed one. 
+Figure \ref{fig:exp1_loss_parameters} shows the loss and the estimated parameters for the linear shifts over epochs during training. The loss was minimized during training and the estimated parameters $\beta_{12}$ and $\beta_{13}$ converged to the true values used in the DGP. The linear shift parameters are the interpretable part of the model (log-odds ratios). From the fitted model, we generated samples from the observational distribution, as shown in Figure \ref{fig:exp1_observational_distribution}. The TRAM-DAG can recover the observational distribution as its samples align with the data that was used to fit the model. Then we drew samples from the interventional distribution, where $X_2 = 1$ is fixed, as shown in Figure \ref{fig:exp1_interventional_distribution}. Fixing $X_2$ leads to a distributional change in $X_3$, which was also captured by the model. The TRAM-DAG learns the linear shifts ($\beta_{12}$, $\beta_{13}$) and the complex shift $f(X_2)$, which are shown in Figure \ref{fig:exp1_shifts}. Figure~\ref{fig:exp1_intercepts} presents the intercepts learned for each of the nodes. For comparison, we added the estimated intercept functions from the Continuous Outcome Logistic Regression (Colr() function from the \texttt{tram} \texttt{R}-package \citep{hothorn2018}) for $X_1$ and $X_2$, and the true values used in the DGP for the ordinal variable $X_3$ (three cut-points for the four levels). Since the transformation functions for $X_1$ and $X_2$ contain no complex terms, they match the default form used in Colr(). Finally, Figure~\ref{fig:exp1_counterfactuals} shows the counterfactuals for $X_2$ estimated by the TRAM-DAG for varying values of $X_1$. The counterfactuals are the predicted values of $X_2$ had $X_1$ taken other values instead of the initially observed one. 
 
 \begin{figure}[htbp]
 \centering
@@ -184,9 +184,9 @@ Figure \ref{fig:exp1_loss_parameters} shows the loss and the estimated parameter
 % enforce that starts after all floats have been displayed
 \FloatBarrier
 
-\subsection{Discussion}
+\subsection{Discussion of Experiment 1}
 
-The results show that the TRAM-DAG framework can accurately recover the underlying causal relationships from data, including both linear and nonlinear (complex) relationships. This enabled the model to generate observational and interventional distributions that closely matched the true ones, and to produce valid counterfactual predictions.
+The results show that the TRAM-DAG framework can accurately recover the underlying causal relationships from data, including both linear and nonlinear (complex) relationships. This enabled the model to generate observational and interventional distributions (Figures~\ref{fig:exp1_observational_distribution} and~\ref{fig:exp1_interventional_distribution}) that closely matched the true ones, and produce valid counterfactual predictions (Figure~\ref{fig:exp1_counterfactuals}).
 
 This experiment provides a simple proof of concept for the flexibility and generative capability of TRAM-DAGs. By incorporating both interpretable (e.g., linear shifts) and flexible (e.g., complex shift) components, the model is able to capture a range of causal mechanisms -- provided that the true DAG is known and data is generated accordingly.
 
@@ -231,7 +231,7 @@ This experiment provides a simple proof of concept for the flexibility and gener
 % Results: The IST dataset includes data on 19 435 patients with acute stroke, with 99% complete follow-up. Over 26.4% patients were aged over 80 years at study entry. Background stroke care was limited and none of the patients received thrombolytic therapy.
 % 
 % 
-\citet{chen2025} evaluated multiple causal ML methods on the International Stroke Trial (IST), to estimate the individualized treatment effects. They demonstrated that none of the applied ML methods generalized well, as performance on the test data differed significantly from the training data on the chosen evaluation metrics.
+\citet{chen2025} evaluated multiple causal ML methods on the International Stroke Trial (IST), to estimate the individualized treatment effects (ITEs). They demonstrated that none of the applied ML methods generalized well, as performance on the test data differed significantly from the training data on the chosen evaluation metrics.
 In this experiment, we replicate the analysis on the same data by applying three causal ML methods for ITE estimation, to investigate whether we obtain similar results as the authors.
 
 
@@ -248,7 +248,7 @@ We used the same data pre-processing steps as \citet{chen2025} to ensure compara
 
 \medskip
 
-\textbf{Models for ITE estimation: } The aim is to estimate the ITE based on baseline characteristics. As a benchmark, we apply a T-learner logistic regression (following \citet{chen2025}, using the \texttt{stats} package). As a more complex model, we apply a T-learner tuned random forest (using the \texttt{comets} package \citep{comets}), which tunes the number of variables considered for splitting at each node (\texttt{mtry}) and the maximum tree depth (\texttt{max.depth}) using out-of-bag error, with 500 trees. Additionally, we apply an S-learner TRAM-DAG. For the random forest and TRAM-DAG based methods, we additionally scale numerical and dummy encode categorical covariates prior to model training. The transformation function of the outcome is modelled by a complex intercept $h(Y \mid T, \mathbf{X}) = CI(T, \mathbf{X})$, with 4 hidden layers of shape (20, 10, 10, 2). This architecture allows for interaction between the treatment and covariates. Furthermore, batch normalization, ReLU activation, and dropout (0.1) are applied to prevent overfitting and stabilize learning. A validation set comprising 20\% of the training data is used to select the model with the lowest out-of-sample negative log-likelihood, while the test set remains untouched for final evaluation. 
+\textbf{Models for ITE estimation: } The aim is to estimate the ITE (Equation~\ref{eq:ITE_binary}) based on baseline characteristics. As a benchmark, we apply a T-learner logistic regression (following \citet{chen2025}, using the \texttt{stats} package). As a more complex model, we apply a T-learner tuned random forest (using the \texttt{comets} package \citep{comets}), which tunes the number of variables considered for splitting at each node (\texttt{mtry}) and the maximum tree depth (\texttt{max.depth}) using out-of-bag error, with 500 trees. Additionally, we apply an S-learner TRAM-DAG. For the random forest and TRAM-DAG based methods, we additionally scale numerical and dummy encode categorical covariates prior to model training. The transformation function of the outcome is modelled by a complex intercept $h(Y \mid T, \mathbf{X}) = CI(T, \mathbf{X})$, with 4 hidden layers of shape (20, 10, 10, 2). This architecture allows for interaction between the treatment and covariates. Furthermore, batch normalization, ReLU activation, and dropout (0.1) are applied to prevent overfitting and stabilize learning. A validation set comprising 20\% of the training data is used to select the model with the lowest out-of-sample negative log-likelihood (Equation~\ref{eq:nll_tram}), while the test set remains untouched for final evaluation. 
 
 Since the IST is a randomized controlled trial, the full potential of TRAM-DAGs -- designed primarily for use in observational settings -- is not required here, as only the outcome needs to be modeled as a function of baseline patient characteristics. However, applying TRAM-DAGs in this context still allows us to assess its predictive performance and ability to flexibly model interactions between variables.
 
@@ -276,8 +276,16 @@ Since the IST is a randomized controlled trial, the full potential of TRAM-DAGs 
 \subsection{Results} \label{sec:results_experiment2}
 
 
-In this section, we present the results of the ITE estimation on the International Stroke Trial (IST) dataset. The observed average treatment effect (ATE), defined as $P(Y=1|T=1) - P(Y=1|T=0)$, was -2.4\% absolute risk reduction on the training set, with a 95\% confidence interval from -4.1\% to -0.6\%. The interval was computed using the Wald method for risk differences, with standard error $\sqrt{p_1 (1 - p_1)/n_1 + p_0 (1 - p_0)/n_0}$
-, where $p_1$ and $p_0$ are the event rates in the treated and control groups. On the test set, the observed treatment effect was -0.1\%, with a 95\% confidence interval from -2.6\% to 2.3\%. The ITEs were estimated using three different models: T-learner logistic regression, T-learner tuned random forest, and S-learner TRAM-DAG. The estimated average treatment effect on the test set, calculated as $\text{ATE}_\text{pred}=\text{mean}(\text{ITE}_\text{pred})$, was -2.5\% for the T-learner logistic regression, -2.2\% for the T-learner tuned random forest, and -3.1\% for the S-learner TRAM-DAG. The density of predicted ITEs and the ITE-ATE plots for risk difference per estimated ITE subgroup, including 95\% confidence intervals, are presented in Figures \ref{fig:IST_density_ITE_ATE_glm_tlearner} - \ref{fig:IST_density_ITE_ATE_TRAM_DAG}. Calibration plots are provided in Appendix \ref{sec:calibrations_experiment2}, Figures \ref{fig:calibration_IST_glm} - \ref{fig:calibration_IST_TRAM_DAG}. 
+In this section, we present the results of the ITE estimation on the International Stroke Trial (IST) dataset. 
+
+The observed average treatment effect (ATE), defined as $P(Y=1|T=1) - P(Y=1|T=0)$, was -2.4\% absolute risk reduction on the training set, with a 95\% confidence interval from -4.1\% to -0.6\%. The interval was computed using the Wald method for risk differences, with standard error $\sqrt{p_1 (1 - p_1)/n_1 + p_0 (1 - p_0)/n_0}$
+, where $p_1$ and $p_0$ are the event rates in the treated and control groups. On the test set, the observed treatment effect was -0.1\%, with a 95\% confidence interval from -2.6\% to 2.3\%. 
+
+To estimate ITEs (Equation~\ref{eq:ITE_binary}), we applied three models: a T-learner logistic regression, a T-learner tuned random forest, and an S-learner TRAM-DAG. The results for each model are shown in terms of (1) the density of predicted ITEs, and (2) ITE-ATE plots, which display the empirical risk difference within subgroups of estimated ITEs, including 95\% confidence intervals. Results are presented in Figures~\ref{fig:IST_density_ITE_ATE_glm_tlearner} (logistic regression), \ref{fig:IST_density_ITE_ATE_tuned_rf} (random forest), and~\ref{fig:IST_density_ITE_ATE_TRAM_DAG} (TRAM-DAG). Additionally, calibration plots are provided in Appendix~\ref{sec:calibrations_experiment2}, Figures \ref{fig:calibration_IST_glm} - \ref{fig:calibration_IST_TRAM_DAG}. 
+
+% The ITEs were estimated using three different models, and the results are shown in terms of the density of predicted ITEs and the ITE-ATE plots for risk difference per estimated ITE subgroup, including 95\% confidence intervals: T-learner logistic regression (see results in Figure~\ref{fig:IST_density_ITE_ATE_glm_tlearner}), T-learner tuned random forest (see results in Figure~\ref{fig:IST_density_ITE_ATE_tuned_rf}), and S-learner TRAM-DAG (see results in Figure~\ref{fig:IST_density_ITE_ATE_TRAM_DAG}). 
+
+The estimated average treatment effect on the test set, calculated as $\text{ATE}_\text{pred}=\text{mean}(\text{ITE}_\text{pred})$, was -2.5\% for the T-learner logistic regression, -2.2\% for the T-learner tuned random forest, and -3.1\% for the S-learner TRAM-DAG.  
 
 
 
@@ -299,6 +307,8 @@ In this section, we present the results of the ITE estimation on the Internation
 \end{figure}
 
 
+
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_density_ITE_ATE.png}
@@ -307,19 +317,18 @@ In this section, we present the results of the ITE estimation on the Internation
 \end{figure}
 
 
-
-
-% enforce that starts after all floats have been displayed
+enforce that starts after all floats have been displayed
 \FloatBarrier
 
-\subsection{Discussion}
 
-We observed similar results to those reported by \citet{chen2025} when estimating ITEs on the International Stroke Trial dataset across all three models: the T-learner logistic regression, the T-learner tuned random forest, and the S-learner TRAM-DAG. The logistic model showed moderate discrimination in the training set, which did not generalize to the test set, as illustrated by the ITE-ATE plot in Figure~\ref{fig:IST_density_ITE_ATE_glm_tlearner}. The tuned random forest model showed stronger discrimination in the training set but similarly failed to generalize to the test set (Figure~\ref{fig:IST_density_ITE_ATE_tuned_rf}). In contrast, the S-learner TRAM-DAG estimated less heterogeneity than the other two models, as shown in the density plot in Figure~\ref{fig:IST_density_ITE_ATE_TRAM_DAG}, resulting in weak discrimination in both the training and test sets. For all three models, the confidence intervals in the ITE-ATE plots on the test set included the zero line, suggesting no significant effect in any of the estimated ITE subgroups.
+\subsection{Discussion of Experiment 2}
+
+We observed similar results to those reported by \citet{chen2025} when estimating ITEs on the International Stroke Trial dataset across all three models: the T-learner logistic regression, the T-learner tuned random forest, and the S-learner TRAM-DAG. The logistic model showed moderate discrimination in the training set, which did not generalize to the test set, as illustrated by the ITE-ATE plot in Figure~\ref{fig:IST_density_ITE_ATE_glm_tlearner}. The tuned random forest model showed stronger discrimination in the training set but similarly failed to generalize to the test set (see Figure~\ref{fig:IST_density_ITE_ATE_tuned_rf}). In contrast, the S-learner TRAM-DAG estimated less heterogeneity than the other two models, as shown in the density plot in Figure~\ref{fig:IST_density_ITE_ATE_TRAM_DAG}, resulting in weak discrimination in both the training and test sets, visible in the corresponding ITE-ATE plot. For all three models, the confidence intervals in the ITE-ATE plots on the test set included the zero line, suggesting no significant effect in any of the estimated ITE subgroups.
 
 \medskip
 
 
-Poor calibration does not appear to explain the limited ITE performance, as calibration on the test set was good, as shown in Appendix~\ref{sec:calibrations_experiment2}, Figures~\ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG}. However, since the ground truth is unknown, it remains unclear whether the models fail to detect true treatment effect heterogeneity, or whether the heterogeneity is too small, or driven by unobserved effect modifiers. We investigate these possibilities further in Experiment 3, Chapter~\ref{ch:experiment3}.
+Poor calibration does not appear to explain the limited ITE performance, as calibration on the test set was good, as shown in Appendix~\ref{sec:calibrations_experiment2}, Figures~\ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG}. However, since the ground truth is unknown, it remains unclear whether the models fail to detect true treatment effect heterogeneity, or whether the heterogeneity is too small, or driven by unobserved effect modifiers. We investigate these possibilities further in Experiment 3, Section~\ref{ch:experiment3}.
 
 
 
@@ -338,7 +347,7 @@ Poor calibration does not appear to explain the limited ITE performance, as cali
 
 \subsection{Motivation}
 
-In this section, we perform a simulation study to estimate the ITE using different models in an RCT setting under various scenarios. The aim is to identify conditions under which ITE estimation fails, and whether such failure is model-agnostic -- i.e., driven by external factors such as unobserved covariates or the strength of the treatment effect, rather than by the model class itself. This may provide insight into why ITE estimation can fail in real-world applications, as demonstrated by \citet{chen2025} on the IST dataset and replicated in our own work in Experiment 2 (Section~\ref{sec:results_experiment2}). 
+In this section, we perform a simulation study to estimate ITEs using different models in an RCT setting under various scenarios. The aim is to identify conditions under which ITE estimation fails, and whether such failure is model-agnostic -- i.e., driven by external factors such as unobserved covariates or the strength of the treatment effect, rather than by the model class itself. This may provide insight into why ITE estimation can fail in real-world applications, as demonstrated by \citet{chen2025} on the IST dataset and replicated in our own work in Experiment 2 (Section~\ref{ch:exp2}). 
 
 
 \subsection{Setup} \label{sec:methods_experiment3}
@@ -349,7 +358,7 @@ The simulation is based on a data-generating process (DGP) that resembles an RCT
 
 \textbf{Data-generating process:} Data is generated similarly to the approach proposed by \citet{hoogland2021}. The binary treatment ($T$) is sampled from a Bernoulli distribution with probability 0.5. The five covariates ($\mathbf{X}$), representing patient-specific characteristics at baseline, are drawn from a multivariate standard normal distribution with a compound symmetric covariance matrix ($\rho=0.1$). The binary outcome ($Y$) is sampled from a Bernoulli distribution with probability $P(Y_i = 1 \mid  \mathbf{X} = \mathbf{x_i}, T = t_i) = \text{logit}^{-1} \left(\beta_0 + \beta_T t_i + \boldsymbol{\beta}_X^\top \mathbf{x_i} + t_i \cdot \boldsymbol{\beta}_{TX}^\top \mathbf{x_{TX,i}} \right)$, where $i$ denotes the patient index, and $\mathbf{x}_{TX,i}$ denotes the subset of covariates that interact with the treatment.
 
-The simulated datasets are generated under three scenarios, where coefficients are set to different values or not all variables are observed. In Scenario 1, the coefficients are: $\beta_0 = 0.45$ (intercept), $\beta_T = -0.85$ (direct treatment effect), $\boldsymbol{\beta}_X = (-0.5, 0.8, 0.2, 0.6, -0.4)$ (direct covariate effects), and $\boldsymbol{\beta}_{TX} = (0.9, 0.1)$ (interaction effects between treatment and covariates $X_1$ and $X_2$ on the outcome). In Scenario 2, the same coefficients are used, but the covariate $X_1$, which is responsible for a large portion of the heterogeneity, is not observed in the final dataset. This is expected to cause difficulties in estimating the ITE. In Scenario 3, the coefficients for the direct treatment and interaction effects are set to $\beta_T = -0.05$ and $\boldsymbol{\beta}_{TX} = (-0.01, 0.03)$ to represent a weak treatment effect and low heterogeneity. All other coefficients remain unchanged, and all covariates are observed. The DAGs corresponding to the three scenarios are presented in Figure~\ref{fig:simulation_dags}.
+The simulated datasets are generated under three scenarios, where coefficients are set to different values or not all variables are observed. In Scenario 3.1, the coefficients are: $\beta_0 = 0.45$ (intercept), $\beta_T = -0.85$ (direct treatment effect), $\boldsymbol{\beta}_X = (-0.5, 0.8, 0.2, 0.6, -0.4)$ (direct covariate effects), and $\boldsymbol{\beta}_{TX} = (0.9, 0.1)$ (interaction effects between treatment and covariates $X_1$ and $X_2$ on the outcome). In Scenario 3.2, the same coefficients are used, but the covariate $X_1$, which is responsible for a large portion of the heterogeneity, is not observed in the final dataset. This is expected to cause difficulties in estimating the ITE. In Scenario 3.3, the coefficients for the direct treatment and interaction effects are set to $\beta_T = -0.05$ and $\boldsymbol{\beta}_{TX} = (-0.01, 0.03)$ to represent a weak treatment effect and low heterogeneity. All other coefficients remain unchanged, and all covariates are observed. The DAGs corresponding to the three scenarios are presented in Figure~\ref{fig:simulation_dags}.
 
 
 % here include 3 figures side by side 
@@ -362,7 +371,7 @@ The simulated datasets are generated under three scenarios, where coefficients a
 \includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_observed.png}
 \includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_unobserved.png}
 \includegraphics[width=0.3\textwidth]{img/results_ITE_simulation/simulation_small_effects.png}
-\caption{Data-generating process (DGP) for the three scenarios in the ITE simulation study (RCT). Interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$) are shown in red. Left: Scenario 1, where all covariates are observed and both treatment effect and heterogeneity are strong; Middle: Scenario 2, with the same DGP as in Scenario 1, but where covariate $X_1$ is not observed; Right: Scenario 3, where the treatment effect and heterogeneity are weak, and all covariates are observed.}
+\caption{Data-generating process (DGP) for the three scenarios in the ITE simulation study (RCT). Interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$) are shown in red. Left: Scenario 3.1, where all covariates are observed and both treatment effect and heterogeneity are strong; Middle: Scenario 3.2, with the same DGP as in Scenario 3.1, but where covariate $X_1$ is not observed; Right: Scenario 3.3, where the treatment effect and heterogeneity are weak, and all covariates are observed.}
 \label{fig:simulation_dags}
 \end{figure}
 
@@ -433,9 +442,9 @@ The simulated datasets are generated under three scenarios, where coefficients a
 % \end{align*}
 
 
-\textbf{Models for ITE estimation:} We applied the following models in \texttt{R} to estimate individualized treatment effects (ITEs): T-learner logistic regression (\texttt{stats} package), T-learner and S-learner logistic lasso regression (\texttt{glmnet} package \citep{friedman2010}, with $\lambda$ selected via 10-fold cross-validation), T-learner random forest (\texttt{randomForest} package \citep{breiman2001}, 100 trees), and T-learner tuned random forest (\texttt{comets} package \citep{comets}, which tunes \texttt{mtry} and \texttt{max.depth} using out-of-bag error, 500 trees).
+\textbf{Models for ITE estimation:} We applied the following models in \texttt{R} to estimate individualized treatment effects (ITEs) according to Equation~\ref{eq:ITE_binary}: T-learner logistic regression (\texttt{stats} package), T-learner and S-learner logistic lasso regression (\texttt{glmnet} package \citep{friedman2010}, with $\lambda$ selected via 10-fold cross-validation), T-learner random forest (\texttt{randomForest} package \citep{breiman2001}, 100 trees), and T-learner tuned random forest (\texttt{comets} package \citep{comets}, which tunes \texttt{mtry} and \texttt{max.depth} using out-of-bag error, 500 trees).
 
-While all models were run, we focus on two for the main results: the T-learner logistic regression as a baseline (matching the DGP), and the tuned random forest as a more flexible non-parametric model. Results for the default random forest in Scenario 1 are shown in Appendix~\ref{sec:default_rf_ite} to highlight the role of model tuning in avoiding overfitting and ensuring proper calibration.
+While all models were run, we focus on two for the main results: the T-learner logistic regression as a baseline (matching the DGP), and the T-learner tuned random forest as a more flexible non-parametric model. Results for the default random forest in Scenario 3.1 are shown in Appendix~\ref{sec:default_rf_ite} to highlight the role of model tuning in avoiding overfitting and ensuring proper calibration.
 
 Each model was trained and evaluated on independent datasets of 10,000 samples generated from the same DGP. Although TRAM-DAGs are well suited for ITE estimation, we did not include them here, as the goal of this experiment is to compare simpler and more complex models under varying conditions. Furthermore, when specified as T-learner with standard logistic latent distribution and linear shift effects of covariates, the TRAM-DAG would be equivalent to a logistic regression for the binary outcome.
 % 
@@ -448,7 +457,7 @@ Each model was trained and evaluated on independent datasets of 10,000 samples g
 
 \medskip
 
-\textbf{Model evaluation:} Model performance is evaluated visually on both the training and test datasets. For predictive performance, we present true vs. predicted probabilities $P(Y = 1 \mid X, T)$ to assess how well each model is calibrated. Plots of true vs. predicted ITEs show how closely the model estimates match the true effects. Since the true probabilities and ITEs are known by design in this simulation, direct evaluation of calibration and prediction accuracy is possible, unlike in real-world applications.
+\textbf{Model evaluation:} Model performance is evaluated visually on both the training and test datasets. For predictive performance, we present true vs. predicted probabilities $P(Y = 1 \mid X, T)$ to assess how well each model is calibrated. Plots of true vs. predicted ITEs (calculated according to Equation~\ref{eq:ITE_binary}) show how closely the model estimates match the true effects. Since the true probabilities and ITEs are known by design in this simulation, direct evaluation of calibration and prediction accuracy is possible, unlike in real-world applications.
 
 To assess whether estimated ITEs correspond to actual observed outcomes, we use ITE-ATE plots. These show the observed average treatment effect (ATE), calculated as $P(Y = 1 \mid T = 1) - P(Y = 1 \mid T = 0)$, in the respective subgroups of estimated ITEs. Accurate models should produce ITE-ATE points that align with the identity line.
 
@@ -459,13 +468,13 @@ These simulation scenarios allow us to assess ITE estimation performance under c
 
 \subsection{Results and discussion} \label{sec:results_experiment3}
 
-In this section, we present the performance of two causal machine learning models -- T-learner logistic regression and T-learner tuned random forest -- for estimating ITEs under the three simulated scenarios introduced in Section~\ref{sec:methods_experiment3}. Scenario~(1) (Section~\ref{sec:exp3_sc1}) represents the ideal case where all covariates are observed and both treatment and interaction effects are strong. In Scenario~(2) (Section~\ref{sec:exp3_sc3}), a key effect modifier is unobserved, and in Scenario~(3) (Section~\ref{sec:exp3_sc3}), treatment and interaction effects are weak, but all covariates are observed.
+In this section, we present the performance of two causal machine learning models -- T-learner logistic regression and T-learner tuned random forest -- for estimating ITEs under the three simulated scenarios introduced in Section~\ref{sec:methods_experiment3}. Scenario~3.1 (Section~\ref{sec:exp3_sc1}) represents the ideal case where all covariates are observed and both treatment and interaction effects are strong. In Scenario~3.2 (Section~\ref{sec:exp3_sc3}), a key effect modifier is unobserved, and in Scenario~3.3 (Section~\ref{sec:exp3_sc3}), treatment and interaction effects are weak, but all covariates are observed.
 
-Results for all scenarios are presented in Figures~\ref{fig:fully_observed_glm_tlearner} to~\ref{fig:small_interaction_tuned_rf_tlearner}.
+% Results for all scenarios are presented in Figures~\ref{fig:fully_observed_glm_tlearner} to~\ref{fig:small_interaction_tuned_rf_tlearner}.
 
 
 
-\subsubsection{Scenario (1): Fully observed, large effects} \label{sec:exp3_sc1}
+\subsubsection{Scenario 3.1: Fully observed, large effects} \label{sec:exp3_sc1}
 
 
 
@@ -476,23 +485,23 @@ Results for all scenarios are presented in Figures~\ref{fig:fully_observed_glm_t
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_observed.png}
-\caption{DAG for Scenario~(1), where all variables are observed and both treatment and interaction effects are strong. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\caption{DAG for Scenario~3.1, where all variables are observed and both treatment and interaction effects are strong. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
 \label{fig:fully_observed_dag}
 \end{figure}
 
 
-In Scenario~1 (Figure~\ref{fig:fully_observed_dag}),  where treatment effect heterogeneity was large and all covariates were observed, the T-learner logistic regression accurately estimated the ITE. The observed ATE, conditional on the respective ITE subgroup, was well calibrated in both the training and test datasets (Figure~\ref{fig:fully_observed_glm_tlearner}). This is as expected, since the data were generated with the same model class (logistic regression), and applying logistic regression as a T-learner for ITE estimation can accurately capture the interaction effects.
+In Scenario~3.1 (Figure~\ref{fig:fully_observed_dag}),  where treatment effect heterogeneity was large and all covariates were observed, the T-learner logistic regression accurately estimated the ITE. The observed ATE, conditional on the respective ITE subgroup, was well calibrated in both the training and test datasets (Figure~\ref{fig:fully_observed_glm_tlearner}). This is as expected, since the data were generated with the same model class (logistic regression), and applying logistic regression as a T-learner for ITE estimation can accurately capture the interaction effects.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_glm_tlearner.png}
-\caption{Results of the T-learner logistic regression in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner logistic regression in Scenario~3.1, where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:fully_observed_glm_tlearner}
 \end{figure}
 
 
 
-The tuned random forest model also performed well. As illustrated in Figure~\ref{fig:fully_tuned_rf_tlearner}, choosing a different model class than that used in the DGP may lead to worse prediction accuracy in terms of $P(Y = 1 \mid X, T)$ and ITE. This difference between the two models arises because the logistic regression model has only a small number of parameters, and with sufficient data, these parameters can converge to their true values as used in the logistic DGP, allowing near-perfect recovery of the true probabilities and thus ITEs. In contrast, the non-parametric random forest must infer the underlying probabilities from the observed binary outcomes (0 or 1), which are themselves realizations of a Bernoulli process. This introduces inherent noise, making it harder for the model to estimate the true risk accurately -- even with large sample sizes. Nonetheless, the tuned random forest also captured the general trend of the ITEs, as reflected in the ITE-ATE plot, Figure~\ref{fig:fully_tuned_rf_tlearner}. Both models were able to capture treatment effect heterogeneity well under full observability of covariates.
+The tuned random forest model also performed well (see Figure~\ref{fig:fully_tuned_rf_tlearner}), but less accurate compared to the logistic model (see Figure~\ref{fig:fully_observed_glm_tlearner}). Choosing a different model class than that used in the DGP may lead to worse prediction accuracy in terms of $P(Y = 1 \mid X, T)$ and ITE. This difference between the two models arises because the logistic regression model has only a small number of parameters, and with sufficient data, these parameters can converge to their true values as used in the logistic DGP, allowing near-perfect recovery of the true probabilities and thus ITEs. In contrast, the non-parametric random forest must infer the underlying probabilities from the observed binary outcomes (0 or 1), which are themselves realizations of a Bernoulli process. This introduces inherent noise, making it harder for the model to estimate the true risk accurately -- even with large sample sizes. Nonetheless, the tuned random forest also captured the general trend of the ITEs, as reflected in the ITE-ATE plot, Figure~\ref{fig:fully_tuned_rf_tlearner}. Both models were able to capture treatment effect heterogeneity well under full observability of covariates.
 
 
 
@@ -501,7 +510,7 @@ The tuned random forest model also performed well. As illustrated in Figure~\ref
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_tuned_rf_tlearner.png}
-\caption{Results of the T-learner tuned random forest in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner tuned random forest in Scenario~3.1, where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:fully_tuned_rf_tlearner}
 \end{figure}
 
@@ -513,19 +522,19 @@ In contrast, the default random forest (i.e., without hyperparameter tuning) per
 
 
 
-\subsubsection{Scenario (2): Unobserved interaction} \label{sec:exp3_sc2}
+\subsubsection{Scenario 3.2: Unobserved interaction} \label{sec:exp3_sc2}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_unobserved.png}
-\caption{DAG for Scenario~(2), where there are strong treatment and interaction effects, but variable $X_1$ is not observed. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\caption{DAG for Scenario~3.2, where there are strong treatment and interaction effects, but variable $X_1$ is not observed. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
 \label{fig:unobserved_interaction_dag}
 \end{figure}
 
 
-In Scenario~2 (Figure~\ref{fig:unobserved_interaction_dag}), where treatment effect heterogeneity remained large but one important interaction covariate ($X_1$) was not observed, prediction accuracy decreased for both models, and the estimated heterogeneity in terms of the ITE was smaller than the true heterogeneity (see Figures~\ref{fig:unobserved_interaction_glm_tlearner} and~\ref{fig:unobserved_interaction_tuned_rf_tlearner}). 
+In Scenario~3.2 (Figure~\ref{fig:unobserved_interaction_dag}), where treatment effect heterogeneity remained large but one important interaction covariate ($X_1$) was not observed, prediction accuracy decreased for both models, and the estimated heterogeneity in terms of the ITE was smaller than the true heterogeneity (see true vs. estimated ITE plots in Figures~\ref{fig:unobserved_interaction_glm_tlearner} and~\ref{fig:unobserved_interaction_tuned_rf_tlearner}). 
 
-Although a considerable number of individuals had a true ITE that was positive (visible in the true vs. estimated ITE plot in Figure~\ref{fig:unobserved_interaction_glm_tlearner}), the T-learner logistic regression did not predict a single positive ITE. This shows that the missing covariate $X_1$ prevents detection of individuals who would actually benefit from the treatment. In practice, where the true ITEs are unknown, we would evaluate the ITE estimation in terms of the ITE-ATE plot (Figure~\ref{fig:unobserved_interaction_glm_tlearner}), which in this case would suggest good calibration of ITEs, as they follow the identity-line. However, we still did not identify the patients that would actually benefit from the treatment. This implies that even if the ITE-ATE plot suggests heterogeneity and that ITE estimates are well calibrated, there may still be additional heterogeneity, that was not captured by the model.
+Although a considerable number of individuals had a true ITE that was positive (visible in the true vs. estimated ITE plot in Figure~\ref{fig:unobserved_interaction_glm_tlearner}), the T-learner logistic regression did not predict a single positive ITE. This shows that the missing covariate $X_1$ in this example prevents detection of individuals who would actually benefit from the treatment. In practice, where the true ITEs are unknown, we would evaluate the ITE estimation in terms of the ITE-ATE plot (Figure~\ref{fig:unobserved_interaction_glm_tlearner}), which in this case would suggest good calibration of ITEs, as they follow the identity-line. However, we still did not identify the patients that would actually benefit from the treatment. This implies that even if the ITE-ATE plot suggests heterogeneity and that ITE estimates are well calibrated, there may still be additional heterogeneity, which was not captured by the model.
 
 
 
@@ -535,58 +544,57 @@ Although a considerable number of individuals had a true ITE that was positive (
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_glm_tlearner.png}
-\caption{Results of the T-learner logistic regression in Scenario~(2), where there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner logistic regression in Scenario~3.2, where there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:unobserved_interaction_glm_tlearner}
 \end{figure}
 
 
-In contrast, the T-learner tuned random forest ( Figure~\ref{fig:unobserved_interaction_tuned_rf_tlearner}) estimated larger treatment effect heterogeneity than the logistic model, but still could not accurately estimate the ITE and also failed to detect patients who would benefit from the treatment. The ITE-ATE plot in Figure~\ref{fig:unobserved_interaction_tuned_rf_tlearner} illustrates that the model discriminates too strongly in the training set and does not generalize well to the test set.
+In contrast, the T-learner tuned random forest (Figure~\ref{fig:unobserved_interaction_tuned_rf_tlearner}) estimated larger treatment effect heterogeneity than the logistic model, but still could not accurately estimate the ITE and also failed to detect patients who would benefit from the treatment. The ITE-ATE plot in Figure~\ref{fig:unobserved_interaction_tuned_rf_tlearner} illustrates that the model discriminates too strongly in the training set and does not generalize well to the test set.
 
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/unobserved_interaction_tuned_rf_tlearner.png}
-\caption{Results of the T-learner tuned random forest in Scenario~(2), where there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner tuned random forest in Scenario~3.2, where there are strong treatment and interaction effects, but variable $X_1$ is not observed. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:unobserved_interaction_tuned_rf_tlearner}
 \end{figure}
 
 
 \clearpage
 
-\subsubsection{Scenario (3): Fully observed, small effects} \label{sec:exp3_sc3}
+\subsubsection{Scenario 3.3: Fully observed, small effects} \label{sec:exp3_sc3}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_small_effects.png}
-\caption{DAG for Scenario~(3), where all variables are observed and both treatment and interaction effects are weak. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\caption{DAG for Scenario~3.3, where all variables are observed and both treatment and interaction effects are weak. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
 \label{fig:small_interaction_dag}
 \end{figure}
 
 
 
 
-In Scenario~3 (Figure~\ref{fig:small_interaction_dag}), where the true treatment effect heterogeneity was small and all covariates were observed, the T-learner logistic regression estimated a larger heterogeneity than actually present. In the ITE-ATE plot in Figure~\ref{fig:small_interaction_glm_tlearner}, the confidence intervals of all ITE subgroups overlap and include the zero line, indicating that the treatment effect is not significantly different from zero. This matches expectations given the small true effect sizes.
-
-However, the T-learner tuned random forest model incorrectly estimated even larger treatment effect heterogeneity than the logistic regression model. As shown in Figure~\ref{fig:small_interaction_tuned_rf_tlearner}, the model exhibited strong discrimination in the training set but did not to replicate this pattern in the test set, where -- regardless of the estimated ITE -- the observed outcomes in the subgroups were similar.
-
+In Scenario~3.3 (Figure~\ref{fig:small_interaction_dag}), where the true treatment effect heterogeneity was small and all covariates were observed, the T-learner logistic regression estimated a larger heterogeneity than actually present (see true vs. estimated ITE plots in Figure~\ref{fig:small_interaction_glm_tlearner}). In the ITE-ATE plot in Figure~\ref{fig:small_interaction_glm_tlearner}, the confidence intervals of all ITE subgroups overlap and include the zero line, indicating that the treatment effect is not significantly different from zero. This matches expectations given the small true effect sizes.
 
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/small_interaction_glm_tlearner.png}
-\caption{Results of the T-learner logistic regression in Scenario~(3), where the DAG is fully observed and both treatment and interaction effects are weak. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner logistic regression in Scenario~3.3, where the DAG is fully observed and both treatment and interaction effects are weak. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:small_interaction_glm_tlearner}
 \end{figure}
 
+
+However, the T-learner tuned random forest model incorrectly estimated even larger treatment effect heterogeneity than the logistic regression model (see true vs. estimated ITE plots in Figure~\ref{fig:small_interaction_tuned_rf_tlearner}). As shown in the ITE-ATE plot in Figure~\ref{fig:small_interaction_tuned_rf_tlearner}, the model exhibited strong discrimination in the training set but did not replicate this pattern in the test set, where -- regardless of the estimated ITE -- the observed outcomes were similar across all subgroups. These results indicate that when evaluating the ITE predictions on the test set, it correctly suggests that no significant treatment effect heterogeneity is present.
 
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearner.png}
-\caption{Results of the T-learner tuned random forest in Scenario~(3), where the DAG is fully observed and both treatment and interaction effects are weak. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the T-learner tuned random forest in Scenario~3.3, where the DAG is fully observed and both treatment and interaction effects are weak. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:small_interaction_tuned_rf_tlearner}
 \end{figure}
 
@@ -597,19 +605,19 @@ However, the T-learner tuned random forest model incorrectly estimated even larg
 
 
 
-\subsection{Conclusion of Experiment 3} \label{sec:disc_experiment3}
+\subsection{Discussion of Experiment 3} \label{sec:disc_experiment3}
 
 
 
-Tuning more flexible models like random forests using cross-validation improved generalization to the test set but led to poor calibration in terms of predicted probabilities vs. empirically observed outcomes in the training set. An illustrative case is shown in Appendix~\ref{sec:calibration_tuned_rf} for the T-learner tuned random forest in Scenario~3 (with weak effects), where calibration was poor in the training set but aligned well with the identity line in the test set. We repeatedly observed this pattern in the tuned random forest when, in the ITE-ATE plot, results from the training set did not generalize to the test set. This highlights the importance of evaluating models on an independent test set, when tuning a model to prevent overfitting. Although, evaluation on a test set should be done in any case.
+Tuning more flexible models like random forests using cross-validation improved generalization to the test set but led to poor calibration in terms of predicted probabilities vs. empirically observed outcomes in the training set. An illustrative case is shown in Appendix~\ref{sec:calibration_tuned_rf} for the T-learner tuned random forest in Scenario~3 (with weak effects; Section~\ref{sec:exp3_sc3}), where calibration was poor in the training set but aligned well with the identity line in the test set. We repeatedly observed this pattern in the tuned random forest when, in the ITE-ATE plot, results from the training set did not generalize to the test set (e.g. in Figures~\ref{fig:unobserved_interaction_tuned_rf_tlearner} and~\ref{fig:small_interaction_tuned_rf_tlearner}). This highlights the importance of evaluating models on an independent test set, when tuning a model to prevent overfitting, although evaluation on a test set should be done in any case.
 
 \medskip
 
-In this experiment, we showed that even when causal ML models for ITE estimation are well calibrated in terms of prediction accuracy $P(Y = 1 \mid \mathbf{X}, T)$, they can still fail to estimate the ITE accurately under less favorable scenarios. In cases of full observability of covariates but low interaction effects, models may estimate too high heterogeneity that is not present in the data. However, this can become visible in the ITE-ATE plot on the test set, which reveals that the apparent heterogeneity does not generalize. 
-But we also observed that when important effect-modifying covariates are missing, the models may fail to detect treatment effect heterogeneity altogether, as shown in Scenario~2. In such cases, the estimated ITEs may be too small or even negative, suggesting that the model does not capture the true treatment effect heterogeneity. This makes it difficult to distinguish between a true lack of heterogeneity and the failure to capture it due to unobserved effect modifiers.
+In this experiment, we showed that even when causal ML models for ITE estimation are well calibrated in terms of prediction accuracy $P(Y = 1 \mid \mathbf{X}, T)$, they can still fail to estimate the ITE accurately under less favorable scenarios. In cases of full observability of covariates but low interaction effects (Scenario~3.3; Section~\ref{sec:exp3_sc3}), models may estimate too high heterogeneity that is not present in the data. However, this can become visible in the ITE-ATE plot on the test set, which reveals that the apparent heterogeneity does not generalize. 
+But we also observed that when important effect-modifying covariates are missing (Scenario~3.2; Section~\ref{sec:exp3_sc2}), the models may fail to detect treatment effect heterogeneity altogether. In such cases, the estimated ITEs may be too small or even negative, suggesting that the model does not capture the true treatment effect heterogeneity. This makes it difficult to distinguish between a true lack of heterogeneity and the failure to capture it due to unobserved effect modifiers.
 
 
-\citet{vegetabile2021} also analyzed the effect of unobserved interaction variables. He pointed out that as long as all confounding variables $\mathbf{X}$ are observed and conditioned on, the ignorability assumption required for ITE estimation is satisfied -- even in the presence of an unobserved interaction variable $Z$. However, if such a variable $Z$ exists, the estimated ITEs would be biased, and this issue could arise even in an RCT setting where confounding is removed through randomization.
+\citet{vegetabile2021} also analyzed the effect of unobserved interaction variables. He pointed out that as long as all confounding variables $\mathbf{X}$ are observed and conditioned on, the ignorability assumption (Equation~\ref{eq:ignorability}) required for ITE estimation is satisfied -- even in the presence of an unobserved interaction variable $Z$. However, if such a variable $Z$ exists, the estimated ITEs would be biased, and this issue could arise even in an RCT setting where confounding is removed through randomization. This aligns with our observations in Scenario~3.2 (Section~\ref{sec:exp3_sc2}).
 
 \citet{nichols2007} discusses various methods for estimating causal effects from observational data, including in the presence of unobserved variables. One of these methods, instrumental variables (IV), can help reduce bias from unobserved confounding. Whether IV methods can also address unobserved effect modifiers in the context of ITE estimation is not something we explored, and remains beyond the scope of this thesis.
 
@@ -658,21 +666,33 @@ But we also observed that when important effect-modifying covariates are missing
 
 
 
+% \subsection{Motivation}
+% 
+% We claim that the TRAM-DAG framework can be effectively used for unbiased ITE estimation on observational data with confounding and mediating variables, provided that the identifiability assumptions are satisfied and the DAG is fully known. Therefore, we apply TRAM-DAGs in both a confounded and a randomized setting, using data simulated according to the DAGs shown in Figure~\ref{fig:ite_dag_observational}. The binary treatment ($X_4$) is the intervention variable, and the goal is to estimate the ITE for the continuous outcome $Y$. To evaluate how the model performs under more or less favorable conditions, we conduct this experiment under three scenarios: Scenario~(4.1) (Section~\ref{sec:exp4_sc1}) including both direct and interaction effects of treatment, Scenario~(4.2) (Section~\ref{sec:exp4_sc2}) including only a direct effect, and Scenario~(4.3) (Section~\ref{sec:exp4_sc3}) including only interaction effects.
+
 \subsection{Motivation}
 
-We claim that the TRAM-DAG framework can be effectively used for unbiased ITE estimation on observational data with confounding and mediating variables, provided that the identifiability assumptions are satisfied and the DAG is fully known. Therefore, we apply TRAM-DAGs in both a confounded and a randomized setting, using data simulated according to the DAGs shown in Figure~\ref{fig:ite_dag_observational}. The binary treatment ($X_4$) is the intervention variable, and the goal is to estimate the ITE for the continuous outcome $Y$.
+We claim that the TRAM-DAG framework can be effectively used for unbiased ITE estimation on observational data that includes both confounding and mediating variables -- provided that identifiability assumptions are met and the underlying DAG is fully known. To evaluate this, we apply TRAM-DAGs in both confounded and randomized settings, using data simulated according to the DAGs shown in Figure~\ref{fig:ite_dag_observational}. The binary treatment variable ($X_4$) represents the intervention, and the goal is to estimate the ITE for a continuous outcome $Y$.
+
+To assess model performance under varying conditions, we conduct this experiment across three scenarios:  
+
+\begin{itemize}
+    \item \textbf{Scenario 4.1} (Section~\ref{sec:exp4_sc1}): both direct and interaction effects of treatment are present,
+    \item \textbf{Scenario 4.2} (Section~\ref{sec:exp4_sc2}): only a direct treatment effect is included,
+    \item \textbf{Scenario 4.3} (Section~\ref{sec:exp4_sc3}): only interaction effects are included.
+\end{itemize}
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{img/exp4_dags.png}
-\caption{DAGs used for the simulation to estimate the ITE. Left: observational; Right: RCT setting. The source nodes $X_1$, $X_2$, and $X_3$ come from a multivariate standard normal distribution ($\rho=0.1$). In the observational setting, the binary treatment $X_4$ depends on the parents $X_1$ and $X_2$. In the RCT setting, this dependency is omitted due to randomization. The outcome $Y$ depends on all variables, with additional interaction effects between the treatment and the variables $X_2$ and $X_3$. All variables except the treatment $X_4$ are continuous.}
+\caption{DAGs used for the simulation to estimate the ITE. Left: Observational; Right: RCT setting. The source nodes $X_1$, $X_2$, and $X_3$ come from a multivariate standard normal distribution ($\rho=0.1$). In the observational setting, the binary treatment $X_4$ depends on the parents $X_1$ and $X_2$. In the RCT setting, this dependency is omitted due to randomization. The outcome $Y$ depends on all variables, with additional interaction effects between the treatment and the variables $X_2$ and $X_3$. All variables except the treatment $X_4$ are continuous.}
 \label{fig:ite_dag_observational}
 \end{figure}
 
 \medskip
 
-\textbf{Illustrative scenario:} An possible real-world scenario that follows the structure of the proposed DAG could be the following: A marketing campaign is conducted to increase customer spending. The treatment is the marketing email ($X_4$) sent to customers. If the treatment is not randomized, it depends on prior total spend ($X_1$) and the customer engagement score ($X_2$). The outcome is the total spend in the 30 days following the email, denoted as $Y$. The past total spend ($X_1$) and customer engagement score ($X_2$) act as confounders, influencing both the treatment and the outcome. The customer satisfaction score ($X_3$), obtained from a recent survey, is another predictor. The time spent on the website after receiving the email ($X_5$) is a mediator that affects the number of product pages viewed ($X_6$), which in turn influences the total spend ($Y$). Interaction effects exist between the treatment ($X_4$) and both $X_2$ and $X_3$, meaning the treatment effect differs based on the customer's engagement and satisfaction levels. The goal is to estimate the individualized treatment effect (ITE) of the marketing email ($X_4$) on the total spend ($Y$), in order to personalize customer targeting.
+\textbf{Illustrative scenario:} A possible real-world scenario that follows the structure of the proposed DAG could be the following: A marketing campaign is conducted to increase customer spending. The treatment is the marketing email ($X_4$) sent to customers. If the treatment is not randomized, it depends on prior total spend ($X_1$) and the customer engagement score ($X_2$). The outcome is the total spend in the 30 days following the email, denoted as $Y$. The past total spend ($X_1$) and customer engagement score ($X_2$) act as confounders, influencing both the treatment and the outcome. The customer satisfaction score ($X_3$), obtained from a recent survey, is another predictor. The time spent on the website after receiving the email ($X_5$) is a mediator that affects the number of product pages viewed ($X_6$), which in turn influences the total spend ($Y$). Interaction effects exist between the treatment ($X_4$) and both $X_2$ and $X_3$, meaning the treatment effect differs based on the customer's engagement and satisfaction levels. The goal is to estimate the individualized treatment effect (ITE) of the marketing email ($X_4$) on the total spend ($Y$), in order to personalize customer targeting.
 
 \medskip
 
@@ -680,7 +700,7 @@ We claim that the TRAM-DAG framework can be effectively used for unbiased ITE es
 
 \textbf{Data-generating process:} The standard logistic distribution was chosen as the noise distribution to align with other examples in this thesis. Any other noise distribution could also be used here, as we are not interested in coefficient interpretability in this experiment. All variables except the binary treatment $X_4$ are continuous. The source nodes $X_1$, $X_2$, and $X_3$ are generated from a multivariate standard normal distribution with a compound symmetric covariance matrix ($\rho = 0.1$). These variables represent baseline patient characteristics.
 
-In the observational setting, $X_1$ and $X_2$ act as confounders by influencing both the treatment assignment $X_4$ and the outcome $Y$. In the RCT setting, these dependencies are removed due to randomization. The mediator $X_5$ depends on treatment $X_4$, and $X_6$ depends on $X_5$. The log-odds of the continuous outcome $Y$ depend linearly on all covariates, including additional interaction terms between the treatment and $X_2$ and $X_3$. Equation~\ref{eq:outcome_dgp} defines the outcome on the log-odds scale:
+In the observational setting, $X_1$ and $X_2$ act as confounders by influencing both the treatment assignment $X_4$ and the outcome $Y$. In the RCT setting, these dependencies are removed due to randomization. The mediator $X_5$ depends on treatment $X_4$, and $X_6$ depends on $X_5$. The log-odds of the continuous outcome $Y$ depend linearly on all covariates, including additional interaction terms between the treatment and $X_2$ and $X_3$. Equation~\ref{eq:outcome_dgp} defines the outcome $Y$ on the log-odds scale:
 
 \begin{equation}
 h(y \mid \mathbf{X}) = h_I(y) + \boldsymbol{\beta}_X^\top \mathbf{X} + X_4 \cdot (\boldsymbol{\beta}_{TX}^\top \mathbf{X}_{\text{TX}})
@@ -693,16 +713,17 @@ The coefficients are set as $\boldsymbol{\beta}_X = (-0.5,\ 0.5,\ 0.2,\ 1.5,\ -0
 
 \medskip
 
-\textbf{Three scenarios:} The experiment is conducted under three different scenarios regarding the effect of the treatment on the outcome $Y$ in the DGP: (1) both direct and interaction effects, (2) only a direct effect, and (3) only interaction effects. Depending on the scenario, the corresponding coefficients in $\boldsymbol{\beta}_X$ and $\boldsymbol{\beta}_{TX}$ are set to zero.
+\textbf{Three scenarios:} The experiment is conducted under three different scenarios regarding the effect of the treatment on the outcome $Y$ in the DGP: Scenario 4.1 (Section~\ref{sec:exp4_sc1}) with both direct treatment and interaction effects, Scenario 4.2 (Section~\ref{sec:exp4_sc2}) with only a direct effect, and Scenario 4.3 (Section~\ref{sec:exp4_sc3}) with only interaction effects. Depending on the scenario, the corresponding coefficients in $\boldsymbol{\beta}_X$ and $\boldsymbol{\beta}_{TX}$ in Equation~\ref{eq:outcome_dgp} are set to zero.
 
 \medskip
 
 
-\textbf{TRAM-DAG estimation:} In both the observational and RCT settings, the TRAM-DAG is fitted as an S-learner (i.e., a single model including the treatment variable). To allow for full flexibility, all nodes with parents are modeled using complex intercepts with three hidden layers of size (10, 10, 10), without batch normalization or dropout, unsing ReLU activation. This architecture enables the model to learn nonlinearities and interactions between the treatment and covariates, allowing it to estimate both potential outcomes. The model is trained on a dataset of 20,000 samples. To prevent overfitting, an additional validation set of 10,000 samples is used, and the final model is selected using early stopping based on validation loss.
+\textbf{TRAM-DAG estimation:} In both the observational and RCT settings, the TRAM-DAG is fitted as an S-learner (i.e., a single model including the treatment variable). To allow for full flexibility, all nodes with parents are modeled using complex intercepts with three hidden layers of size (10, 10, 10), without applying batch normalization or dropout, using ReLU activation. This architecture enables the model to learn nonlinearities and interactions between the treatment and covariates, allowing it to estimate both potential outcomes. The model is trained on a dataset of 20,000 samples. To prevent overfitting, an additional validation set of 10,000 samples is used, and the final model is selected using early stopping based on the validation loss.
 
 \medskip
 
-\textbf{ITE estimation procedure:} \label{qte:exp4} In contrast to most of the research we analyzed, where ITEs are typically defined in terms of expected values of potential outcomes, we estimate the quantile treatment effect (QTE), specifically at the median. For each individual, we calculate the difference between the medians of the potential outcome distributions under treatment and control. \citet{chernozhukov2005}, for example, highlighted the ability of quantile regression models in heterogeneous treatment effect estimation. QTEs are particularly relevant when the distributional behavior of outcomes beyond the mean is of interest. The median QTE is defined as
+\textbf{ITE estimation procedure:} \label{qte:exp4} In contrast to much of the literature we reviewed, where ITEs are typically defined in terms of expected values of potential outcomes (Equation~\ref{eq:ite}), we estimate the quantile treatment effect (QTE), specifically at the median (Equation~\ref{eq:qte}). For each individual, we calculate the difference between the medians of the potential outcome distributions under treatment and control. Note that estimating the potential outcomes in terms of expected values would also be possible -- either by repeatedly sampling from each outcome distribution or, potentially, by numerical integration. However, for this experiment, we chose to estimate the QTE. 
+\citet{chernozhukov2005}, for example, highlighted the ability of quantile regression models in heterogeneous treatment effect estimation. QTEs are particularly relevant when the distributional behavior of outcomes beyond the mean is of interest. The median QTE is defined as
 
 \begin{equation}
 \text{QTE}^{(0.5)}(\mathbf{x}) = Q_{Y(1) \mid \mathbf{X} = \mathbf{x}}(0.5) - Q_{Y(0) \mid \mathbf{X} = \mathbf{x}}(0.5),
@@ -712,13 +733,14 @@ The coefficients are set as $\boldsymbol{\beta}_X = (-0.5,\ 0.5,\ 0.2,\ 1.5,\ -0
 
 where $Q_{Y(t) \mid \mathbf{X} = \mathbf{x}}(q)$ denotes the $q$-th quantile of the potential outcome distribution under treatment $t$.
 
-Once the TRAM-DAG model is fitted on observed data, we can access the inverse transformation functions $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$, which represent the structural equations of the DAG. ITE estimation proceeds in three steps, according to Algorithm~\ref{alg:ite_qte}. First, the latent values $z_{ij}$ for the explanatory variables $X_i \in \{X_1, X_2, X_3, X_5, X_6\}$ are computed for each sample $j$ using the transformation functions conditioned on their observed parents. Second, the treatment variable $X_4$ is intervened on using the do-operator for both $X_4 = 0$ and $X_4 = 1$. For each of these two treatment states, $X_5$, $X_6$, and the potential outcome (distribution) $Y$ are sampled sequentially using the latent encodings and inverse transformations. This means that the counterfactuals for $X_5$ and $X_6$ are determined. This results in two potential outcome distributions per individual, as illustrated in Figure~\ref{fig:exp4_potential_outcomes}. Finally, for each individual, the median is determined for both potential outcome distributions and the QTE is calculated as the difference between the two medians. Note that estimating the potential outcomes in terms of expected values would also be possible -- either by repeatedly sampling from each outcome distribution or, potentially, by numerical integration. However, for this experiment, we chose to estimate the QTE. For simplicity, we will refer to these as ITEs throughout the remainder of the experiment.
+Once the TRAM-DAG model is fitted on observed data, we can access the inverse transformation functions $X_i = h^{-1}(Z_i \mid \text{pa}(X_i))$, which represent the structural equations of the DAG. ITE estimation proceeds in three steps, according to Algorithm~\ref{alg:ite_qte}. First, the latent values $z_{ij}$ for the explanatory variables $X_i \in \{X_1, X_2, X_3, X_5, X_6\}$ are computed for each sample $j$ using the transformation functions conditioned on their observed parents. Second, the treatment variable $X_4$ is intervened on using the do-operator for both $X_4 = 0$ and $X_4 = 1$. For each of these two treatment states, $X_5$, $X_6$, and the potential outcome (distribution) $Y$ are sampled sequentially using the latent encodings and inverse transformations. This means that the counterfactuals for $X_5$ and $X_6$ are determined. This results in two potential outcome distributions per individual, as illustrated in Figure~\ref{fig:exp4_potential_outcomes}. Finally, for each individual, the median is determined for both potential outcome distributions and the QTE is calculated as the difference between the two medians (Equation~\ref{eq:qte}). 
+For simplicity, we will refer to QTEs as ITEs throughout the remainder of the experiment.
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.6\textwidth]{img/potential_outcomes_y.png}
-\caption{ITE estimation in terms of quantile treatment effect (QTE) at the median with TRAM-DAGs. The two transformation functions represent the distributions of the potential outcomes under both treatments. For the QTE(0.5), the median of the latent distribution (0 for the standard logistic) is evaluated on both transformation functions to determine the median potential outcomes. We define the ITE for an individual as the difference of the median potential outcomes. Plot adapted from visualizations similar to those used in \citet{sick2025}.}
+\caption{ITE estimation in terms of quantile treatment effect (QTE) (Equation~\ref{eq:qte}) at the median with TRAM-DAGs. The two transformation functions represent the distributions of the potential outcomes under both treatments. For the QTE(0.5), the median of the latent distribution (0 for the standard logistic) is evaluated on both transformation functions to determine the median potential outcomes. We define the ITE for an individual as the difference of the median potential outcomes. Plot adapted from visualizations similar to those used in \citet{sick2025}.}
 \label{fig:exp4_potential_outcomes}
 \end{figure}
 
@@ -750,9 +772,12 @@ Once the TRAM-DAG model is fitted on observed data, we can access the inverse tr
 \end{algorithm}
 
 
+% enforce that starts after all floats have been displayed
+\FloatBarrier
+
 \medskip
 
-\textbf{Model evaluation:} Validation is conducted on the training dataset and on an independent test dataset of same size. During the data-generating process, the true potential outcomes under both treatment states were recorded for each individual, which allows for exact computation of the true ITE. The estimated ITEs are evaluated against the true values using several visual and numerical metrics. These include density plots of the estimated ITEs, scatter plots of true vs. estimated ITEs, and ITE-ATE plots where the observed ATE per ITE subgroup is computed as the difference in medians. In addition, the average of the estimated ITEs is compared to the true average ITE and to the empirical ATE from the RCT setting. The scatter plot of true versus estimated ITEs is the most informative validation, as it directly reflects how accurately the model estimated ITEs.
+\textbf{Model evaluation:} Validation is conducted on the training dataset and on an independent test dataset, each of which consists of 20,000 samples. During the data-generating process, the true potential outcomes under both treatment states were recorded for each individual, which allows for exact computation of the true ITE. The estimated ITEs are evaluated against the true values using several visual and numerical metrics. These include density plots of the estimated ITEs (e.g. Figure~\ref{fig:scenario1_ite_densities_train_test}), scatter plots of true vs. estimated ITEs (e.g. Figure~\ref{fig:scenario1_ite_scatter_train_test}), and ITE-ATE plots (e.g. Figure~\ref{fig:observ_scenario1_ite_ATE}) where the observed ATE per ITE subgroup is computed as the difference in medians. In addition, the average of the estimated ITEs is compared to the true average ITE and to the empirical ATE from the RCT setting (e.g. Table~\ref{tab:scenario1_ate_comparison}). Among the evaluated metrics, the scatter plot of true versus estimated ITEs provides the most direct insight into estimation accuracy.
 
 
 
@@ -868,34 +893,35 @@ Once the TRAM-DAG model is fitted on observed data, we can access the inverse tr
  
 
 
+
 \subsection{Results and Discussion}
 
-First, we present the results for Scenario (1) (Section~\ref{sec:exp4_sc1}), which includes both direct and interaction effects  of treatment. Then, we show the results for Scenario (2) (Section~\ref{sec:exp4_sc2}), which has a direct effect but no interaction effects, and finally Scenario (3) (Section~\ref{sec:exp4_sc3}), which includes interaction effects but no direct treatment effect. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounding. We also compare the average treatment effect (ATE), which can be directly calculated in the RCT setting on observed outcomes, with the ATE derived from the estimated ITEs. All ITEs presented in this experiment are technically quantile treatment effects (QTEs), as defined in Equation~\ref{eq:qte}, based on the medians of the potential outcomes. For simplicity, we will refer to them as ITEs. The aim is to investigate how the TRAM-DAG performs in the presence or absence of direct and interaction effects of the treatment, both in confounded and in randomized settings, for the purpose of ITE estimation.
+First, we present the results for Scenario 4.1 (Section~\ref{sec:exp4_sc1}), which includes both direct and interaction effects of treatment. Then, we show the results for Scenario 4.2 (Section~\ref{sec:exp4_sc2}), which has a direct effect but no interaction effects, and finally Scenario 4.3 (Section~\ref{sec:exp4_sc3}), which includes interaction effects but no direct treatment effect. For each scenario, we compare the results in an observational setting with confounded treatment allocation and in a randomized controlled trial (RCT) setting without confounding. We also compare the average treatment effect (ATE), which can be directly calculated in the RCT setting on observed outcomes, with the ATE derived from the estimated ITEs. All ITEs presented in this experiment are technically quantile treatment effects (QTEs), as defined in Equation~\ref{eq:qte}, based on the medians of the potential outcomes. For simplicity, we will refer to them as ITEs. The aim is to investigate how the TRAM-DAG performs in the presence or absence of direct and interaction effects of the treatment, both in confounded and in randomized settings, for the purpose of ITE estimation.
 
-\subsubsection{Scenario (1): Direct and interaction effects} \label{sec:exp4_sc1}
+\subsubsection{Scenario 4.1: Direct and interaction effects} \label{sec:exp4_sc1}
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{img/exp4_dags.png}
-\caption{DAGs for Scenario~(1), which includes a direct effect of the treatment on the outcome and additional interaction effects with covariates $X_2$ and $X_3$. These DAGs were previously shown in Figure~\ref{fig:ite_dag_observational} and is re-plotted here for convenience. Left: observational setting; Right: RCT setting.}
+\caption{DAGs for Scenario~4.1, which includes a direct effect of the treatment on the outcome and additional interaction effects with covariates $X_2$ and $X_3$. These DAGs were previously shown in Figure~\ref{fig:ite_dag_observational} and are re-plotted here for convenience. Left: Observational; Right: RCT setting.}
 \label{fig:ite_dag_observational_1}
 \end{figure}
 
-Scenario~(1) includes a direct effect of the treatment on the outcome, and interaction effects with $X_2$ and $X_3$, as shown in Figure~\ref{fig:ite_dag_observational_1}. Train and test sets with 20,000 samples each were generated.
+Scenario~4.1 includes a direct effect of the treatment on the outcome, and interaction effects with $X_2$ and $X_3$, as shown in Figure~\ref{fig:ite_dag_observational_1}.
 
 In the observational setting, treatment was confounded by $X_1$ and $X_2$. In the train set, $38.6$\% of individuals were in the control group and $61.4$\% in the treatment group. The test set had a similar distribution.
 
 In the RCT setting, treatment was randomly assigned. In the train set, $49.8$\% were in control and $50.2$\% in treatment; in the test set, the shares were $50.2$\% and $49.8$\%, respectively.
 
-Figure~\ref{fig:scenario1_ite_distribution_dgp} shows the true ITE distribution from the DGP, which displays some heterogeneity due to interaction effects. Figure~\ref{fig:scenario1_sampling_distributions_vertical} shows the marginal distributions of all variables in the DGP and as estimated by the TRAM-DAG. The distribution of the outcome $Y$ under $\text{do}(X_4 = 0)$ and $\text{do}(X_4 = 1)$ is shown in Figure~\ref{fig:scenario1_outcome_distributions}. The ITEs were estimated as the difference in medians of the potential outcomes. Figure~\ref{fig:scenario1_ite_densities_train_test} compares the densities of the estimated and true ITEs. In both observational and RCT settings, the estimated ITEs are close to the true ones in both train and test sets. Figure~\ref{fig:scenario1_ite_scatter_train_test} shows the scatterplots of estimated vs. true ITEs. Figures~\ref{fig:observ_scenario1_ite_ATE} and \ref{fig:rct_scenario1_ite_ATE} show the ITE-ATE plots, where the ATE is calculated as the median difference in observed outcomes within ITE subgroups. The trends are similar across train and test sets.
+Figure~\ref{fig:scenario1_ite_distribution_dgp} shows the true ITE distribution resulting from the DGP, which displays some heterogeneity due to interaction effects. Figure~\ref{fig:scenario1_sampling_distributions_vertical} shows the marginal distributions of all variables in the DGP and as estimated by the TRAM-DAG. The distribution of the outcome $Y$ under $\text{do}(X_4 = 0)$ and $\text{do}(X_4 = 1)$ is shown in Figure~\ref{fig:scenario1_outcome_distributions}. The ITEs were estimated as the difference in medians of the potential outcomes. Figure~\ref{fig:scenario1_ite_densities_train_test} compares the densities of the estimated and true ITEs. Figure~\ref{fig:scenario1_ite_scatter_train_test} shows the scatterplots of estimated vs. true ITEs. In both observational and RCT settings, the estimated ITEs are close to the true ones in both train and test sets. Figures~\ref{fig:observ_scenario1_ite_ATE} and \ref{fig:rct_scenario1_ite_ATE} show the ITE-ATE plots, where the ATE is calculated as the median difference in observed outcomes within ITE subgroups. The trends are similar across train and test sets and follow the calibration line.
 
 
 
 The ATEs calculated based on different measures in both the training and test sets are shown in Table~\ref{tab:scenario1_ate_comparison}. In the RCT setting (training set), the difference in means of the outcomes between the two treatment groups was 
-$-0.563$, with a 95\% Wald confidence interval of 
+$-0.563$, with a 95\% Wald confidence interval from 
 $-0.582$ to 
-$-0.543$. 
+$-0.543$. Note that the ATE in terms of difference in means cannot be directly compared to the ATE based on difference in medians.
 
 
 
@@ -915,7 +941,7 @@ $-0.543$.
 \begin{table}[htbp]
 \centering
 \small
-\caption{Scenario (1), including direct and interaction effects: Comparison of ATE measures across training and test sets for the observational and RCT settings. $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
+\caption{Scenario~4.1, including direct and interaction effects: Comparison of ATE measures across training and test sets for the observational and RCT settings. $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
 \label{tab:scenario1_ate_comparison}
 \begin{tabular}{l c c c c}
 \toprule
@@ -974,7 +1000,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.7\textwidth]{img/results/observ_scenario1_ite_distribution_dgp.png}
-\caption{True ITE distribution resulting from the DGP for Scenario (1), which includes both direct and interaction effects. The true ITEs are identical for each individual in the observational and RCT settings, as they are based on the potential outcomes under both treatment conditions.}
+\caption{True ITE distribution resulting from the DGP for Scenario 4.1, which includes both direct and interaction effects. The true ITEs are identical for each individual in the observational and RCT settings, as they are based on the potential outcomes under both treatment conditions.}
 \label{fig:scenario1_ite_distribution_dgp}
 \end{figure}
 
@@ -984,7 +1010,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_sampling_distributions_vertical.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_sampling_distributions_vertical.png}
-\caption{Marginal distributions of variables from the DGP and from samples generated by the fitted TRAM-DAG for Scenario (1) with direct and interaction effects. Distributions are shown as observed (Obs), under the control intervention (do($X_4 = 0$)), and under the treatment intervention (do($X_4 = 1$)). Left: Observational; Right: RCT setting.}
+\caption{Marginal distributions of variables from the DGP and from samples generated by the fitted TRAM-DAG for Scenario 4.1 with direct and interaction effects. Distributions are shown as observed (Obs), under the control intervention do($X_4 = 0$), and under the treatment intervention do($X_4 = 1$). Left: Observational; Right: RCT setting.}
 \label{fig:scenario1_sampling_distributions_vertical}
 \end{figure}
 
@@ -993,7 +1019,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario1_X7_treatment_densities.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario1_X7_treatment_densities.png}
-\caption{Distributions of the outcome variable ($X_7$) under control and treatment interventions for Scenario (1), which includes both direct and interaction effects. This plot provides a more detailed view of the $X_7$ panels shown under do($X_4=0$) and do($X_4=1$) in Figure~\ref{fig:scenario1_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\caption{Distributions of the outcome variable ($X_7=Y$) under control and treatment interventions for Scenario 4.1, which includes both direct and interaction effects. This plot provides a more detailed view of the $X_7$ panels shown under do($X_4=0$) and do($X_4=1$) in Figure~\ref{fig:scenario1_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
 \label{fig:scenario1_outcome_distributions}
 \end{figure}
 
@@ -1005,7 +1031,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario1_ITE_densities_train_test.png} 
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario1_ITE_densities_train_test.png}
 \vspace{-17pt}
-\caption{Densities of the estimated ITEs compared to the true ITEs in the training and test datasets for Scenario (1), which includes direct and interaction effects. Left: Observational; Right: RCT setting.}
+\caption{Densities of the estimated ITEs compared to the true ITEs in the training and test datasets for Scenario 4.1, which includes direct and interaction effects. Left: Observational; Right: RCT setting.}
 \label{fig:scenario1_ite_densities_train_test}
 \end{figure}
 
@@ -1019,7 +1045,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario1_ITE_scatter_train_test.png} 
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario1_ITE_scatter_train_test.png}
 \vspace{-17pt}
-\caption{Scatterplots of estimated ITEs vs. true ITEs in the training and test datasets for Scenario (1), which includes direct and interaction effects. Left: Observational; Right: RCT setting.}
+\caption{Scatterplots of estimated ITEs vs. true ITEs in the training and test datasets for Scenario 4.1, which includes direct and interaction effects. Left: Observational; Right: RCT setting.}
 \label{fig:scenario1_ite_scatter_train_test}
 \end{figure}
 
@@ -1039,7 +1065,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/observ_scenario1_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario (1) in the observatinal setting, which includes direct and interaction effects. Individuals are grouped into bins based on their estimated ITEs, and within each bin, the ATE is calculated as the difference in medians of the observed outcomes under the two treatments. 95\% bootstrap confidence intervals indicate the uncertainty.}
+\caption{ITE-ATE plot for Scenario 4.1 in the observational setting, which includes direct and interaction effects. Individuals are grouped into bins based on their estimated ITEs, and within each bin, the ATE is calculated as the difference in medians of the observed outcomes under the two treatments. 95\% bootstrap confidence intervals indicate the uncertainty.}
 \label{fig:observ_scenario1_ite_ATE}
 \end{figure}
 
@@ -1048,40 +1074,45 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/rct_scenario1_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario (1) in the RCT setting, which includes direct and interaction effects. Individuals are grouped into bins based on their estimated ITEs, and within each bin, the ATE is calculated as the difference in medians of the observed outcomes under the two treatments. 95\% bootstrap confidence intervals indicate the uncertainty.}
+\caption{ITE-ATE plot for Scenario 4.1 in the RCT setting, which includes direct and interaction effects. Individuals are grouped into bins based on their estimated ITEs, and within each bin, the ATE is calculated as the difference in medians of the observed outcomes under the two treatments. 95\% bootstrap confidence intervals indicate the uncertainty.}
 \label{fig:rct_scenario1_ite_ATE}
 \end{figure}
 
 
-\textbf{Discussion:} The TRAM-DAG could successfully estimate the ITE in Scenario 1 where interaction effects were present. There was no notable difference between the observational and RCT settings. Scatterplots of estimated ITEs vs. true ITEs showed good prediction accuracy (see Figure \ref{fig:scenario1_ite_scatter_train_test}). Also the ATE based on the mean of estimated ITEs was close to the ATE based on true ITEs in both scenarios (see Table \ref{tab:scenario1_ate_comparison}). These results highlight TRAM-DAG's ability to compute counterfactuals for mediators and to estimate individualized treatment effects even in relatively complex DAG structures.
+% enforce that starts after all floats have been displayed
+\FloatBarrier
+
+
+\textbf{Discussion of Scenario~4.1:} The TRAM-DAG successfully estimatet the ITEs in Scenario~4.1 where a direct effect and interaction effects were present. There was no notable difference in estimation accuracy between the observational and RCT settings. Scatterplots of estimated ITEs vs. true ITEs showed good prediction accuracy (see Figure \ref{fig:scenario1_ite_scatter_train_test}). The ATE based on the mean of the estimated ITEs closely matched the ATE derived from the true ITEs in both scenarios (see Table \ref{tab:scenario1_ate_comparison}). These results highlight TRAM-DAG's ability to compute counterfactuals for mediators and to estimate ITEs even in relatively complex DAG structures.
 
 
 % start a new page
 \clearpage
 
 
-\subsubsection{Scenario (2): With direct effect, but no interaction effects} \label{sec:exp4_sc2}
+\subsubsection{Scenario 4.2: With direct effect, but no interaction effects} \label{sec:exp4_sc2}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{img/exp4_dag_2.png}
-\caption{DAGs for Scenario~(2), which includes a direct effect of the treatment on the outcome, but no interaction effects that would induce treatment effect heterogeneity. Left: Observational setting; Right: RCT setting.}
+\caption{DAGs for Scenario~4.2, which includes a direct effect of the treatment on the outcome, but no interaction effects that would induce treatment effect heterogeneity. Left: Observational; Right: RCT setting.}
 \label{fig:ite_dag_observational_2}
 \end{figure}
 
-Scenario (2) includes a direct effect of the treatment on the outcome, while the coefficients for the interaction terms are set to zero. This results in less heterogeneity in the ITE distribution compared to Scenario (1), as shown in Figure~\ref{fig:scenario2_ite_distribution_dgp}. Why there is still some heterogeneity despite the absence of interactions is discussed in Section~\ref{sec:disc_experiment4}. The observational and interventional densities generated by the fitted TRAM-DAG closely match the true densities defined by the DGP, as illustrated in Figures~\ref{fig:scenario2_sampling_distributions_vertical} and~\ref{fig:scenario2_outcome_distributions}. However, there is a notable difference in variance between the estimated and true ITE distributions, visible in Figures~\ref{fig:scenario2_ite_densities_train_test} and~\ref{fig:scenario2_ite_scatter_train_test}. The ITE-ATE plots in Figures~\ref{fig:observ_scenario2_ite_ATE} and \ref{fig:rct_scenario2_ite_ATE} are less informative than in Scenario (1), as expected given the reduced heterogeneity. Table~\ref{tab:scenario2_ate_comparison} presents the ATE measures for Scenario (2). In the test set of the RCT setting, the ATE based on the true ITEs was -0.633, while the ATE based on the estimated ITEs was -0.586.
+Scenario~4.2 includes a direct effect of the treatment on the outcome, while the coefficients for the interaction terms are set to zero. This results in less heterogeneity in the ITE distribution compared to Scenario~4.1 (Section~\ref{sec:exp4_sc1}), as shown in Figure~\ref{fig:scenario2_ite_distribution_dgp}. The reason for the remaining heterogeneity despite the absence of explicit interactions is discussed at the end of this section.
+The observational and interventional densities generated by the fitted TRAM-DAG closely approximate the true DGP-defined distributions for all variables, as illustrated in Figures~\ref{fig:scenario2_sampling_distributions_vertical} and~\ref{fig:scenario2_outcome_distributions}. However, there is a notable difference in variance between the estimated and true ITE distributions, visible in Figures~\ref{fig:scenario2_ite_densities_train_test} and~\ref{fig:scenario2_ite_scatter_train_test}. The ITE-ATE plots in Figures~\ref{fig:observ_scenario2_ite_ATE} and \ref{fig:rct_scenario2_ite_ATE} are less informative than those in Scenario~1, which is as expected given the reduced heterogeneity. Table~\ref{tab:scenario2_ate_comparison} presents the ATE measures for Scenario~2. In the test set of the RCT setting, the ATE based on the true ITEs was -0.633, while the ATE based on the estimated ITEs was -0.586.
 
 In the RCT setting (training set), the difference in means of the outcomes between the two treatment groups was 
-$-0.569$, with a 95\% Wald confidence interval of 
+$-0.569$, with a 95\% Wald confidence interval from 
 $-0.588$ to 
-$-0.550$. 
+$-0.550$. Note that the ATE in terms of difference in means cannot be directly compared to the ATE based on difference in medians.
 
 
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{Scenario (2), including a direct treatment effect but no interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting. $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
+\caption{Scenario~4.2, including a direct treatment effect but no interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting. $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
 \label{tab:scenario2_ate_comparison}
 \begin{tabular}{l c c c c}
 \toprule
@@ -1139,17 +1170,16 @@ ATE as mean(ITE$_\text{estimated}$)
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.7\textwidth]{img/results/observ_scenario2_ite_distribution_dgp.png}
-\caption{True ITE distribution resulting from the DGP for Scenario~(2), which includes a direct treatment effect but no interaction effects. The true ITEs are identical in the observational and RCT settings, as they depend only on the potential outcomes under both treatment allocations.}
+\caption{True ITE distribution resulting from the DGP for Scenario~4.2, which includes a direct treatment effect but no interaction effects. The true ITEs are identical in the observational and RCT settings, as they depend only on the potential outcomes under both treatment allocations.}
 \label{fig:scenario2_ite_distribution_dgp}
 \end{figure}
-
 
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_sampling_distributions_vertical.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_sampling_distributions_vertical.png}
-\caption{Marginal distributions of variables from the DGP and samples generated by the fitted TRAM-DAG for Scenario~(2), which includes a direct treatment effect but no interaction effects. The distributions are shown as observed (Obs), under control intervention (do($X_4 = 0$)), and under treatment intervention (do($X_4 = 1$)). Left: Observational; Right: RCT setting.}
+\caption{Marginal distributions of variables from the DGP and from samples generated by the fitted TRAM-DAG for Scenario~4.2, which includes a direct treatment effect but no interaction effects. The distributions are shown as observed (Obs), under control intervention do($X_4 = 0$), and under treatment intervention do($X_4 = 1$). Left: Observational; Right: RCT setting.}
 \label{fig:scenario2_sampling_distributions_vertical}
 \end{figure}
 
@@ -1158,7 +1188,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario2_X7_treatment_densities.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario2_X7_treatment_densities.png}
-\caption{Distributions of the outcome variable ($X_7$) under treatment and control interventions for Scenario~(2), which includes a direct treatment effect but no interaction effects. This plot provides a higher-resolution view of the $X_7$ panels under do($X_4 = 0$) and do($X_4 = 1$) from Figure~\ref{fig:scenario2_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\caption{Distributions of the outcome variable ($X_7=Y$) under treatment and control interventions for Scenario~4.2, which includes a direct treatment effect but no interaction effects. This plot provides a higher-resolution view of the $X_7$ panels under do($X_4 = 0$) and do($X_4 = 1$) from Figure~\ref{fig:scenario2_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
 \label{fig:scenario2_outcome_distributions}
 \end{figure}
 
@@ -1172,7 +1202,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario2_ITE_densities_train_test.png}
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario2_ITE_densities_train_test.png}
 \vspace{-17pt}
-\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~(2), which includes a direct treatment effect but no interaction effects. Left: Observational; Right: RCT setting.}
+\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~4.2, which includes a direct treatment effect but no interaction effects. Left: Observational; Right: RCT setting.}
 \label{fig:scenario2_ite_densities_train_test}
 \end{figure}
 
@@ -1186,7 +1216,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario2_ITE_scatter_train_test.png}
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario2_ITE_scatter_train_test.png}
 \vspace{-17pt}
-\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~(2), which includes a direct treatment effect but no interaction effects. Left: Observational; Right: RCT setting.}
+\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~4.2, which includes a direct treatment effect but no interaction effects. Left: Observational; Right: RCT setting.}
 \label{fig:scenario2_ite_scatter_train_test}
 \end{figure}
 
@@ -1197,7 +1227,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/observ_scenario2_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario~(2) in the observational setting, which includes a direct treatment effect but no interaction effects. Individuals are grouped into bins based on their estimated ITEs, and in each bin, the ATE is computed as the difference in medians of the observed outcomes under treatment and control. The 95\% bootstrap confidence intervals indicate uncertainty.}
+\caption{ITE-ATE plot for Scenario~4.2 in the observational setting, which includes a direct treatment effect but no interaction effects. Individuals are grouped into bins based on their estimated ITEs, and in each bin, the ATE is computed as the difference in medians of the observed outcomes under treatment and control. The 95\% bootstrap confidence intervals indicate uncertainty.}
 \label{fig:observ_scenario2_ite_ATE}
 \end{figure}
 
@@ -1207,24 +1237,29 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/rct_scenario2_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario~(2) in the RCT setting, which includes a direct treatment effect but no interaction effects. Individuals are grouped into bins based on their estimated ITEs, and in each bin, the ATE is computed as the difference in medians of the observed outcomes under treatment and control. The 95\% bootstrap confidence intervals indicate uncertainty.}
+\caption{ITE-ATE plot for Scenario~4.2 in the RCT setting, which includes a direct treatment effect but no interaction effects. Individuals are grouped into bins based on their estimated ITEs, and in each bin, the ATE is computed as the difference in medians of the observed outcomes under treatment and control. The 95\% bootstrap confidence intervals indicate uncertainty.}
 \label{fig:rct_scenario2_ite_ATE}
 \end{figure}
 
 
-\textbf{Discussion:} In Scenario 2, where no explicit interaction effects were present, ITE estimation was poor. This aligns with our discovery in Experiment 3 (Section~\ref{ch:experiment3}) that when true heterogeneity is weak, models tended to estimate too large heterogeneity, as e.g. shown in Figure \ref{fig:small_interaction_tuned_rf_tlearner} with the T-learner tuned random forest.
+
+% enforce that starts after all floats have been displayed
+\FloatBarrier
+
+\textbf{Discussion of Scenario~4.2:} In Scenario~4.2, where no explicit interaction effects were present, ITE estimation was poor. Even though the TRAM-DAG could accurately reproduce observational and interventional distributions (see Figures~\ref{fig:scenario2_sampling_distributions_vertical} and~\ref{fig:scenario2_outcome_distributions}), the resulting ITEs could not be accurately determined (see Figures~\ref{fig:scenario2_ite_densities_train_test} and~\ref{fig:scenario2_ite_scatter_train_test}). This aligns with our discovery in Experiment~3 (Section~\ref{ch:experiment3}) that when true heterogeneity is weak, models tended to estimate too large heterogeneity, as shown, for example, in Figure \ref{fig:small_interaction_tuned_rf_tlearner} with the T-learner tuned random forest.
 
 \medskip
 
-What might be surprising in Scenario 2 is the presence of heterogeneity (true ITEs), despite the absence of explicitly specified interaction terms in the data-generating process. As shown in Figure~\ref{fig:scenario2_ite_distribution_dgp}, one might have expected the ITEs to be constant across individuals -- equal to the ATE -- given the model's additivity on the log-odds scale. However, as described by \citet{hoogland2021}, such heterogeneity arises because a constant treatment effect on the log-odds scale does not translate into a constant effect on a different scale, such as the probability scale. This phenomenon results from the nonlinearity of the inverse-link function (e.g., $\text{logit}^{-1}$), which transforms additive effects in the linear predictor into non-additive effects on the outcome scale. As the authors point out, the same shift induced by the treatment on the log-odds scale leads to different absolute risk reductions depending on the outcome risk under the control treatment. In other words, even with a homogeneous effect on the linear predictor, variation in covariates $\mathbf{X}$ leads to different treatment effects on the probability scale.
+What might be surprising in Scenario~4.2 is the presence of heterogeneity (variation in true ITEs), despite the absence of explicitly specified treatment-covariate interactions in the data-generating process. As shown in Figure~\ref{fig:scenario2_ite_distribution_dgp}, one might expect constant ITEs across individuals -- equal to the ATE -- given the model's additivity on the log-odds scale (Equation~\ref{eq:outcome_dgp}). However, as described by \citet{hoogland2021}, such heterogeneity arises because a constant treatment effect on the log-odds scale does not translate into a constant effect on a different scale, such as the probability scale. This phenomenon results from the nonlinearity of the inverse-link function (e.g., $\text{logit}^{-1}$), which transforms additive effects in the linear predictor into non-additive effects on the outcome scale. As they point out, the same shift induced by the treatment on the log-odds scale leads to different absolute risk reductions depending on the outcome risk under the control treatment. In other words, even with a homogeneous effect on the linear predictor, variation in covariates $\mathbf{X}$ leads to different treatment effects on the probability scale.
 
 This would not have occurred under a linear model where the transformation function $h$ is the identity. In that case, the ITE would simplify as follows:
 
 \begin{equation}
 \text{ITE} = \mathbb{E}[Y(1)] - \mathbb{E}[Y(0)] = (\beta_0 + \beta_t + \boldsymbol{\beta}_x^\top \mathbf{X} + \epsilon) - (\beta_0 + \boldsymbol{\beta}_x^\top \mathbf{X} + \epsilon) = \beta_t
+\label{eq:ITE_LM}
 \end{equation}
 
-Here, the ITE is constant and equal to the treatment coefficient, independent of the covariates or the noise term, which cancels out.
+In Equation~\ref{eq:ITE_LM}, the ITE is constant and equal to the treatment coefficient $\beta_t$, independent of the covariates or the noise term, which both cancel out.
 
 In contrast, under a nonlinear model, such as the logistic transformation model with a nonlinear intercept function used in this experiment, the ITE becomes:
 
@@ -1245,16 +1280,16 @@ Since $h^{-1}$ is nonlinear, the difference depends on the covariate profile $\m
 
 
 
-\subsubsection{Scenario (3): No direct effect, but with interaction effects} \label{sec:exp4_sc3}
+\subsubsection{Scenario 4.3: No direct effect, but with interaction effects} \label{sec:exp4_sc3}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{img/exp4_dag_3.png}
-\caption{DAGs for Scenario~(3), which includes no direct effect of the treatment on the outcome, but interaction effects with covariates $X_2$ and $X_3$. Left: Observational setting; Right: RCT setting.}
+\caption{DAGs for Scenario~4.3, which includes no direct effect of the treatment on the outcome, but interaction effects with covariates $X_2$ and $X_3$. Left: Observational; Right: RCT setting.}
 \label{fig:ite_dag_observational_3}
 \end{figure}
 
-Scenario~(3) includes no direct effect of the treatment on the outcome, but does include interaction effects between the treatment and covariates $X_2$ and $X_3$. Compared to Scenario~(1), removing the direct effect results in a more centered ITE distribution, as shown in Figure~\ref{fig:scenario3_ite_distribution_dgp}. In the test set of the RCT setting, the ATE measured as the difference in means was -0.048, with a 95\% Wald confidence interval from -0.068 to -0.028.
+Scenario~4.3 includes no direct effect of the treatment on the outcome, but does include interaction effects between the treatment and covariates $X_2$ and $X_3$. Compared to Scenario~4.1 (Section~\ref{sec:exp4_sc1}), removing the direct effect results in a more centered ITE distribution, as shown in Figure~\ref{fig:scenario3_ite_distribution_dgp}. In the test set of the RCT setting, the ATE measured as the difference in means was -0.048, with a 95\% Wald confidence interval from -0.068 to -0.028. Note that the ATE in terms of difference in means cannot be directly compared to the ATE based on difference in medians.
 
 
 
@@ -1262,7 +1297,7 @@ Scenario~(3) includes no direct effect of the treatment on the outcome, but does
 \begin{table}[htbp]
 \centering
 \small
-\caption{Scenario (3), without a direct treatment effect but including interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.  $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
+\caption{Scenario~4.3, without a direct treatment effect but including interaction effects: Comparison of ATE measures across train and test sets for the observational and RCT setting.  $\text{Y}_\text{observed}^{(\text{Tr})}$ denotes the observed outcome under the treatment ($\text{Tr}$) actually received. Estimates based on these observed outcomes (means and medians) are provided only for the RCT setting, as the observational setting is confounded. The true ITEs ($\text{ITE}_\text{true}$) were calculated for each individual based on the data-generating process. In contrast, the estimated ITEs ($\text{ITE}_\text{estimated}$) were obtained from the TRAM-DAG trained on observed data. The estimated ATE from $\text{mean}(\text{ITE}_\text{estimated})$ can be directly compared to the true $\text{mean}(\text{ITE}_\text{true})$, whereas comparisons to empirical ATEs from observed outcome differences should be interpreted with caution. All ITEs were computed as quantile treatment effects (QTEs) based on the median of the potential outcome distributions, as defined in Equation~\ref{eq:qte}.}
 \label{tab:scenario3_ate_comparison}
 \begin{tabular}{l c c c c}
 \toprule
@@ -1320,7 +1355,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.7\textwidth]{img/results/observ_scenario3_ite_distribution_dgp.png}
-\caption{True ITE distribution resulting from the DGP for Scenario~(3), which includes interaction effects but no direct treatment effect. The true ITEs are identical in the observational and RCT settings, since they are based on the potential outcomes under both treatment allocations. Left: Observational; Right: RCT setting.}
+\caption{True ITE distribution resulting from the DGP for Scenario~4.3, which includes interaction effects but no direct treatment effect. The true ITEs are identical in the observational and RCT settings, since they are based on the potential outcomes under both treatment allocations.}
 \label{fig:scenario3_ite_distribution_dgp}
 \end{figure}
 
@@ -1330,15 +1365,17 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_sampling_distributions_vertical.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_sampling_distributions_vertical.png}
-\caption{Marginal distributions of DGP variables and samples generated by the fitted TRAM-DAG for Scenario~(3), which includes interaction effects but no direct treatment effect. The distributions are shown as observed (Obs), under control intervention (do($X_4 = 0$)), and under treatment intervention (do($X_4 = 1$)). Left: Observational; Right: RCT setting.}
+\caption{Marginal distributions of variables from the DGP and from samples generated by the fitted TRAM-DAG for Scenario~4.3, which includes interaction effects but no direct treatment effect. The distributions are shown as observed (Obs), under control intervention do($X_4 = 0$), and under treatment intervention do($X_4 = 1$). Left: Observational; Right: RCT setting.}
 \label{fig:scenario3_sampling_distributions_vertical}
 \end{figure}
+
+
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{img/results/observ_scenario3_X7_treatment_densities.png}
 \includegraphics[width=0.45\textwidth]{img/results/rct_scenario3_X7_treatment_densities.png}
-\caption{Distributions of the outcome variable ($X_7$) under treatment and control interventions for Scenario~(3), which includes interaction effects but no direct treatment effect. This plot provides a higher resolution view of the $X_7$ panels under do($X_4 = 0$) and do($X_4 = 1$) from Figure~\ref{fig:scenario3_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
+\caption{Distributions of the outcome variable ($X_7=Y$) under treatment and control interventions for Scenario~4.3, which includes interaction effects but no direct treatment effect. This plot provides a higher resolution view of the $X_7$ panels under do($X_4 = 0$) and do($X_4 = 1$) from Figure~\ref{fig:scenario3_sampling_distributions_vertical}. Left: Observational; Right: RCT setting.}
 \label{fig:scenario3_outcome_distributions}
 \end{figure}
 
@@ -1350,7 +1387,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario3_ITE_densities_train_test.png}
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario3_ITE_densities_train_test.png}
 \vspace{-17pt}
-\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~(3), which includes interaction effects but no direct treatment effect. Left: Observational; Right: RCT setting.}
+\caption{Densities of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~4.3, which includes interaction effects but no direct treatment effect. Left: Observational; Right: RCT setting.}
 \label{fig:scenario3_ite_densities_train_test}
 \end{figure}
 
@@ -1364,7 +1401,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \includegraphics[width=0.33\textwidth]{img/results/observ_scenario3_ITE_scatter_train_test.png}
 \includegraphics[width=0.33\textwidth]{img/results/rct_scenario3_ITE_scatter_train_test.png}
 \vspace{-17pt}
-\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~(3), which includes interaction effects but no direct treatment effect. Left: Observational; Right: RCT setting.}
+\caption{Scatterplots of estimated ITEs compared to the true ITEs in the training and test datasets for Scenario~4.3, which includes interaction effects but no direct treatment effect. Left: Observational; Right: RCT setting.}
 \label{fig:scenario3_ite_scatter_train_test}
 \end{figure}
 
@@ -1375,7 +1412,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/observ_scenario3_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario~(3) in the observational setting, which includes interaction effects but no direct treatment effect. Individuals are grouped into bins based on the estimated ITE, and within each bin the ATE is computed as the difference in medians of the observed outcomes under treatment and control. 95\% bootstrap confidence intervals reflect the uncertainty.}
+\caption{ITE-ATE plot for Scenario~4.3 in the observational setting, which includes interaction effects but no direct treatment effect. Individuals are grouped into bins based on the estimated ITE, and within each bin the ATE is computed as the difference in medians of the observed outcomes under treatment and control. 95\% bootstrap confidence intervals reflect the uncertainty.}
 \label{fig:observ_scenario3_ite_ATE}
 \end{figure}
 
@@ -1384,13 +1421,18 @@ ATE as mean(ITE$_\text{estimated}$)
 \centering
 \includegraphics[width=0.8\textwidth]{img/results/rct_scenario3_ITE_ATE.png}
 \vspace{-15pt}
-\caption{ITE-ATE plot for Scenario~(3) in the RCT setting, which includes interaction effects but no direct treatment effect. Individuals are grouped into bins based on the estimated ITE, and within each bin the ATE is computed as the difference in medians of the observed outcomes under treatment and control. 95\% bootstrap confidence intervals reflect the uncertainty.}
+\caption{ITE-ATE plot for Scenario~4.3 in the RCT setting, which includes interaction effects but no direct treatment effect. Individuals are grouped into bins based on the estimated ITE, and within each bin the ATE is computed as the difference in medians of the observed outcomes under treatment and control. 95\% bootstrap confidence intervals reflect the uncertainty.}
 \label{fig:rct_scenario3_ite_ATE}
 \end{figure}
 
 
 
-\textbf{Discussion:} In Scenario 3, where interaction effects but no direct effects were present, the TRAM-DAG could successfully estimate the ITE (similarly as in Scenario 1; Section~\ref{sec:exp4_sc1}). The scatterplots of estimated ITEs vs. true ITEs (Figure~\ref{fig:scenario3_ite_scatter_train_test}) showed good prediction accuracy.
+
+% enforce that starts after all floats have been displayed
+\FloatBarrier
+
+
+\textbf{Discussion of Scenario~4.3:} In Scenario~4.3, which included interaction effects but no direct treatment effect, the TRAM-DAG could successfully estimate the ITE (similarly as in Scenario 4.1; Section~\ref{sec:exp4_sc1}). The scatterplots of estimated ITEs vs. true ITEs (Figure~\ref{fig:scenario3_ite_scatter_train_test}) showed good prediction accuracy.
 
 
 
@@ -1415,7 +1457,7 @@ ATE as mean(ITE$_\text{estimated}$)
 \FloatBarrier
 
 
-\subsection{Conclusion of Experiment 4} \label{sec:disc_experiment4}
+\subsection{Discussion of Experiment 4} \label{sec:disc_experiment4}
 
 
 TRAM-DAGs provided unbiased estimates of ITEs in Scenario 1 (Section~\ref{sec:exp4_sc1}) and Scenario 3 (Section~\ref{sec:exp4_sc3}), where heterogeneity of treatment effects was strong. This supports our claim that TRAM-DAGs can effectively be unbiased ITE estimation in a complex scenario, if the DAG is fully observed and heterogeneity is strong.

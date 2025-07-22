@@ -488,7 +488,7 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 
 \section{Experiment 3: Calibration plots} \label{sec:calibration_tuned_rf}
 
-Figure \ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Section \ref{sec:results_experiment3} where we presented the true probabilities of the event $P(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to improved generalization it leads to a better calibration on the test set.
+Figure~\ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3.3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Figure~\ref{fig:small_interaction_tuned_rf_tlearner} where we presented the true probabilities of the event $P(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set (Figure~\ref{fig:calibration_tuned_rf}; left), but due to improved generalization it leads to a better calibration on the test set (Figure~\ref{fig:calibration_tuned_rf}; right).
 
 \begin{figure}[htbp]
 \centering
