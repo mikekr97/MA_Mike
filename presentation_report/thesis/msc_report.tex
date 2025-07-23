@@ -94,13 +94,14 @@ I want to thank my supervisors and all the people I had the chance to work and s
 
 
 
-This thesis explores the use of TRAM-DAGs, a flexible neural network-based framework for estimating complex causal relationships in known directed acyclic graphs (DAGs). TRAM-DAGs allow sampling from observational, interventional, and counterfactual distributions when the full DAG is known. We applied TRAM-DAGs to both simulated data and a real-world randomized controlled trial, with a focus on individualized treatment effect (ITE) estimation.
+This thesis explores TRAM-DAGs, a flexible neural network-based framework for modeling complex causal relationships in known directed acyclic graphs (DAGs), and investigates their use -- alongside other models -- for estimating individualized treatment effects (ITEs). TRAM-DAGs allow sampling from observational, interventional, and counterfactual distributions when the full DAG is known. 
+% We applied TRAM-DAGs to both simulated data and a real-world randomized controlled trial, with a focus on individualized treatment effect (ITE) estimation.
 
 We show how TRAM-DAGs can be used with continuous and ordinal or categorical predictor variables, investigate how variable scaling affects interpretability, and demonstrate how interactions between variables can be modeled. A key part of this work involved applying different causal machine learning models -- including TRAM-DAGs, logistic regression, and random forests -- to estimate ITEs on the International Stroke Trial (IST) dataset. In line with findings by \citet{chen2025}, none of the models produced ITE estimates that generalized to the test data.
 
 To explore possible reasons for this poor performance, we conducted simulation experiments under varying conditions. These revealed that, while models must be well calibrated and overfitting should be avoided, this alone may not suffice to guarantee valid ITE estimates. Weak treatment-covariate interaction effects and especially unmeasured effect modifiers were found to be critical challenges. When such variables are unobserved, the ignorability assumption alone may not ensure unbiased estimation -- an issue also highlighted by \citet{vegetabile2021}. These factors may help explain the limited model performance observed in the IST dataset.
 
-We also applied TRAM-DAGs in randomized and confounded simulation settings with relatively complex DAGs and found that, when the full DAG was observed and interaction effects were present, TRAM-DAGs accurately recovered causal relationships and provided unbiased ITE estimates.
+We also applied TRAM-DAGs in randomized and confounded simulation settings with relatively complex DAGs and found that, when the full DAG was observed and interaction effects were present, TRAM-DAGs accurately recovered causal relationships and provided unbiased ITE estimates for a continuous outcome.
 
 While promising, our work has limitations. The simulation scenarios may not fully capture real-world complexity, and evaluating ITE estimates on real data remains challenging since ground truth is unknown. The neural network-based TRAM-DAGs require training time and rely on modeling assumptions -- e.g., regarding the scale of conditional effects -- when parameter interpretability is desired.
 
@@ -183,9 +184,7 @@ TRAM-DAGs offer a customizable modeling framework that enables the specification
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 \input{chapter04}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

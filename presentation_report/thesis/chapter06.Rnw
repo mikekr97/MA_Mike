@@ -27,35 +27,34 @@ opts_chunk$set(
 
 \section{Interpretation of linear coefficients} \label{sec:interpretation_linear_coefficients}
 
-The transformation model framework allows for interpretation of the coefficients in the linear shift component. The choice of the inverse-link function $F_Z$ determines the interpretation of the coefficients. For example, if the standard logistic distribution is chosen as the latent scale, i.e. $F_Z(z) = \operatorname{expit}(z)$, the coefficients can be interpreted as log-odds ratios. For $F_Z(z) = 1-\exp(-\exp(z))$, the interpretation of the coefficients changes to log-hazard ratios.
+The transformation model framework (see Section~\ref{sec:trams}) allows for interpretation of the coefficients in the linear shift component. The choice of the inverse-link function $F_Z$ determines the interpretation of the coefficients. For example, if the standard logistic distribution is chosen as the latent scale, i.e. $F_Z(z) = \operatorname{expit}(z)$, the coefficients can be interpreted as log-odds ratios. For $F_Z(z) = 1-\exp(-\exp(z))$, the interpretation of the coefficients changes to log-hazard ratios.
 
 Consider the conditional transformation model:
 
-\begin{equation}
+\begin{equation*}
 F_{X_2 \mid X_1}(x_2) = \operatorname{expit}( h(x_2) + \beta_{12} x_1 ),
-\end{equation}
+\end{equation*}
 
 
-where $h(x_2)$ is a smooth, monotonic transformation (e.g., a Bernstein polynomial), and $\beta_{12}$ is the coefficient representing the effect of $X_1$ on $X_2$.
+where $h(x_2)$ is a smooth, monotonic transformation (e.g., a Bernstein polynomial, Equation~\ref{eq:methods_bernstein_polynomial}), and $\beta_{12}$ is the coefficient representing the effect of $X_1$ on $X_2$.
 
 Applying the logit link ($\operatorname{expit}^{-1}$) yields:
 
-\begin{equation}
+\begin{equation*}
 \log\left( \frac{F_{X_2 \mid X_1}(x_2)}{1 - F_{X_2 \mid X_1}(x_2)} \right)
 = h(x_2) + \beta_{12} x_1.
-\end{equation}
+\end{equation*}
 
 
 This shows that on the log-odds scale, $X_1$ has an additive linear effect on $X_2$. The corresponding odds ratio when increasing $x_1$ by one unit is:
 
-\begin{equation}
+\begin{equation*}
 \text{OR}_{x_1 \to x_1 + 1} = 
 \frac{\exp(h(x_2) + \beta_{12}(x_1 + 1))}{\exp(h(x_2) + \beta_{12} x_1)} 
 = \exp(\beta_{12}).
-\end{equation}
+\end{equation*}
 
-Therefore, $\exp(\beta_{12})$ represents the multiplicative change in odds of $X_2 \le x_2$ for a one-unit increase in $X_1$, holding all else constant. This means that $\beta_{12}$ can be interpreted as a log-odds ratio.
-
+Therefore, $\exp(\beta_{12})$ represents the multiplicative change in odds of observing $X_2 \le x_2$ for a one-unit increase in $X_1$, holding all else constant. This means that $\beta_{12}$ can be interpreted as a log-odds ratio.
 
 
 
@@ -63,7 +62,7 @@ Therefore, $\exp(\beta_{12})$ represents the multiplicative change in odds of $X
 
 \section{Bernstein polynomial for continuous outcomes} \label{sec:bernstein_polynomial}
 
-In deep TRAMs, the intercept for a continuous outcome $y$ is modeled as a smooth and monotonically increasing function using a Bernstein polynomial of order $M$. Here, we focus on the more general case, where the intercept depends on the predictors $\mathbf{x}$. The same logic also applies to the simple intercept case without dependence on covariates.
+In deep TRAMs (see Section~\ref{sec:deep_trams}), the intercept for a continuous outcome $y$ is modeled as a smooth and monotonically increasing function using a Bernstein polynomial of order $M$ (Equation~\ref{eq:bernstein_intercept}). Here, we focus on the more general case, where the intercept depends on the predictors $\mathbf{x}$. The same logic also applies to the simple intercept case without dependence on covariates.
 
 The intercept of the transformation function can be written as:
 
@@ -78,7 +77,7 @@ where $s(y) \in [0, 1]$ is a scaled version of the outcome $y$, and $B_{k, M}(s(
 B_{k, M}(s(y)) = \binom{M}{k} s(y)^k (1 - s(y))^{M - k}.
 \]
 
-The parameters $\vartheta_k(\mathbf{x})$ depend on the predictors and determine the shape of the intercept function. To ensure that $h_I(y \mid \mathbf{x})$ is monotonically increasing in $y$, the coefficients must satisfy:
+The parameters $\vartheta_k(\mathbf{x})$ depend on the predictors and determine the shape of the intercept function (Equation~\ref{eq:bernstein_intercept}). To ensure that $h_I(y \mid \mathbf{x})$ is monotonically increasing in $y$, the coefficients must satisfy:
 
 \[
 \vartheta_0(\mathbf{x}) \leq \vartheta_1(\mathbf{x}) \leq \dots \leq \vartheta_M(\mathbf{x}).
@@ -99,9 +98,10 @@ Let $q_{0.05}$ and $q_{0.95}$ denote the 5th and 95th empirical quantiles of $y$
 
 \begin{equation}
 s(y) = \frac{y - q_{0.05}}{q_{0.95} - q_{0.05}}.
+\label{eq:scale}
 \end{equation}
 
-This transformation maps the central interval $[q_{0.05}, q_{0.95}]$ onto the unit interval $[0, 1]$, the domain of the Bernstein basis polynomials. Let $h_I(s(y) \mid \mathbf{x})$ be the core transformation function as defined in Equation~\eqref{eq:bernstein_intercept}. The extrapolated transformation $\tilde{h}_I(y \mid \mathbf{x})$ is then defined as:
+This transformation maps the central interval $[q_{0.05}, q_{0.95}]$ onto the unit interval $[0, 1]$, the domain of the Bernstein basis polynomials. Let $h_I(s(y) \mid \mathbf{x})$ be the core transformation function as defined in Equation~\eqref{eq:bernstein_intercept}. The extrapolated transformation function $\tilde{h}_I(y \mid \mathbf{x})$ is then defined as:
 
 \begin{equation}
 \tilde{h}_I(y \mid \mathbf{x}) =
@@ -113,10 +113,9 @@ h_I(1 \mid \mathbf{x}) + h_I'(1 \mid \mathbf{x}) \cdot (s(y) - 1), & \text{if } 
 \label{eq:extended_bernstein}
 \end{equation}
 
-The derivatives $h_I'(0 \mid \mathbf{x})$ and $h_I'(1 \mid \mathbf{x})$ are computed analytically from the Bernstein basis and the learned coefficients $\vartheta_k(\mathbf{x})$, ensuring smooth and differentiable transitions at the boundaries (see Section~\ref{sec:analytical_derivative_bernstein}).
+The derivatives $h_I'(0 \mid \mathbf{x})$ and $h_I'(1 \mid \mathbf{x})$ are computed analytically from the Bernstein basis and the learned coefficients $\vartheta_k(\mathbf{x})$, ensuring smooth and differentiable transitions at the boundaries (see Section~\ref{sec:analytical_derivative_bernstein}, Equation~\ref{eq:bernstein_derivative}).
 
 This construction ensures several desirable properties. First, the transformation function $\tilde{h}_I(y \mid \mathbf{x})$ is globally defined on $\mathbb{R}$, avoiding undefined regions or discontinuities. Second, monotonicity is guaranteed due to the softplus parameterization of the coefficients $\vartheta_k(\mathbf{x})$.
-
 
 
 
@@ -126,37 +125,20 @@ To compute gradients and ensure differentiability at the extrapolation boundarie
 
 Recall the general form of the intercept of the transformation function:
 
-\begin{equation}
-h_I(y \mid \mathbf{x}) = \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \cdot B_{k, M}(s(y)),
-\end{equation}
+\begin{equation*}
+h_I(s(y) \mid \mathbf{x}) = \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \cdot B_{k, M}(s(y)),
+\end{equation*}
 
-where $s(y) \in [0, 1]$ is the scaled outcome, $\vartheta_k(\mathbf{x})$ are the (monotonized) coefficients, and $B_{k, M}(s(y))$ are the Bernstein basis polynomials of degree $M$.
+where \( s(y) \in [0, 1] \) is the scaled outcome, \( \vartheta_k(\mathbf{x}) \) are the (monotonized) coefficients, and \( B_{k, M}(s(y)) \) are the Bernstein basis polynomials of degree \( M \).
 
-To compute the derivative with respect to $y$, we apply the chain rule:
+Compute the derivative with respect to \( s(y) \):
 
-\begin{equation}
-\frac{d}{dy} h_I(y \mid \mathbf{x}) = \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \cdot \frac{d}{dy} B_{k, M}(s(y)) = \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \cdot \frac{dB_{k, M}(s)}{ds} \cdot \frac{ds}{dy}.
-\end{equation}
-
-
-Since $s(y) = \frac{y - q_{0.05}}{q_{0.95} - q_{0.05}}$, its derivative is:
-
-\begin{equation}
-\frac{ds}{dy} = \frac{1}{q_{0.95} - q_{0.05}}.
-\end{equation}
-
-The derivative of the Bernstein basis polynomial is:
-
-\begin{equation}
-\frac{d}{ds} B_{k, M}(s) = M \left[ B_{k - 1, M - 1}(s) - B_{k, M - 1}(s) \right].
-\end{equation}
-
-
-Therefore, the full derivative is:
-
-\begin{equation}
-\frac{d}{dy} h_I(y \mid \mathbf{x}) = \frac{M}{q_{0.95} - q_{0.05}} \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \left[ B_{k - 1, M - 1}(s(y)) - B_{k, M - 1}(s(y)) \right].
-\end{equation}
+\begin{align}
+\frac{d}{ds(y)} h_I(s(y) \mid \mathbf{x}) 
+&= M \sum_{k=0}^{M} \vartheta_k(\mathbf{x}) \left[ B_{k - 1, M - 1}(s(y)) - B_{k, M - 1}(s(y)) \right] \nonumber \\
+&= M \sum_{k=0}^{M-1}  \left( \vartheta_{k+1}(\mathbf{x}) - \vartheta_k(\mathbf{x}) \right) B_{k, M - 1}(s(y)).
+\label{eq:bernstein_derivative}
+\end{align}
 
 This expression is used to evaluate the slope of the transformation function at the borders and is also critical when computing the likelihood.
 
@@ -164,81 +146,79 @@ This expression is used to evaluate the slope of the transformation function at 
 
 
 
+
 \section{Negative log-likelihood} \label{sec:nll}
 
-\subsection{Continuous Outcome}
+\subsection{Continuous outcome} \label{sec:cont}
 
 For a continuous outcome $Y$, the conditional cumulative distribution function (CDF) is given by:
 
-\begin{equation}
+\begin{equation*}
 F_{Y \mid \mathbf{X} = \mathbf{x}}(y) = F_Z(h(s(y) \mid \mathbf{x})),
-\end{equation}
+\end{equation*}
 
 where $F_Z$ is the CDF of the standard logistic distribution:
 
-\begin{equation}
+\begin{equation*}
 F_Z(z) = \frac{1}{1 + e^{-z}}, \quad z \in \mathbb{R},
-\end{equation}
+\end{equation*}
 
 and $h$ is the conditional transformation function that maps the scaled outcome $s(y)$ to the latent (log-odds) scale.
 
-The outcome $y$ must be scaled to the unit interval $[0, 1]$ because the Bernstein polynomial is defined on this range:
+The outcome $y$ must be scaled to the unit interval $[0, 1]$ (Equation~\ref{eq:scale}) because the Bernstein polynomial is defined on this range.
 
-\begin{equation}
-s(y) = \frac{y - \min(y)}{\max(y) - \min(y)}.
-\end{equation}
 
 To compute the conditional density, we apply the change-of-variables formula:
 
-\begin{equation}
+\begin{equation*}
 f_{Y \mid \mathbf{X} = \mathbf{x}}(y) = f_Z(h(s(y) \mid \mathbf{x})) \cdot h'(s(y) \mid \mathbf{x}) \cdot s'(y),
-\end{equation}
+\end{equation*}
 
 where $f_Z$ is the PDF of the standard logistic distribution:
 
-\begin{equation}
+\begin{equation*}
 f_Z(z) = \frac{e^z}{(1 + e^z)^2}, \quad z \in \mathbb{R}.
-\end{equation}
+\end{equation*}
 
 The negative log-likelihood (NLL) contribution for a single observation is then given by:
 
-\begin{equation}
+\begin{equation*}
 \text{NLL} = - \log f_{Y \mid \mathbf{X} = \mathbf{x}}(y).
-\end{equation}
+\end{equation*}
 
 Plugging in the expressions yields:
 
-\begin{align}
+\begin{align*}
 \text{NLL} &= - \log f_{Y \mid \mathbf{X} = \mathbf{x}}(y) \nonumber \\
 &= -h(s(y) \mid \mathbf{x}) - 2 \log(1 + \exp(-h(s(y) \mid \mathbf{x}))) \nonumber \\
-&\quad + \log h'(s(y) \mid \mathbf{x}) - \log(\max(y) - \min(y)).
-\end{align}
+&\quad + \log h'(s(y) \mid \mathbf{x}) - \log(q_{0.95} - q_{0.05}).
+\end{align*}
 
 
-\subsection{Discrete Outcome}
+\subsection{Discrete outcome} \label{sec:disc}
 
 For a discrete outcome (binary, ordinal, categorical) with ordered categories $y_k$, $k = 1, \ldots, K$, the transformation model defines the conditional CDF as:
 
-\begin{equation}
+\begin{equation*}
 F(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(h(y_k \mid \mathbf{x})).
-\end{equation}
+\end{equation*}
 
 The likelihood contribution for an observation in class $y_k$ is:
 
-\begin{equation}
+\begin{equation*}
 f_{Y \mid \mathbf{X} = \mathbf{x}}(y_k) =
 \begin{cases}
 F_Z(h(y_1 \mid \mathbf{x})), & k = 1, \\
 F_Z(h(y_k \mid \mathbf{x})) - F_Z(h(y_{k-1} \mid \mathbf{x})), & k = 2, \ldots, K - 1, \\
 1 - F_Z(h(y_{K-1} \mid \mathbf{x})), & k = K.
 \end{cases}
-\end{equation}
+\end{equation*}
 
 The corresponding NLL contribution is then:
 
-\begin{equation}
+\begin{equation*}
 \text{NLL} = - \log f_{Y \mid \mathbf{X} = \mathbf{x}}(y_k).
-\end{equation}
+\end{equation*}
 
 
 
@@ -249,7 +229,7 @@ The corresponding NLL contribution is then:
 
 In TRAM-DAGs, a variable $X_i$ can act either as a predictor variable for a child node or as an outcome variable that depends on parent nodes.
 
-When $X_i$ is the outcome variable, and it is discrete with $K$ ordered categories (e.g., ordinal), its conditional distribution is modeled via a transformation function $h$ that defines $K-1$ cut-points. The modeling differences between continuous and discrete outcomes have already been discussed.
+When $X_i$ is the outcome variable, and it is discrete with $K$ ordered categories (e.g., ordinal), its conditional distribution is modeled via a transformation function $h$ that defines $K-1$ cut-points. The modeling differences between continuous and discrete outcomes have already been discussed in Sections~\ref{sec:cont} and~\ref{sec:disc}.
 
 However, when a discrete variable $X_i$ with $K$ categories is used as a predictor variable, it should be dummy encoded. Dummy encoding creates $K - 1$ binary (0/1) indicator variables. Each binary variable corresponds to one of the non-reference categories, with the first category serving as the reference level that is not explicitly represented.
 
@@ -355,9 +335,10 @@ P\left(\frac{Y - \mu_Y}{\sigma_Y} < \frac{20 - \mu_Y}{\sigma_Y} \,\middle|\, X_{
 = F_z\left(\tilde{h}\left(\frac{20 - \mu_Y}{\sigma_Y}\right) + \tilde{\beta} \cdot \frac{3 - \mu_X}{\sigma_X} \right)
 \]
 
+\medskip
+
 
 In summary, standardizing predictors changes coefficient interpretation, whereas outcome standardization does not affect interpretability or model validity.
-
 
 
 
@@ -398,7 +379,7 @@ After training the TRAM-DAG, we can visualize the resulting learned complex shif
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.5\textwidth]{img/appendix_CS_NN_interaction.pdf}
-\caption{Neural network architecture for the complex shift (CS) effect of the treatment $T$ and the covariate $X_1$ on the outcome $Y$ ($X_4$). ReLU activation and batch normalization were used in the hidden layers. The deep neural network enables interactions between the input variables.}
+\caption{Neural network architecture for the complex shift (CS) effect of the treatment $T$ and the covariate $X_1$ on the outcome ($X_4=Y$). ReLU activation and batch normalization were used in the hidden layers. The deep neural network enables interactions between the input variables.}
 \label{fig:complex_shift_nn}
 \end{figure}
 
@@ -427,7 +408,7 @@ This example demonstrates how TRAM-DAGs can be used to model interactions, which
 
 \section{Experiment 2: Calibration plots} \label{sec:calibrations_experiment2}
 
-Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show the calibration plots of predicted risks versus observed outcome proportions for the models applied in Experiment 2 (International Stroke Trial, IST).
+Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show the calibration plots of predicted risks versus observed outcome proportions for the models applied in Experiment 2 (International Stroke Trial, IST,  Section~\ref{sec:results_experiment2}).
 
 
 % It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set, but due to better generalization it leads to a better calibration on the test set.
@@ -436,7 +417,7 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \centering
 \includegraphics[width=0.45\textwidth]{img/results_IST/glm_tlearner_train_calibration_plot.png}
 \includegraphics[width=0.45\textwidth]{img/results_IST/glm_tlearner_test_calibration_plot.png}
-\caption{Calibration plot for the T-learner logistic regression applied to the International Stroke Trial (IST) in Experiment 2. The plot shows predicted risks versus observed event proportions. Left: training dataset; Right: test dataset.}
+\caption{Calibration plots for the T-learner logistic regression applied to the International Stroke Trial (IST) in Experiment 2 (Section~\ref{sec:results_experiment2}). The plots show predicted risks versus observed event proportions. Left: Training dataset; Right: Test dataset.}
 \label{fig:calibration_IST_glm}
 \end{figure}
 
@@ -445,7 +426,7 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \centering
 \includegraphics[width=0.45\textwidth]{img/results_IST/IST_tuned_rf_tlearner_train_calibration_plot.png}
 \includegraphics[width=0.45\textwidth]{img/results_IST/IST_tuned_rf_tlearner_test_calibration_plot.png}
-\caption{Calibration plot for the T-learner tuned random forest applied to the International Stroke Trial (IST) in Experiment 2. The plot shows predicted risks versus observed event proportions. Left: training dataset; Right: test dataset.}
+\caption{Calibration plots for the T-learner tuned random forest applied to the International Stroke Trial (IST) in Experiment 2 (Section~\ref{sec:results_experiment2}). The plots show predicted risks versus observed event proportions. Left: Training dataset; Right: Test dataset.}
 \label{fig:calibration_IST_tuned_rf}
 \end{figure}
 
@@ -454,7 +435,7 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \centering
 \includegraphics[width=0.45\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_train_calibration_plot.png}
 \includegraphics[width=0.45\textwidth]{img/results_IST/IST_TRAM_DAG_slearner_test_calibration_plot.png}
-\caption{Calibration plot for the S-learner TRAM-DAG applied to the International Stroke Trial (IST) in Experiment 2. The plot shows predicted risks versus observed event proportions. Left: training dataset; Right: test dataset.}
+\caption{Calibration plots for the S-learner TRAM-DAG applied to the International Stroke Trial (IST) in Experiment 2 (Section~\ref{sec:results_experiment2}). The plots show predicted risks versus observed event proportions. Left: Training dataset; Right: Test dataset.}
 \label{fig:calibration_IST_TRAM_DAG}
 \end{figure}
 
@@ -462,9 +443,9 @@ Figures \ref{fig:calibration_IST_glm}-\ref{fig:calibration_IST_TRAM_DAG} show th
 \clearpage
 
 
-\section{Experiment 3: Standard Random Forest for ITE Estimation} \label{sec:default_rf_ite}
+\section{Experiment 3: Standard random forest for ITE estimation} \label{sec:default_rf_ite}
 
-In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects (ITEs). Here, we present results from a default (untuned) random forest model in Scenario~(1), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_rf}.
+In Section~\ref{sec:ite_models}, we emphasized the importance of model calibration when estimating individualized treatment effects (ITEs). Here, we present results from a default (untuned) random forest model in Scenario~3.1 (Section~\ref{sec:exp3_sc1}), where all variables are observed and both treatment and interaction effects are strong (see Figure~\ref{fig:fully_observed_dag_rf_appendix}). The corresponding model results are shown in Figure~\ref{fig:fully_observed_rf}.
 
 The scatterplot of true vs. predicted probabilities for $P(Y_i = 1 \mid \mathbf{X} = \mathbf{x}_i, T = t_i)$ in the training set shows that the model is poorly calibrated, with predicted probabilities deviating substantially from the true values. This miscalibration carries over to the ITE estimates. The ITE-ATE plot further illustrates that the estimated ITEs are not well aligned with the observed treatment effects, in both the training and test sets.
 
@@ -475,7 +456,7 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.35\textwidth]{img/results_ITE_simulation/simulation_observed.png}
-\caption{DAG for Scenario~(1), where all variables are observed and both treatment and interaction effects are strong. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
+\caption{DAG for Scenario~3.1, where all variables are observed and both treatment and interaction effects are strong. This DAG was previously shown in Figure~\ref{fig:simulation_dags} and is re-plotted here for convenience. The numbers indicate the coefficients on the log-odds scale. Red arrows represent interaction effects between treatment ($T$) and covariates ($X_1$ and $X_2$) on the outcome ($Y$).}
 \label{fig:fully_observed_dag_rf_appendix}
 \end{figure}
 
@@ -483,7 +464,7 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{img/results_ITE_simulation/fully_observed_rf_tlearner.png}
-\caption{Results of the default random forest in Scenario~(1), where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
+\caption{Results of the default random forest in Scenario~3.1, where the DAG is fully observed and both treatment and interaction effects are strong. Left: true vs. predicted probabilities for $P(Y = 1 \mid X, T)$; Middle: true vs. predicted ITEs; Right: observed ATE in terms of risk difference per estimated ITE subgroup.}
 \label{fig:fully_observed_rf}
 \end{figure}
 
@@ -495,13 +476,13 @@ In contrast, the tuned random forest (Figure~\ref{fig:fully_tuned_rf_tlearner}) 
 
 \section{Experiment 3: Calibration plots} \label{sec:calibration_tuned_rf}
 
-Figure~\ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario (3.3) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Figure~\ref{fig:small_interaction_tuned_rf_tlearner} where we presented the true probabilities of the event $P(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set (Figure~\ref{fig:calibration_tuned_rf}; left), but due to improved generalization it leads to a better calibration on the test set (Figure~\ref{fig:calibration_tuned_rf}; right).
+Figure~\ref{fig:calibration_tuned_rf} shows the calibration plots in terms of the predicted risks against the the observed proportions of the event for the T-learner tuned random forest in Scenario~3.3 (see Section~\ref{sec:exp3_sc3}) with weak direct and interaction effects. This is in contrast to the prediction plots presented in Figure~\ref{fig:small_interaction_tuned_rf_tlearner} where we presented the true probabilities of the event $P(Y=1 \mid X, T)$ against the predicted probabilities. It becomes apparent, that tuning the random forest model out-of-bag leads to a poor calibration on the training set (Figure~\ref{fig:calibration_tuned_rf}; left), but due to improved generalization it leads to a better calibration on the test set (Figure~\ref{fig:calibration_tuned_rf}; right).
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.45\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearnertrain_calibration_plot.png}
 \includegraphics[width=0.45\textwidth]{img/results_ITE_simulation/small_interaction_tuned_rf_tlearnertest_calibration_plot.png}
-\caption{Calibration plot for the T-learner tuned random forest for Scenario (3) with weak direct and interaction treatmetn effects. It shows the predicted risks against the the observed proportions of the event. Left: training dataset; Right: test dataset.}
+\caption{Calibration plot for the T-learner tuned random forest for Scenario~3.3 (Section~\ref{sec:exp3_sc3}) with weak direct and interaction treatment effects. It shows the predicted risks against the the observed proportions of the event. Left: Training dataset; Right: Test dataset.}
 \label{fig:calibration_tuned_rf}
 \end{figure}
 
@@ -510,5 +491,5 @@ Figure~\ref{fig:calibration_tuned_rf} shows the calibration plots in terms of th
 
 \section{Declaration of tools and services used} \label{sec:declaration_tools_services}
 
-During the preparation of this thesis, I used ChatGPT, Google's Gemini and Github Copilot in order to to support language refinement, such as checking grammar, spelling and clarity of expression as well as to assist in plotting and resolving some R coding errors. After using theses tools/services, I reviewed and edited the content as needed and I take full responsibility for the content of the report.
+During the preparation of this thesis, I used ChatGPT, Google's Gemini and Github Copilot in order to support language refinement, such as checking grammar, spelling and clarity of expression as well as to assist in plotting and resolving some R coding errors. After using these tools/services, I reviewed and edited the content as needed and I take full responsibility for the content of the report.
 

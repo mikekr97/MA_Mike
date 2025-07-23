@@ -1456,11 +1456,16 @@ ATE as mean(ITE$_\text{estimated}$)
 % enforce that starts after all floats have been displayed
 \FloatBarrier
 
-
 \subsection{Discussion of Experiment 4} \label{sec:disc_experiment4}
 
+TRAM-DAGs yielded unbiased ITE estimates in Scenario~4.1 (Section~\ref{sec:exp4_sc1}) and Scenario~4.3 (Section~\ref{sec:exp4_sc3}), where strong treatment effect heterogeneity was present. This held in both the confounded and randomized settings, supporting their applicability for ITE estimation in complex causal structures when heterogeneity is strong and the DAG is fully observed.
 
-TRAM-DAGs provided unbiased estimates of ITEs in Scenario 1 (Section~\ref{sec:exp4_sc1}) and Scenario 3 (Section~\ref{sec:exp4_sc3}), where heterogeneity of treatment effects was strong. This supports our claim that TRAM-DAGs can effectively be unbiased ITE estimation in a complex scenario, if the DAG is fully observed and heterogeneity is strong.
+In Scenario~4.2 (Section~\ref{sec:exp4_sc2}), where no explicit treatment-covariate interactions were modeled, TRAM-DAGs overestimated the ITEs. However, when validating the estimated ITEs against observed outcomes in the ITE-ATE plots (Figures~\ref{fig:observ_scenario2_ite_ATE} and~\ref{fig:rct_scenario2_ite_ATE}), the model correctly suggested no large differences in treatment effects across ITE subgroups. These findings are consistent with insights from Experiment~3 (Section~\ref{ch:experiment3}), which showed that when true heterogeneity is weak, models tend to overestimate variation in treatment effects.
+
+Overall, Experiment~4 demonstrated that TRAM-DAGs can be effectively used to estimate ITEs in the presence of confounding and mediation, provided that effect heterogeneity exists and the underlying causal graph is known and fully observed. We showed this with a continuous outcome, estimating the ITE as the quantile treatment effect (QTE) at the median (Equation~\ref{eq:qte}).
+
+
+
 
 
 
@@ -1520,12 +1525,3 @@ TRAM-DAGs provided unbiased estimates of ITEs in Scenario 1 (Section~\ref{sec:ex
 
 
 % cite susanne and torsten paper: https://arxiv.org/abs/2503.01657
-
-
-
-
-
-
-
-
-
