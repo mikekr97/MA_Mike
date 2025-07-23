@@ -1,6 +1,6 @@
 # MA_Mike
 
-This repository contains the code, data, and presentation material for my Master's thesis on **Causal Modeling with Neural Networks and Individualized Treatment Effect Estimation **. The work includes multiple experiments using both simulated and real-world clinical trial data, specifically the International Stroke Trial (IST) dataset.
+This repository contains the code, data, and presentation material for my Master's thesis on **Causal Modeling with Neural Networks and Individualized Treatment Effect Estimation** . The work includes multiple experiments using both simulated and real-world clinical trial data, specifically the International Stroke Trial (IST) dataset.
 
 ---
 
