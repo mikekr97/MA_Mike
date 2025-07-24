@@ -12,7 +12,7 @@ The first focus of this thesis was the application of TRAM-DAGs, a flexible neur
 
 \medskip
 
-Experiment 1 (Section~\ref{ch:exp1}) served as a proof of concept, demonstrating that a TRAM-DAG can be fitted to simulated data generated from a known causal structure and used to sample from observational, interventional, and counterfactual distributions. Our results showed that the causal relationships could be recovered from the data, and that queries at all three levels of Pearl's causal hierarchy could be answered accurately. We also gave advice on how to handle ordinal and categorical predictors (Appendix~\ref{sec:encoding_discrete_variables}), how variable scaling affects the interpretation of coefficients (Appendix~\ref{sec:scaling_continuous_variables}), and how variable interactions can be modeled (Appendix~\ref{sec:complex_shift}).
+Experiment 1 (Section~\ref{ch:exp1}) served as a proof of concept, demonstrating that a TRAM-DAG can be fitted to simulated data generated from a known causal structure and used to sample from observational, interventional, and counterfactual distributions. Our results showed that the causal relationships could be recovered from the data, and that queries at all three levels of Pearl's causal hierarchy could be answered accurately. We also gave advice on how to handle ordinal predictors (Appendix~\ref{sec:encoding_discrete_variables}), how variable scaling affects the interpretation of coefficients (Appendix~\ref{sec:scaling_continuous_variables}), and how variable interactions can be modeled (Appendix~\ref{sec:complex_shift}).
 
 \medskip
 
@@ -33,8 +33,8 @@ Experiment~4 (Section~\ref{ch:exp4}) aimed to demonstrate that TRAM-DAGs can be 
 
 \section{Limitations}
 
-Despite the promising results, this work has several limitations. While we aimed to make the simulation scenarios as realistic as possible while still retaining some interpretability, they may not fully reflect the complexity of real-world data. However, applying and evaluating models like TRAM-DAGs on real data for causal questions such as ITE estimation is inherently difficult, as the true effects are usually unknown. TRAM-DAGs rely on neural networks, which can be computationally demanding depending on model complexity and dataset size. While TRAM-DAGs offer flexibility, they still require modeling assumptions -- for instance, regarding the scale of conditional effects -- if interpretability is to be preserved.
-
+Despite the promising results, this work has several limitations. While we aimed to make the simulation scenarios as realistic as possible while still retaining some interpretability, they may not fully reflect the complexity of real-world data. However, applying and evaluating models like TRAM-DAGs on real data for causal questions such as ITE estimation is inherently difficult, as the true effects are usually unknown. TRAM-DAGs rely on neural networks, which can be computationally demanding depending on model complexity and dataset size. While TRAM-DAGs offer flexibility, they still require modeling assumptions -- for instance, regarding the scale of conditional effects -- if interpretability is to be preserved. 
+Furthermore, when estimating the ITE for a continuous outcome (Experiment 4; Section~\ref{ch:exp4}), we technically applied the quantile treatment effect (QTE) at the median, rather than computing the ITE in the more common way based on the expected values of potential outcomes. Depending on the field of application or research question, either approach may be appropriate. With TRAM-DAGs, ITE estimation based on expected values would also have been possible, either by repeatedly sampling from the potential outcome distributions and computing the mean, or potentially via numerical integration.
 
 
 \section{Conclusion}

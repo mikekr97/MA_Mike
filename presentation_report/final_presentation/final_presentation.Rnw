@@ -938,9 +938,9 @@ Fundamental problem of causal inference $\rightarrow$ We cannot observe both pot
 \begin{enumerate}
     \item \textsb{Consistency:} $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$ \\
     Observed outcome equals the potential outcome under the treatment actually received
-    \item \textsb{Ignorability/Unconfoundedness:} $(Y(1), Y(0)) \perp T \mid X$ \\
+    \item \textsb{Ignorability/Unconfoundedness:} $(Y(1), Y(0)) \perp T \mid \mathbf{X}$ \\
     Treatment assignment is independent of potential outcomes given observed covariates
-    \item \textsb{Overlap/Positivity:} $0 < \text{P}(T = 1 \mid X = x) < 1 \quad \text{for all } x$ \\
+    \item \textsb{Overlap/Positivity:} $0 < \text{P}(T = 1 \mid \mathbf{X} = \mathbf{x}) < 1 \quad \text{for all } \mathbf{x}$ \\
     Every individual has a positive probability of receiving each treatment level
     \item \textsb{No interference:} The treatment of one individual does not affect the potential outcomes of another individual.
 \end{enumerate}
@@ -954,13 +954,13 @@ Fundamental problem of causal inference $\rightarrow$ We cannot observe both pot
 \textbf{If assumptions for identifiability are satisfied:}
 
 \begin{align}
-\text{ITE}_i(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid \mathbf{X}_i = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
-  - \mathbb{E}[Y_i(0) \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \\
+\text{ITE}(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+&= \mathbb{E}[Y_i(1) \mid \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+&= \mathbb{E}[Y_i(1) \mid T = 1, \mathbf{X} = \mathbf{x}_i]
+  - \mathbb{E}[Y_i(0) \mid T = 0, \mathbf{X} = \mathbf{x}_i] \\
 &\quad \quad \text{(by ignorability)} \notag \\[0.5em] % Added a new line for the comment with indentation
-&= \mathbb{E}[Y_i \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i]
-  - \mathbb{E}[Y_i \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i] \notag \\
+&= \mathbb{E}[Y_i \mid T = 1, \mathbf{X} = \mathbf{x}_i]
+  - \mathbb{E}[Y_i \mid T = 0, \mathbf{X} = \mathbf{x}_i] \notag \\
 &\quad \quad \text{(by consistency)} \notag % Added a new line for the comment with indentation
 \end{align}
 
@@ -971,7 +971,7 @@ For a binary outcome:
 \vspace{-0.5cm}
 
 \begin{equation}
-\text{ITE}_i(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T_i = 1, \mathbf{X}_i = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T_i = 0, \mathbf{X}_i = \mathbf{x}_i).
+\text{ITE}(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T = 1, \mathbf{X} = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T = 0, \mathbf{X} = \mathbf{x}_i).
 \end{equation}
 
 \end{frame}
@@ -1005,7 +1005,7 @@ For a binary outcome:
 \begin{frame}{Individualized Treatment Effect (ITE): Models}
 
 
-\textbf{How we estimated the potential outcomes $\mathbb{E}[Y_i \mid T_i = t_i, \mathbf{X}_i = \mathbf{x}_i]$?} 
+\textbf{How we estimated the potential outcomes $\mathbb{E}[Y_i \mid T = t_i, \mathbf{X} = \mathbf{x}_i]$?} 
 
 \begin{itemize}
     \item \textsb{T-learners:} Two models, separately estimated on treated and control groups
