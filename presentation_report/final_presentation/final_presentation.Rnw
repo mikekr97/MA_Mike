@@ -52,7 +52,7 @@
 
 %% The following are all optional, simply comment them
 %\subtitle{Subtitle (optional)}
-\institute{Master Program in Biostatistics www.biostat.uzh.ch\\ Master Thesis: Final Presentation}  %% optional
+\institute{Master Program in Biostatistics www.biostat.uzh.ch\\ Master Exam}  %% optional
 % leave some vertical space here
 
 \author{Mike Kr{\"a}henb{\"u}hl, Supervisors: Beate Sick, Oliver D{\"u}rr }
@@ -157,6 +157,13 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
 
 
 
+\begin{frame}[plain]
+\centering
+\vspace{0.2\textheight}
+{\usebeamercolor[fg]{title} \LARGE \textbf{TRAM-DAGs}}
+\end{frame}
+
+
 
 
 
@@ -201,7 +208,7 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
 
 \begin{frame}{TRAM-DAGs: Motivation}
 
-\textbf{Pearl's Causality Ladder}
+\textbf{Pearl's causal hierarchy} \citep{pearl_book2009}
 
 \vspace{-0.5cm}
 
@@ -281,7 +288,7 @@ Counterfactual: $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
 % \end{frame}
 \begin{frame}{TRAM-DAGs: Background}
 
-\textbf{Structural Causal Model:} Describes the causal mechanism and probabilistic uncertainty
+\textbf{Structural Causal Model:} Describes the causal mechanism and probabilistic uncertainty \citep{pearl_book2009}
 
 \vspace{0.2cm}
 
@@ -504,8 +511,8 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
     \end{itemize}
     \item We want:
     \begin{itemize}
-      \item Estimate conditional CDF of each variable
-      \item Sample from conditional distributions for causal queries with structural equations $x_i = h^{-1}(z_i \mid \text{pa}(x_i))$
+      \item Estimate $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$ of each variable $i$
+      \item Sample from conditional distributions for causal queries with structural equations $X_i = h_i^{-1}(Z_i \mid \operatorname{pa}(X_i))$
     \end{itemize}
   \end{itemize}
 
@@ -898,83 +905,142 @@ How to determine a counterfactual value for $X_2$, given some observation?
 
 
 
+\begin{frame}[plain]
+\centering
+\vspace{0.3\textheight}
+{\usebeamercolor[fg]{title} \LARGE \textbf{Individualized Treatment Effects} \\[1ex] \usebeamercolor[fg]{title} \LARGE \textbf{(ITEs)} }
+\end{frame}
 
 
-
-
+% 
 \begin{frame}{Individualized Treatment Effect (ITE): Motivation}
 
-
-\textbf{Motivation:}
+\textbf{Why ITE?}
 
 \begin{itemize}
-    \item RCT typically estimates Average Treatment Effect (ATE)
-    \item Individuals may respond differently depending on characteristics
-    \item Crucial for decision-making in personalized medicine or targeted marketing
-    \item Heterogeneous treatent effect mainly due to treatment-covariate-interactions
+  \item RCTs estimate the Average Treatment Effect (ATE)
+  \item Individuals may respond differently based on covariates
+  \item Important for personalized medicine, targeted marketing, etc.
+  \item Heterogeneity mostly driven by treatment-covariate interactions
 \end{itemize}
-    
-\textbf{Individual treatment effect:} Difference in potential outcomes
 
+% \vspace{0.5em}
+\textbf{Definition:} Difference in potential outcomes \citep{rubin2005}
 \[
 Y_i(1) - Y_i(0)
 \]
 
-, where $Y_i(1)$ is the potential outcome if treated and $Y_i(0)$ if not treated.
+\textit{where \( Y_i(1) \): outcome if treated, \( Y_i(0) \): if not treated}
 
-% arrow Fundamental Problem of Causal Inference:} We cannot observe both potential outcomes for the same individual.
+% \vspace{0.5em}
+\textbf{Fundamental problem:} We never observe both \( Y_i(1) \) and \( Y_i(0) \) for the same individual \citep{holland1986}
 
-Fundamental problem of causal inference $\rightarrow$ We cannot observe both potential outcomes for the same individual.
 
 \end{frame}
 
 
 
-\begin{frame}{Individualized Treatment Effect (ITE): Assumptions}
+% 
+% \begin{frame}{Individualized Treatment Effect (ITE): Motivation}
+% 
+% 
+% \textbf{Motivation:}
+% 
+% \begin{itemize}
+%     \item RCT typically estimates Average Treatment Effect (ATE)
+%     \item Individuals may respond differently depending on characteristics
+%     \item Crucial for decision-making in personalized medicine or targeted marketing
+%     \item Heterogeneous treatment effect mainly due to treatment-covariate-interactions
+% \end{itemize}
+%     
+% \textbf{Individual treatment effect:} Difference in potential outcomes
+% 
+% \[
+% Y_i(1) - Y_i(0)
+% \]
+% 
+% , where $Y_i(1)$ is the potential outcome if treated and $Y_i(0)$ if not treated.
+% 
+% % arrow Fundamental Problem of Causal Inference:} We cannot observe both potential outcomes for the same individual.
+% 
+% Fundamental problem of causal inference $\rightarrow$ We cannot observe both potential outcomes for the same individual.
+% 
+% \end{frame}
 
 
-\textbf{Assumptions for identifiability of causal effects from observed data:}
 
-\begin{enumerate}
-    \item \textsb{Consistency:} $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$ \\
-    Observed outcome equals the potential outcome under the treatment actually received
-    \item \textsb{Ignorability/Unconfoundedness:} $(Y(1), Y(0)) \perp T \mid \mathbf{X}$ \\
-    Treatment assignment is independent of potential outcomes given observed covariates
-    \item \textsb{Overlap/Positivity:} $0 < \text{P}(T = 1 \mid \mathbf{X} = \mathbf{x}) < 1 \quad \text{for all } \mathbf{x}$ \\
-    Every individual has a positive probability of receiving each treatment level
-    \item \textsb{No interference:} The treatment of one individual does not affect the potential outcomes of another individual.
-\end{enumerate}
+% \begin{frame}{Individualized Treatment Effect (ITE): Assumptions}
+% 
+% 
+% \textbf{Assumptions for identifiability of causal effects from observed data:}
+% 
+% \begin{enumerate}
+%     \item \textsb{Consistency:} $Y = Y(1)$ if $T = 1$, and $Y = Y(0)$ if $T = 0$ \\
+%     Observed outcome equals the potential outcome under the treatment actually received
+%     \item \textsb{Ignorability/Unconfoundedness:} $(Y(1), Y(0)) \perp T \mid \mathbf{X}$ \\
+%     Treatment assignment is independent of potential outcomes given observed covariates
+%     \item \textsb{Overlap/Positivity:} $0 < \text{P}(T = 1 \mid \mathbf{X} = \mathbf{x}) < 1 \quad \text{for all } \mathbf{x}$ \\
+%     Every individual has a positive probability of receiving each treatment level
+%     \item \textsb{No interference:} The treatment of one individual does not affect the potential outcomes of another individual.
+% \end{enumerate}
+% 
+% \end{frame}
 
+% 
+% 
+% \begin{frame}{Individualized Treatment Effect (ITE): Estimand}
+% 
+% \textbf{If assumptions for identifiability are satisfied:}
+% 
+% \begin{align}
+% \text{ITE}(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+% &= \mathbb{E}[Y_i(1) \mid \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
+% &= \mathbb{E}[Y_i(1) \mid T = 1, \mathbf{X} = \mathbf{x}_i]
+%   - \mathbb{E}[Y_i(0) \mid T = 0, \mathbf{X} = \mathbf{x}_i] \\
+% &\quad \quad \text{(by ignorability)} \notag \\[0.5em] % Added a new line for the comment with indentation
+% &= \mathbb{E}[Y_i \mid T = 1, \mathbf{X} = \mathbf{x}_i]
+%   - \mathbb{E}[Y_i \mid T = 0, \mathbf{X} = \mathbf{x}_i] \notag \\
+% &\quad \quad \text{(by consistency)} \notag % Added a new line for the comment with indentation
+% \end{align}
+% 
+% 
+% 
+% For a binary outcome:
+% 
+% \vspace{-0.5cm}
+% 
+% \begin{equation}
+% \text{ITE}(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T = 1, \mathbf{X} = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T = 0, \mathbf{X} = \mathbf{x}_i).
+% \end{equation}
+% 
+% \end{frame}
+% 
+
+
+
+
+\begin{frame}{From Unobservable to Estimable ITE}
+\small
+\textbf{Goal:} Estimate the \textit{individualized treatment effect (ITE)} from observed data \citep{hoogland2021}.
+
+\vspace{0.5em}
+\begin{align*}
+\text{ITE}(\mathbf{x}_i) 
+&= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \\
+&= \mathbb{E}[Y_i(1) \mid T=1, \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid T=0, \mathbf{X} = \mathbf{x}_i] \\
+& \quad \textit{\footnotesize (by ignorability/exchangeability: no unmeasured confounding)} \\[0.5em]
+&= \mathbb{E}[Y_i \mid T=1, \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i \mid T=0, \mathbf{X} = \mathbf{x}_i] \\
+& \quad \textit{\footnotesize (by consistency: observed = potential outcome, e.g. correct label)}
+\end{align*}
+
+\vspace{0.7em}
+\textbf{Further assumptions:}
+\begin{itemize}
+  \item \textbf{Positivity:} every individual could receive either treatment (e.g. no deterministic assignment)
+  \item \textbf{No interference:} one person's treatment doesn't affect another's outcome
+\end{itemize}
 \end{frame}
 
-
-
-\begin{frame}{Individualized Treatment Effect (ITE): Estimand}
-
-\textbf{If assumptions for identifiability are satisfied:}
-
-\begin{align}
-\text{ITE}(\mathbf{x}_i) &= \mathbb{E}[Y_i(1) - Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid \mathbf{X} = \mathbf{x}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X} = \mathbf{x}_i] \notag \\[0.5em]
-&= \mathbb{E}[Y_i(1) \mid T = 1, \mathbf{X} = \mathbf{x}_i]
-  - \mathbb{E}[Y_i(0) \mid T = 0, \mathbf{X} = \mathbf{x}_i] \\
-&\quad \quad \text{(by ignorability)} \notag \\[0.5em] % Added a new line for the comment with indentation
-&= \mathbb{E}[Y_i \mid T = 1, \mathbf{X} = \mathbf{x}_i]
-  - \mathbb{E}[Y_i \mid T = 0, \mathbf{X} = \mathbf{x}_i] \notag \\
-&\quad \quad \text{(by consistency)} \notag % Added a new line for the comment with indentation
-\end{align}
-
-
-
-For a binary outcome:
-
-\vspace{-0.5cm}
-
-\begin{equation}
-\text{ITE}(\mathbf{x}_i) = \text{P}(Y_i = 1 \mid T = 1, \mathbf{X} = \mathbf{x}_i) - \text{P}(Y_i = 1 \mid T = 0, \mathbf{X} = \mathbf{x}_i).
-\end{equation}
-
-\end{frame}
 
 % 
 % \begin{frame}{Individualized Treatment Effect (ITE): Estimand}
@@ -1002,27 +1068,56 @@ For a binary outcome:
 
 
 
+
 \begin{frame}{Individualized Treatment Effect (ITE): Models}
 
+\small
+\textbf{How did we estimate the potential outcomes \( \mathbb{E}[Y_i \mid T = t, \mathbf{X} = \mathbf{x}_i] \)?}
 
-\textbf{How we estimated the potential outcomes $\mathbb{E}[Y_i \mid T = t_i, \mathbf{X} = \mathbf{x}_i]$?} 
-
+\vspace{0.5em}
 \begin{itemize}
-    \item \textsb{T-learners:} Two models, separately estimated on treated and control groups
-      \begin{itemize}
-        \item Logistic regression
-        \item Random forest (with hyperparameter tuning)
-      \end{itemize}
-    \item \textsb{S-learners:} One model, with treatment as a feature
-      \begin{itemize}
-        \item TRAM-DAGs (with complex intercept; fully flexible)
-      \end{itemize}
-\end{itemize}
+  \item \textsb{T-learner:} 
+    \begin{enumerate}
+      \item Fit two separate models on treated and control groups
+      \item Predict \( \mathbb{E}[Y_i \mid \mathbf{X} = \mathbf{x}_i] \) from each model
+    \end{enumerate}
+    \begin{itemize}
+      \item Logistic regression / Random forest (with hyperparameter tuning)
+    \end{itemize}
 
+  \item \textsb{S-learner:} 
+    \begin{enumerate}
+      \item Fit one model on all data with treatment as a feature
+      \item Predict \( \mathbb{E}[Y_i \mid \text{do}(T = t), \mathbf{X} = \mathbf{x}_i] \) by setting \( T = 0 \) and \( T = 1 \)
+    \end{enumerate}
+    \begin{itemize}
+      \item TRAM-DAGs (SCM, flexible, interactions, generative)
+    \end{itemize}
+\end{itemize}
 
 \end{frame}
 
 
+
+
+% \begin{frame}{Individualized Treatment Effect (ITE): Models}
+% 
+% \small
+% \textbf{How did we estimate the potential outcomes \( \mathbb{E}[Y_i \mid T = t, \mathbf{X} = \mathbf{x}_i] \)?}
+% 
+% \vspace{0.5em}
+% \begin{itemize}
+%   \item \textsb{T-learner:} 1) fit two separate models on treated and control groups 2) with each model predict\( \mathbb{E}[Y_i \mid \mathbf{X} = \mathbf{x}_i] \)
+%     \begin{itemize}
+%       \item Logistic regression / Random forest (with hyperparameter tuning)
+%     \end{itemize}
+%   \item \textsb{S-learner:} 1) fit one model on all data with treatment as a feature 2) predict \( \mathbb{E}[Y_i \mid do(T = t), \mathbf{X} = \mathbf{x}_i] \)
+%     \begin{itemize}
+%       \item TRAM-DAGs (flexible, deep architecture with treatment-aware design)
+%     \end{itemize}
+% \end{itemize}
+% 
+% \end{frame}
 
 
 
@@ -1540,17 +1635,32 @@ Results with T-learner Random Forest (\texttt{comets} package):
 
 
 
-
-
-
 \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
-
-
 \centering
-\includegraphics[width=0.9\textwidth]{img/observedITE_ATE_base.png}
-
-
+\begin{minipage}{0.34\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{img/Experiment4/observ_scenario1_ITE_densities_train_test.png}
+\end{minipage}
+\hspace{0.05\textwidth} % Smaller fixed horizontal spacing
+\begin{minipage}{0.34\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{img/Experiment4/observ_scenario1_ITE_scatter_train_test.png}
+\end{minipage}
 \end{frame}
+
+
+
+% ITE-ATE plot biased because confounded? (observational)
+
+% \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
+% 
+% 
+% \centering
+% \includegraphics[width=0.9\textwidth]{img/observedITE_ATE_base.png}
+% 
+% 
+% 
+% \end{frame}
 
 
 
