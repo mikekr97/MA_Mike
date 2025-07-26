@@ -1249,7 +1249,7 @@ Y_i(1) - Y_i(0)
 \textbf{Motivation:} ITE estimation failed on the real-world RCT of the International Stroke Trial (IST). We want to know why.
 
 
-\textsb{Research question:} What factors contribute to the failure of ITE estimation in causal ML models? %, and under which conditions can reliable estimates be obtained?
+\textsb{Research question:} What factors contribute to the failure of ITE estimation in causal models? %, and under which conditions can reliable estimates be obtained?
 
 \textsb{Setup:}
 \begin{itemize}
@@ -1325,6 +1325,16 @@ Results with T-learner tuned random forest (\texttt{comets} package):
 
 \end{frame}
 
+
+
+\begin{frame}{Simulation Case 1: Fully Observed}
+
+Results with (untuned) T-learner random forest (\texttt{randomForest} package):
+
+% Below: image
+\includegraphics[width=\textwidth]{img/fully_observed_rf_tlearner.png}
+
+\end{frame}
 
 
 
@@ -1463,20 +1473,36 @@ Results with T-learner Random Forest (\texttt{comets} package):
 
 
 
-
-
 \begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
 
-\textbf{Discussion:} 
+\small
 
+\textbf{Key Insights:}
 \begin{itemize}
-    \item When a high predicted treatment effect (ITE) corresponds to a high observed effect in the train set (strong discrimination), but not in the test set, it might be due to \textbf{unobserved interaction variables} or \textbf{weak treatment effects}.
-    \item This is more likely to occur with complex models, as they tend to overfit when the interaction is not observed.
-    % as they tend to predict a wider range of ITEs than simpler models
+  \item \textsb{Calibration} and tuning of models are crucial for reliable ITE estimation
+  \item Ignorability alone may not guarantee unbiased ITEs if important \textsb{effect modifiers are unobserved}
+  \item \textsb{Low true heterogeneity} may be mistaken for model failure
 \end{itemize}
 
+These factors may explain the limited ITE performance in the IST dataset.
 
 \end{frame}
+
+
+% 
+% 
+% \begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
+% 
+% \textbf{Discussion:} 
+% 
+% \begin{itemize}
+%     \item When a high predicted treatment effect (ITE) corresponds to a high observed effect in the train set (strong discrimination), but not in the test set, it might be due to \textbf{unobserved interaction variables} or \textbf{weak treatment effects}.
+%     \item This is more likely to occur with complex models, as they tend to overfit when the interaction is not observed.
+%     % as they tend to predict a wider range of ITEs than simpler models
+% \end{itemize}
+% 
+% 
+% \end{frame}
 
 
 
@@ -1663,42 +1689,42 @@ Results with T-learner Random Forest (\texttt{comets} package):
 % \end{frame}
 
 
-
-\begin{frame}{Conclusion: Key Findings \& Outlook}
-
-\textbf{TRAM-DAGs:}
-\begin{itemize}\setlength\itemsep{4pt}
-  \item Flexible and customizable; recovers known causal structure
-  \item Captures interactions between variables
-\end{itemize}
-
-\textbf{ITE Estimation:}
-\begin{itemize}\setlength\itemsep{4pt}
-  \item Calibration is crucial
-  \item Sensitive to missing effect modifiers or weak heterogeneity
-  \item TRAM-DAGs yield unbiased ITEs when DAG is correct and heterogeneity exists
-\end{itemize}
-
-\textbf{Limitations:}
-Simulations simplify reality; modeling assumptions affect interpretability (e.g., scale of effects)
-
-\textbf{Recommendations:}
-Apply TRAM-DAGs to real-world data; study ITE estimation under unobserved effect modifiers
-
-\end{frame}
-
-
+% 
+% \begin{frame}{Conclusion: Key Findings \& Outlook}
+% 
+% \textbf{TRAM-DAGs:}
+% \begin{itemize}\setlength\itemsep{4pt}
+%   \item Flexible and customizable; recovers known causal structure
+%   \item Captures interactions between variables
+% \end{itemize}
+% 
+% \textbf{ITE Estimation:}
+% \begin{itemize}\setlength\itemsep{4pt}
+%   \item Calibration is crucial
+%   \item Sensitive to missing effect modifiers or weak heterogeneity
+%   \item TRAM-DAGs yield unbiased ITEs when DAG is correct and heterogeneity exists
+% \end{itemize}
+% 
+% \textbf{Limitations:}
+% Simulations simplify reality; modeling assumptions affect interpretability (e.g., scale of effects)
+% 
+% \textbf{Recommendations:}
+% Apply TRAM-DAGs to real-world data; study ITE estimation under unobserved effect modifiers
+% 
+% \end{frame}
 
 
 
-\begin{frame}{Outlook}
+
+
+\begin{frame}{Key Findings}
 
 % check findings in thesis
 
 \textbf{Findings: TRAM-DAGs}
 
 \begin{itemize}
-\item Customizable; accurately recovers causal relationships in known DAG
+\item Customizable; accurately recovers causal relationships in known DAG; allows sampling of L1-L3
 % \item Customizable in terms of flexibility/interpretability
 \item Can model interactions between variables
 \end{itemize}
@@ -1709,16 +1735,47 @@ Apply TRAM-DAGs to real-world data; study ITE estimation under unobserved effect
 \item Calibration is important for ITE prediction
 % \item ITE estimation on International Stroke Trial failed
 \item Missing effect modifiers (or weak heterogeneity) are problematic
-\item TRAM-DAGs estimate unbiased ITEs in complex DAG if fully known and heterogeneity in treatment effects is present
+\item TRAM-DAGs yield unbiased ITEs when DAG is correct and heterogeneity exists
 \end{itemize}
 
-\textbf{Limitations:} Simulations may not represent real-world complexity, TRAM-DAGs require modeling assumptions -- for instance, regarding the scale of conditional effects -- if interpretability is to be preserved
-
-
-\textbf{Recommendations:} Apply TRAM-DAGs on real-world data; ITE estimation under unobserved effect modifiers
 
 \end{frame}
 
+
+% 
+% \begin{frame}{Outlook}
+% 
+% % check findings in thesis
+% 
+% 
+% 
+% \textbf{Limitations:} TRAM-DAGs: Simulations may not represent real-world complexity; to ensure interpretable coefficients are valid, the correct model must be fitted; requires considerable training time. ITE: for continuous outcome we used QTE at the median
+% 
+% 
+% \textbf{Recommendations:} Apply TRAM-DAGs on real-world data; ITE estimation under unobserved effect modifiers
+% 
+% \end{frame}
+
+\begin{frame}{Outlook}
+
+\small
+\textbf{Limitations}
+\begin{itemize}
+  \item Simulations may not reflect real-world complexity
+  \item TRAM-DAGs are computationally expensive (long training time)
+  \item TRAM-DAGs require correct model specification for interpretability
+  \item ITE estimation used median QTE for continuous outcomes
+\end{itemize}
+
+
+\vspace{0.5em}
+\textbf{Recommendations}
+\begin{itemize}
+  \item Apply TRAM-DAGs to real-world datasets, including semi-structured data
+  \item Investigate ITE estimation under unobserved effect modifiers
+\end{itemize}
+
+\end{frame}
 
 % 
 % \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
@@ -1751,11 +1808,18 @@ Apply TRAM-DAGs to real-world data; study ITE estimation under unobserved effect
 % \end{frame}
 
 
-
-\begin{frame}{References}
+\begin{frame}[allowframebreaks, noframenumbering]{References}
   \small
   \bibliographystyle{apalike}
-\bibliography{C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/literature/bibSTA490}
+  \bibliography{C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/literature/bibSTA490}
 \end{frame}
+
+% 
+% 
+% \begin{frame}{References}
+%   \small
+%   \bibliographystyle{apalike}
+% \bibliography{C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/literature/bibSTA490}
+% \end{frame}
 
 \end{document}
