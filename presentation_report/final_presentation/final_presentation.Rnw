@@ -47,7 +47,9 @@
 
 
 % \title{Neural Causal Models with TRAM-DAGs}
-\title{\normalsize Functional Modeling with Neural Causal Models and Personalized Treatment Effect Estimation}
+\title{\normalsize Causal Modeling with Neural Networks \\
+and Individualized Treatment Effect Estimation}
+
 
 
 %% The following are all optional, simply comment them
