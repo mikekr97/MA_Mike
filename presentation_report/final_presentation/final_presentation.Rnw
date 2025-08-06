@@ -57,8 +57,12 @@ and Individualized Treatment Effect Estimation}
 \institute{Master Program in Biostatistics www.biostat.uzh.ch\\ Master Exam}  %% optional
 % leave some vertical space here
 
-\author{Mike Kr{\"a}henb{\"u}hl, Supervisors: Beate Sick, Oliver D{\"u}rr }
+% \author{Mike Kr{\"a}henb{\"u}hl, Supervisors: Beate Sick, Oliver D{\"u}rr }
+
+\author{Mike Kr{\"a}henb{\"u}hl \\
+Supervisors: Prof. Dr. Beate Sick (UZH), Prof. Dr. Oliver D{\"u}rr (HTWG Konstanz)\\[1ex]}
 \date{\today}
+
 \titlegraphic{img/uzh-lake.jpg}
 
 
@@ -104,15 +108,11 @@ library(ggplot2)
 
 % Left side: Text (approx. 3/4 of the slide)
 \begin{column}{0.7\textwidth}
-\textbf{Supervisors:}
-\begin{itemize}
-    \item Beate Sick, UZH
-    \item Oliver D{\"u}rr, HTWG Konstanz
-\end{itemize}
+
 
 \textbf{Paper \textit{"Interpretable Neural Causal Models with TRAM-DAGs"} \citep{sick2025}:}
 \begin{itemize}
-    \item Framework to model causal relationships
+    \item Framework to model causal relationships in a known directed acyclic graph (DAG)
     \item Based on transformation models
     \item Rely on (deep) neural networks
     \item Compromise between interpretability and flexibility
@@ -145,12 +145,12 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
     \item TRAM-DAGs
     
     \begin{itemize}
-        \item How do they work?
+        \item How to fit the model on observed data and subsequently make observational, interventional and counterfactual queries?
     \end{itemize}
     
     \item Individualized Treatment Effect (ITE) estimation
     \begin{itemize}
-        \item Does it work on real data (International Stroke Trial)?
+        \item Does ITE estimation work on real RCT data (International Stroke Trial)?
         \item When and why does ITE estimation fail (simulation)?
         \item How to estimate ITEs with TRAM-DAGs in a complicated graph (simulation)?
     \end{itemize}
@@ -217,25 +217,25 @@ They showed on synthetic data, that TRAM-DAGs can be fitted on observational dat
 \begin{columns}
 
 % Left side: Text (60%)
-\begin{column}{0.63\textwidth}
+\begin{column}{0.7\textwidth}
 
-Observational: $P(Y=1 \mid E=1)$ \\
+(L1) Observational: $P(Y=1 \mid E=1)$ \\
 {\footnotesize \textit{"Probability of heart disease given that the person exercises"}}
 
-\vspace{0.4cm}
+\vspace{0.6cm}
 
-Interventional: $P(Y=1 \mid \text{do}(E=1))$ \\
+(L2) Interventional: $P(Y=1 \mid \text{do}(E=1))$ \\
 {\footnotesize \textit{"Probability of heart disease if we made people start exercising"}} 
 
-\vspace{0.4cm}
+\vspace{0.6cm}
 
-Counterfactual: $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
+(L3) Counterfactual: $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
 {\footnotesize \textit{"Would someone who does not exercise and has heart disease still have it if they had exercised?"}}
 
 \end{column}
 
 % Right side: Image (40%)
-\begin{column}{0.40\textwidth}
+\begin{column}{0.33\textwidth}
 \includegraphics[width=1\linewidth]{img/Pearls_Ladder.png}
 \end{column}
 
@@ -292,21 +292,26 @@ Counterfactual: $P(Y_{(E=1)} = 1 \mid E=0, Y=1)$ \\
 
 \textbf{Structural Causal Model:} Describes the causal mechanism and probabilistic uncertainty \citep{pearl_book2009}
 
-\vspace{0.2cm}
+% \vspace{0.2cm}
+
+
+{ % start of centering group
+\centering
+\includegraphics[width=0.85\textwidth]{img/SCM.png}
+} 
 
 \begin{itemize}
-    \item $X_i$ = observed variable
-    \item $Z_i$ = noise distribution
-    \item $f_i$ = deterministic function: $X_i = f_i(Z_i, \text{pa}_i)$
+    \item $X_i$ : observed variable
+    \item $Z_i$ : exogeneous (latent) variable
+    \item $f_i$ : deterministic function: $X_i = f_i(Z_i, \text{pa}(X_i))$
     % \item $f$ = in our case: $X_2 = f(X_1, U) = h^{-1}(U_{\text{logis}} - \mathbf{x}^\top \boldsymbol{\beta})$
 \end{itemize}
 
-$\rightarrow$ We want a model that estimates $X_i = f_i(Z_i, \text{pa}_i)$ in a flexible and interpretable way!
+$\rightarrow$ We want a model that estimates $X_i = f_i(Z_i, \text{pa}(X_i))$ in a flexible and interpretable way!
 
-\vfill
+% \vfill
 
-\centering
-\includegraphics[width=0.85\textwidth]{img/SCM.png}
+
 
 
 
@@ -390,7 +395,7 @@ Proposed framework: TRAM-DAGs \citep{sick2025}
 
 \textsb{Continuous } $Y \in \mathbb{R}$: 
 \[
-F_{Y \mid \mathbf{X} = \mathbf{x}}(y) = F_Z(h(y) + \mathbf{x}^\top \boldsymbol{\beta})
+F_{Y \mid \mathbf{X} = \mathbf{x}}(y) = F_Z(h(y \mid \mathbf{x})) = F_Z(h(y) + \mathbf{x}^\top \boldsymbol{\beta}) 
 \]
 
 \textsb{Discrete } $Y \in \{y_1, y_2, \ldots, y_K\}$: 
@@ -514,7 +519,7 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
     \item We want:
     \begin{itemize}
       \item Estimate $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$ of each variable $i$
-      \item Sample from conditional distributions for causal queries with structural equations $X_i = h_i^{-1}(Z_i \mid \operatorname{pa}(X_i))$
+      \item Sample from conditional distributions to make causal queries
     \end{itemize}
   \end{itemize}
 
@@ -705,7 +710,7 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 \textsb{Outputs:}
 \begin{itemize}
     \item Simple Intercepts (SI): $\textcolor{violet}{\vartheta}$
-    \item Linear Shifts (LS): $\textcolor{red}{\beta_{12}X_1}, \textcolor{red}{\beta_{13}X_2}$
+    \item Linear Shifts (LS): $\textcolor{red}{\beta_{12}X_1}, \textcolor{red}{\beta_{13}X_1}$
     \item Complex Shift (CS):  $\textcolor{blue}{f(X_2)}$
 \end{itemize}
 
@@ -761,7 +766,7 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 
 
-\begin{frame}{Sampling from the Fitted TRAM-DAG}
+\begin{frame}{Sampling from the Fitted TRAM-DAG (L1)}
 
 \begin{columns}
 
@@ -865,17 +870,45 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 
 
-\begin{frame}{Experiment 1: TRAM-DAGs (simulation)}
+% \begin{frame}{Experiment 1: TRAM-DAGs (simulation)}
+% 
+% How to determine a counterfactual value for $X_2$, given some observation?
+% 
+%   \centering
+%   \includegraphics[width=0.95\linewidth]{img/experiment1/counterfactuals.png}
+% 
+% \end{frame}
 
-How to determine a counterfactual value for $X_2$, given some observation?
 
-  \centering
-  \includegraphics[width=0.95\linewidth]{img/experiment1/counterfactuals.png}
 
+\begin{frame}{Experiment 1: TRAM-DAGs (Simulation)}
+
+\vspace{-0.5em}
+How to determine a counterfactual value for \(X_2\) using Pearl's 3-step procedure \citep{pearl_book2009}:
+
+\vspace{0.5em}
+\begin{columns}
+
+% Left column: Pearl's 3 steps
+\begin{column}{0.35\textwidth}
+\small
+
+\vspace{0.5em}
+\begin{enumerate}
+    \item \textbf{Abduction}: Infer \(Z\) from observed data
+    \item \textbf{Action}: Modify SCM (e.g., do($X = \alpha$))
+    \item \textbf{Prediction}: Infer counterfactual outcome
+\end{enumerate}
+\end{column}
+
+% Right column: visualization
+\begin{column}{0.65\textwidth}
+\centering
+\includegraphics[width=\linewidth]{img/experiment1/counterfactuals.png}
+\end{column}
+
+\end{columns}
 \end{frame}
-
-
-
 
 
 
@@ -935,7 +968,7 @@ Y_i(1) - Y_i(0)
 \textit{where \( Y_i(1) \): outcome if treated, \( Y_i(0) \): if not treated}
 
 % \vspace{0.5em}
-\textbf{Fundamental problem:} We never observe both \( Y_i(1) \) and \( Y_i(0) \) for the same individual \citep{holland1986}
+\textbf{Fundamental problem:} We never observe both \( Y_i(1) \) and \( Y_i(0) \) for the same individual \citep{holland1986}.
 
 
 \end{frame}
@@ -1039,7 +1072,7 @@ Y_i(1) - Y_i(0)
 \textbf{Further assumptions:}
 \begin{itemize}
   \item \textbf{Positivity:} every individual could receive either treatment (e.g. no deterministic assignment)
-  \item \textbf{No interference:} one person's treatment doesn't affect another's outcome
+  \item \textbf{No interference:} one person's treatment does not affect another's outcome
 \end{itemize}
 \end{frame}
 
@@ -1093,7 +1126,7 @@ Y_i(1) - Y_i(0)
       \item Predict \( \mathbb{E}[Y_i \mid \text{do}(T = t), \mathbf{X} = \mathbf{x}_i] \) by setting \( T = 0 \) and \( T = 1 \)
     \end{enumerate}
     \begin{itemize}
-      \item TRAM-DAGs (SCM, flexible, interactions, generative)
+      \item TRAM-DAGs (flexible, interactions, interventions/counterfactuals)
     \end{itemize}
 \end{itemize}
 
@@ -1134,13 +1167,13 @@ Y_i(1) - Y_i(0)
 
 \begin{itemize}
     \item Large RCT on stroke patients (19,435 patients, 21 baseline covariates)
-    \item Evaluated the effects of aspirin on stroke patients
+    \item Evaluated the effects of aspirin on death or dependence at 6 months
     \item Binary treatment and outcome
 \end{itemize}
 
 
 
-\textsb{Research question:} Do we reach similar conclusion as \citet{chen2025} when estimating ITEs with T-learners (logistic regression, tuned random forest) and S-learner (TRAM-DAGs) on IST dataset.
+\textsb{Research question:} Do we reach similar conclusion as \citet{chen2025} when estimating ITEs with T-learners (logistic regression, tuned random forest) and an S-learner (TRAM-DAGs) on the IST dataset.
 
 \end{frame}
 
@@ -1160,7 +1193,7 @@ Y_i(1) - Y_i(0)
 
 \begin{frame}{Experiment 2: ITE on International Stroke Trial (IST)}
 
-\textbf{Results:} with T-learner tuned random forest (\texttt{comets} package \citep{comets}):
+\textbf{Results:} with T-learner tuned random forest using the \texttt{comets} package \citep{comets}:
 
 % Below: image
 \includegraphics[width=\textwidth]{img/Experiment2/IST_tuned_rf_tlearner_density_ITE_ATE.png}
@@ -1175,8 +1208,8 @@ Y_i(1) - Y_i(0)
 
 \begin{itemize}
     \item We obtained similar results as \citet{chen2025}
-    \item Some models suggest a range of ITEs, but these ITEs do not generalize to the test set (no effect)
-    \item We do not know why, since ground truth is unknown
+    \item Some models suggest moderate treatment effect heterogeneity, but the ITEs do not generalize to the test set (no effect)
+    \item We do not certainly know why, since ground truth is unknown
 \end{itemize}
 
 \end{frame}
@@ -1248,7 +1281,7 @@ Y_i(1) - Y_i(0)
 
 \begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
 
-\textbf{Motivation:} ITE estimation failed on the real-world RCT of the International Stroke Trial (IST). We want to know why.
+\textbf{Motivation:} ITE estimation did not generalize to the test data on the real-world RCT of the International Stroke Trial (IST). We want to know why!
 
 
 \textsb{Research question:} What factors contribute to the failure of ITE estimation in causal models? %, and under which conditions can reliable estimates be obtained?
@@ -1311,6 +1344,7 @@ Y_i(1) - Y_i(0)
 \begin{frame}{Simulation Case 1: Fully Observed}
 
 Results with T-learner logistic regression (glm):
+\vfill
 
 % Below: image
 \includegraphics[width=\textwidth]{img/fully_observed_glm_tlearner.png}
@@ -1322,6 +1356,7 @@ Results with T-learner logistic regression (glm):
 
 Results with T-learner tuned random forest (\texttt{comets} package):
 
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/observed_tuned_rf.png}
 
@@ -1331,8 +1366,9 @@ Results with T-learner tuned random forest (\texttt{comets} package):
 
 \begin{frame}{Simulation Case 1: Fully Observed}
 
-Results with (untuned) T-learner random forest (\texttt{randomForest} package):
+Results with (untuned) T-learner random forest using the \texttt{randomForest} package \citep{breiman2001}:
 
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/fully_observed_rf_tlearner.png}
 
@@ -1390,7 +1426,7 @@ Results with (untuned) T-learner random forest (\texttt{randomForest} package):
 \begin{frame}{Simulation Case 2: Unobserved Interaction}
 
 Results with T-learner logistic regression (glm):
-
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/unobserved_interaction_glm_tlearner.png}
 
@@ -1399,7 +1435,7 @@ Results with T-learner logistic regression (glm):
 \begin{frame}{Simulation Case 2: Unobserved Interaction}
 
 Results with T-learner tuned random forest (\texttt{comets} package):
-
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/unobserved_tuned_rf.png}
 
@@ -1457,7 +1493,7 @@ Results with T-learner tuned random forest (\texttt{comets} package):
 \begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
 
 Results with T-learner logistic regression (glm):
-
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/small_interaction_glm_tlearner.png}
 
@@ -1466,8 +1502,8 @@ Results with T-learner logistic regression (glm):
 
 \begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
 
-Results with T-learner Random Forest (\texttt{comets} package):
-
+Results with T-learner tuned random forest (\texttt{comets} package):
+\vfill
 % Below: image
 \includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}
 
@@ -1578,21 +1614,24 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
-\begin{frame}{TRAM-DAGs: Example for ITE estimation}
+\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
 
 \centering
 \includegraphics[width=0.8\textwidth]{img/dag_ITE_observational.png}
-\normalsize
 
-\vspace{1em} % optional spacing
+% \normalsize
+
+% \vspace{1em} % optional spacing
 \raggedright % <--- Ends centering and left-aligns following text
 
 \small
-\textbf{DGP:}
+\textbf{DGP:}\vspace{-0.5em}
 \begin{itemize}
-    \item $X5 = h_5^{-1}(\epsilon - 0.8 \, X4 )$ \hspace{1em} $\rightarrow$ (depends on treatment)
-    \item $X6 = h_6^{-1}(\epsilon + 0.5 \, X5)$ \hspace{1em} $\rightarrow$ (depends on treatment through X5)
-    \item $Y = h_7^{-1}(\epsilon - \beta_1 X1 - \beta_2 X2 - \beta_3 X3 - \beta_4 X4 - \beta_5 X5 - \beta_6 X6 - \textcolor{red}{Tr \cdot (\beta_{2Tr} X2 + \beta_{3Tr} X3)})$
+    \item $X_1, X_2, X_3 \sim \mathcal{N}(\mathbf{0}, \Sigma)$
+    \item $X_4$ (treatment) depends probabilistically on $X_1$ and $X_2$ via a logistic model
+    \item $X_5 = h_5^{-1}(Z_5 - 0.8 \, X_4 )$ \hspace{1em} $\rightarrow$ (depends on treatment)
+    \item $X_6 = h_6^{-1}(Z_6 + 0.5 \, X_5)$ \hspace{1em} $\rightarrow$ (depends on treatment through $X_5$)
+    \item $Y = h_7^{-1}(Z_7 - \beta_1 X_1 - \beta_2 X_2 - \beta_3 X_3 - \beta_4 X_4 - \beta_5 X_5 - \beta_6 X_6 - \textcolor{red}{X_4 \cdot (\beta_{2,Tr} X_2 + \beta_{3,Tr} X_3)})$
 \end{itemize}
 
 \end{frame}
@@ -1615,10 +1654,12 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
-\begin{frame}{TRAM-DAGs: Example for ITE estimation}
+\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+
+We define the ITE as the difference in medians of potential outcomes:
 
 \[
-\text{ITE} = \operatorname{median}(Y \mid \text{do}(T = 1), X) - \operatorname{median}(Y \mid \text{do}(T = 0), X)
+\text{ITE} = \operatorname{median}(Y \mid \text{do}(T = 1), \mathbf{X}) - \operatorname{median}(Y \mid \text{do}(T = 0), \mathbf{X})
 \]
 
 \centering
@@ -1633,11 +1674,16 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
-\begin{frame}{TRAM-DAGs: Example for ITE estimation}
+\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+
+
+Resulting ITEs from the DGP in terms of difference in medians of potential outcomes: \vspace{-0.5em}
 
 \[
-\text{ITE} = \operatorname{median}(Y \mid \text{do}(T = 1), X) - \operatorname{median}(Y \mid \text{do}(T = 0), X)
+\text{ITE} = \operatorname{median}(Y \mid \text{do}(T = 1), \mathbf{X}) - \operatorname{median}(Y \mid \text{do}(T = 0), \mathbf{X})
 \]
+
+\vspace{-0.5em}
 
 \centering
 \includegraphics[width=0.7\textwidth]{img/observ_scenario1_ite_distribution_dgp.png}
@@ -1646,25 +1692,42 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
+% \begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+% 
+% Estimate ITEs with TRAM-DAGs (S-learner) from observational data including mediators $X_5$ and $X_6$:
+% 
+% \begin{enumerate}
+%     \item Estimate each $h_i(X_i \mid \text{pa}(X_i))$ fully flexible (deep-NN / complex intercept) on the train set
+%     \item Take the train set or the test set
+%     \item $z_i = h(x_i \mid \text{pa}(x_i))$ gives us the (observed) latent variable for each $x_i$
+%     \item Determine counterfactuals for $x_5$ and $x_6$ with the (observed) latent variables $z_i$
+%     % \item Determine medians of potential outcome distributions $Y(1)$ and $Y(0)$
+%     \item $\text{ITE} = \text{median}(Y \mid  \text{do}(T = 1), \mathbf{X_{tx}}) - \text{median}(Y \mid \text{do}(T = 0), \mathbf{X_{ct}})$
+% \end{enumerate}
+% 
+% \end{frame}
 
-\begin{frame}{TRAM-DAGs: Estimate Potential Outcomes}
 
+
+\begin{frame}{Experiment 4: ITE Estimation with TRAM-DAGs}
+
+Estimate ITEs with TRAM-DAGs (S-learner approach) from observed data:
 
 \begin{enumerate}
-    \item Estimate each $h_i(X_i \mid \text{pa}(X_i))$ fully flexible (deep-NN / complex intercept)
-    \item Take the train set or a test set
-    \item $Z_i = h(X_i \mid pa(X_i))$ gives us the (observed) latent variable for each $X_i$
-    \item Determine counterfactuals for X5 and X6 with the (observed) latent variables $Z_i$
-    \item Determine medians of potential outcomes $Y(1)$ and $Y(0)$
-    \item $\text{ITE} = \text{median}(Y(1) \mid X_{tx}) - \text{median}(Y(0) \mid X_{ct})$
+    \item Fit the TRAM-DAG on the training set (fully flexible -- CI --  to allow for interactions)
+    \item Compute potential outcomes as $\text{median}(Y \mid \text{do}(T = t), \mathbf{X}_t)$ for $t \in \{0, 1\}$
+    \item $\text{ITE} = \text{median}(Y \mid \text{do}(T = 1), \mathbf{X}_1) - \text{median}(Y \mid \text{do}(T = 0), \mathbf{X}_0)$
 \end{enumerate}
 
 \end{frame}
 
 
 
-\begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
+
+% \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
+\begin{frame}{ITE estimation with TRAM-DAGs (Results)}
 \centering
+
 \begin{minipage}{0.34\textwidth}
     \centering
     \includegraphics[width=\textwidth]{img/Experiment4/observ_scenario1_ITE_densities_train_test.png}
@@ -1760,13 +1823,13 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 \begin{frame}{Outlook}
 
-\small
+% \small
 \textbf{Limitations}
 \begin{itemize}
   \item Simulations may not reflect real-world complexity
   \item TRAM-DAGs are computationally expensive (long training time)
   \item TRAM-DAGs require correct model specification for interpretability
-  \item ITE estimation used median QTE for continuous outcomes
+  \item ITE estimation for continuous outcomes used medians of potential outcomes instead of expected values
 \end{itemize}
 
 
@@ -1814,6 +1877,19 @@ These factors may explain the limited ITE performance in the IST dataset.
   \small
   \bibliographystyle{apalike}
   \bibliography{C:/Users/kraeh/OneDrive/Dokumente/Desktop/UZH_Biostatistik/Masterarbeit/MA_Mike/presentation_report/literature/bibSTA490}
+\end{frame}
+
+
+
+\begin{frame}{Heterogeneity}
+
+Heterogeneity despite no interaction effects in logistic model \citep{hoogland2021}.
+
+\centering
+\includegraphics[width=0.7\textwidth]{img/hoogland.jpg}
+
+
+
 \end{frame}
 
 % 
