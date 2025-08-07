@@ -11,6 +11,10 @@
 
 %% load relevant packages:
 
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
 
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
@@ -505,27 +509,83 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
 
 
 
+% 
+% \begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+% 
+% \textbf{Setup:}
+% 
+%   \begin{itemize}
+%     \item We have:
+%     \begin{itemize}
+%       \item Observational data (simulated)
+%       \item Predefined DAG
+%     \end{itemize}
+%     \item We want:
+%     \begin{itemize}
+%       \item Estimate $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$ of each variable $i$
+%       \item Sample from conditional distributions to make causal queries
+%     \end{itemize}
+%   \end{itemize}
+% 
+%   \vfill
+%   \centering
+%   \includegraphics[width=0.7\linewidth]{img/Simulation_Example.png}
+% \end{frame}
 
-\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\begin{frame}{TRAM-DAGs: Experiment 1 (Simulation)}
+
+% \textbf{Setup:}
 
 \textbf{Setup:}
+\begin{itemize}
+    \item Observational data (simulated)
+    \item Predefined DAG
+\end{itemize}
 
+
+\vfill
+
+\begin{columns}
+
+  % Left column: DAG
+  \begin{column}{0.4\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/Experiment1/dag_exp1.png}
+  \end{column}
+
+  % Right column: equations
+  \begin{column}{0.6\textwidth}
+    \small
+    \begin{flushleft}
+\[
+\begin{array}{l}
+h(X_1) = h_I(X_1) \\
+h(X_2 \mid X_1) = h_I(X_2) + \textcolor{red}{\beta_{12}} X_1 \\
+h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \textcolor{blue}{f(X_2)} \\[0.8em] 
+
+\boxed{
+\textcolor{blue}{f(X_2) = 0.5 \cdot \exp(X_2)}
+}
+\end{array}
+\]
+
+
+
+
+\end{flushleft}
+
+  \end{column}
+
+\end{columns}
+
+\textbf{We want:}
   \begin{itemize}
-    \item We have:
-    \begin{itemize}
-      \item Observational data (simulated)
-      \item Predefined DAG
-    \end{itemize}
-    \item We want:
-    \begin{itemize}
-      \item Estimate $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$ of each variable $i$
-      \item Sample from conditional distributions to make causal queries
-    \end{itemize}
+    \item With TRAM-DAGs, estimate $Z_i = h_i(X_i \mid \operatorname{pa}(X_i))$ of each variable $i$
+    \item Sample from fitted model to make causal queries
   \end{itemize}
 
-  \vfill
-  \centering
-  \includegraphics[width=0.7\linewidth]{img/Simulation_Example.png}
+
 \end{frame}
 
 
@@ -565,65 +625,6 @@ P(Y \leq y_k \mid \mathbf{X} = \mathbf{x}) = F_Z(\vartheta_k + \mathbf{x}^\top \
 % \end{center}
 % 
 % \end{frame}
-
-
-
-\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
-
-\textbf{Data-generating process (DGP):}
-
-\vspace{-1cm}
-
-\begin{columns}
-
-% Left column: Descriptions and formulas
-\begin{column}{0.72\textwidth}
-
-\textbf{\(X_1\):} Continuous, bimodal. \textit{Source node} (independent).
-
-\vspace{0.4cm}
-
-\textbf{\(X_2\):} Continuous. Depends on \(X_1\) (\textcolor{red}{linear}):
-
-\vspace{0.15cm}
-{\scriptsize
-\[
-\textcolor{red}{\beta_{12} = 2}, \quad h_I(X_2) = 5 X_2
-\]
-\[
-\boxed{
-h(X_2 \mid X_1) = h_I(X_2) + \textcolor{red}{\beta_{12}} X_1
-}
-\]
-}
-
-\vspace{0.4cm}
-
-\textbf{\(X_3\):} Ordinal. Depends on \(X_1\) (\textcolor{red}{linear}) and \(X_2\) (\textcolor{blue}{complex}):
-
-\vspace{0.15cm}
-{\scriptsize
-\[
-\textcolor{red}{\beta_{13} = 0.2}, \quad \textcolor{blue}{f(X_2) = 0.5 \cdot \exp(X_2)}, \quad \vartheta_k \in \{-2,\, 0.42,\, 1.02\}
-\]
-\[
-\boxed{
-h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \textcolor{blue}{f(X_2)}
-}
-\]
-}
-
-
-\end{column}
-
-% Right column: Plot
-\begin{column}{0.28\textwidth}
-\includegraphics[width=0.8\linewidth]{img/DGP_Variables.png}
-\end{column}
-
-\end{columns}
-
-\end{frame}
 
 
 
@@ -692,65 +693,7 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 
 
-\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
-
-\textbf{Construct Model: Modular Neural Network}
-
-\begin{columns}
-
-% Left side: Text
-\begin{column}{0.65\textwidth}
-
-\vspace{0.1cm}
-
-\textsb{Inputs:} Observations + assumed structure
-
-\vspace{0.2cm}
-
-\textsb{Outputs:}
-\begin{itemize}
-    \item Simple Intercepts (SI): $\textcolor{violet}{\vartheta}$
-    \item Linear Shifts (LS): $\textcolor{red}{\beta_{12}X_1}, \textcolor{red}{\beta_{13}X_1}$
-    \item Complex Shift (CS):  $\textcolor{blue}{f(X_2)}$
-\end{itemize}
-
-\vspace{0.2cm}
-\textsb{Assemble transformation functions:}
-\begin{align*}
-& \boxed{h(X_i \mid \text{pa}(X_i)) = \text{SI} + \text{LS} + \text{CS}} \\
-& h(X_1) = \textcolor{violet}{h_I(X_1)} \\
-& h(X_2 \mid X_1) = \textcolor{violet}{h_I(X_2)} + \textcolor{red}{\beta_{12} X_1} \\
-& h(X_{3,k} \mid X_1, X_2) = \textcolor{violet}{\vartheta_k} + \textcolor{red}{\beta_{13} X_1} + \textcolor{blue}{f(X_2)} 
-\end{align*}
-
-\end{column}
-
-% Right side: Image
-\begin{column}{0.35\textwidth}
-\begin{figure}
-  \centering
-  \includegraphics[width=0.65\linewidth]{img/CS.png}
-  \caption{$\text{CS}_{X_2}$ on $X_3$}
-\end{figure}
-\end{column}
-
-\end{columns}
-
-\end{frame}
-
-
-% \begin{frame}{Experiment 1: TRAM-DAGs}
-% \begin{itemize}
-%         \item Samples: 20'000 training observations
-%         \item Learning rate: 0.005
-%         \item Epochs: 400
-%         \item Minimizing negative log likelihood (NLL) during training
-%         
-% \end{itemize}
-% \end{frame}
-
-
-\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+\begin{frame}{TRAM-DAGs: Experiment 1 (Simulation)}
 
 % no centering
 
@@ -838,15 +781,37 @@ h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \text
 
 
 
-\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+\begin{frame}{TRAM-DAGs: Experiment 1 (Simulation)}
 
-\textbf{Sampled observational and interventional distributions:}
+% \textbf{Sampled observational and interventional distributions:}
 
-  \centering
-  \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_observational_distribution.png}
-  \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_interventional_distribution.png}
+
+
+\begin{minipage}{\linewidth}
+  \small Sampled \textbf{Observational} distribution: \\[0.2em]
+  \includegraphics[width=0.8\linewidth]{img/experiment1/exp1_observational_distribution.png}
+\end{minipage}
+
+
+
+\begin{minipage}{\linewidth}
+  \small Sampled \textbf{Interventional} distribution; do($X_2 = 1$): \\[0.2em]
+  \includegraphics[width=0.8\linewidth]{img/experiment1/exp1_interventional_distribution.png}
+\end{minipage}
 
 \end{frame}
+
+% 
+% 
+% \begin{frame}{TRAM-DAGs: Experiment 1 (Simulation)}
+% 
+% \textbf{Sampled observational and interventional distributions:}
+% 
+%   \centering
+%   \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_observational_distribution.png}
+%   \includegraphics[width=0.85\linewidth]{img/experiment1/exp1_interventional_distribution.png}
+% 
+% \end{frame}
 
 % 
 % 
@@ -955,17 +920,17 @@ How to determine a counterfactual value for \(X_2\) using Pearl's 3-step procedu
 \begin{itemize}
   \item RCTs estimate the Average Treatment Effect (ATE)
   \item Individuals may respond differently based on covariates
-  \item Important for personalized medicine, targeted marketing, etc.
-  \item Heterogeneity mostly driven by treatment-covariate interactions
+  % \item Important for personalized medicine, targeted marketing, etc.
+  % \item Heterogeneity mostly driven by treatment-covariate interactions
 \end{itemize}
 
 % \vspace{0.5em}
-\textbf{Definition:} Difference in potential outcomes \citep{rubin2005}
+\textbf{Definition:}  \textit{Individual treatment effect} \citep{rubin2005}
 \[
 Y_i(1) - Y_i(0)
 \]
 
-\textit{where \( Y_i(1) \): outcome if treated, \( Y_i(0) \): if not treated}
+where \( Y_i(1) \): outcome if treated, \( Y_i(0) \): if not treated
 
 % \vspace{0.5em}
 \textbf{Fundamental problem:} We never observe both \( Y_i(1) \) and \( Y_i(0) \) for the same individual \citep{holland1986}.
@@ -1056,7 +1021,8 @@ Y_i(1) - Y_i(0)
 
 \begin{frame}{From Unobservable to Estimable ITE}
 \small
-\textbf{Goal:} Estimate the \textit{individualized treatment effect (ITE)} from observed data \citep{hoogland2021}.
+\textbf{Goal:} Define the \textit{individualized treatment effect (ITE/CATE)} estimand, which we aim to estimate from observed data \citep{hoogland2021}.
+
 
 \vspace{0.5em}
 \begin{align*}
@@ -1193,7 +1159,7 @@ Y_i(1) - Y_i(0)
 
 \begin{frame}{Experiment 2: ITE on International Stroke Trial (IST)}
 
-\textbf{Results:} with T-learner tuned random forest using the \texttt{comets} package \citep{comets}:
+\textbf{Results:} with T-learner \textsb{tuned random forest} using the \texttt{comets} package \citep{comets}:
 
 % Below: image
 \includegraphics[width=\textwidth]{img/Experiment2/IST_tuned_rf_tlearner_density_ITE_ATE.png}
@@ -1209,7 +1175,7 @@ Y_i(1) - Y_i(0)
 \begin{itemize}
     \item We obtained similar results as \citet{chen2025}
     \item Some models suggest moderate treatment effect heterogeneity, but the ITEs do not generalize to the test set (no effect)
-    \item We do not certainly know why, since ground truth is unknown
+    \item Ground truth is unknown -- difficult to determine if no true heterogeneity present or models fail to capture it
 \end{itemize}
 
 \end{frame}
@@ -1279,7 +1245,7 @@ Y_i(1) - Y_i(0)
 
 
 
-\begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
+\begin{frame}{Experiment 3:  ITE Model Robustness in RCTs (Simulation)}
 
 \textbf{Motivation:} ITE estimation did not generalize to the test data on the real-world RCT of the International Stroke Trial (IST). We want to know why!
 
@@ -1298,12 +1264,12 @@ Y_i(1) - Y_i(0)
 
 
 
-\begin{frame}{Simulation Case 1: Fully Observed}
+\begin{frame}{Simulation Case 1: \textcolor{red}{Fully Observed}}
 
 \begin{columns}
 
 % Left column: Text
-\begin{column}{0.52\textwidth}
+\begin{column}{0.56\textwidth}
 
 \vspace{-0.5em}
 \textbf{Setup:}
@@ -1311,7 +1277,7 @@ Y_i(1) - Y_i(0)
   \item $n = 20{,}000$
   \item $T \sim \text{Bernoulli}(0.5)$
   \item $\mathbf{X} = (X_1, \dots, X_5)^\top \sim \mathcal{N}(\mathbf{0}, \Sigma)$\\
-  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interaction}
+  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interacting variables}
 \end{itemize}
 
 
@@ -1341,50 +1307,104 @@ Y_i(1) - Y_i(0)
 
 
 
-\begin{frame}{Simulation Case 1: Fully Observed}
+\begin{frame}{Simulation Case 1: \textcolor{red}{Fully Observed}}
 
-Results with T-learner logistic regression (glm):
+Results with T-learner \textsb{logistic regression} (glm):
 \vfill
 
-% Below: image
-\includegraphics[width=\textwidth]{img/fully_observed_glm_tlearner.png}
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/fully_observed_glm_tlearner.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
 
-\end{frame}
+\vspace{-0.3em}
 
-
-\begin{frame}{Simulation Case 1: Fully Observed}
-
-Results with T-learner tuned random forest (\texttt{comets} package):
-
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/observed_tuned_rf.png}
-
-\end{frame}
-
-
-
-\begin{frame}{Simulation Case 1: Fully Observed}
-
-Results with (untuned) T-learner random forest using the \texttt{randomForest} package \citep{breiman2001}:
-
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/fully_observed_rf_tlearner.png}
+\textbf{Interpretation:} Accurate ITE estimation!
 
 \end{frame}
 
 
 
+% \begin{frame}{Simulation Case 1: \textcolor{red}{Fully Observed}}
+% 
+% Results with T-learner logistic regression (glm):
+% \vfill
+% 
+% % Below: image
+% \includegraphics[width=\textwidth]{img/fully_observed_glm_tlearner.png}
+% 
+% \end{frame}
+
+
+\begin{frame}{Simulation Case 1: \textcolor{red}{Fully Observed}}
+
+Results with T-learner \textsb{tuned random forest} (\texttt{comets} package):
+
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/observed_tuned_rf.png}
+
+\vfill
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/observed_tuned_rf.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+
+\textbf{Interpretation:} Unbiased ITE estimation!
+
+\end{frame}
 
 
 
-\begin{frame}{Simulation Case 2: Unobserved Interaction}
+\begin{frame}{Simulation Case 1: \textcolor{red}{Fully Observed}}
+
+Results with \textsb{(untuned) T-learner random forest} using the \texttt{randomForest} package \citep{breiman2001}:
+
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/fully_observed_rf_tlearner.png}
+
+\vspace{-1.0em}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/fully_observed_rf_tlearner.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.0,0.55) rectangle (0.27,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+
+
+\vspace{-1.4em}
+
+\textbf{Interpretation:} Overfitted, poorly calibrated, leads to worse ITE estimates
+
+\end{frame}
+
+
+
+
+
+
+\begin{frame}{Simulation Case 2: \textcolor{red}{Unobserved Interaction}}
 
 \begin{columns}
 
 % Left column: Text
-\begin{column}{0.52\textwidth}
+\begin{column}{0.56\textwidth}
 
 \vspace{-0.5em}
 \textbf{Setup:}
@@ -1392,7 +1412,7 @@ Results with (untuned) T-learner random forest using the \texttt{randomForest} p
   \item $n = 20{,}000$
   \item $T \sim \text{Bernoulli}(0.5)$
   \item $\mathbf{X} = (X_1, \dots, X_5)^\top \sim \mathcal{N}(\mathbf{0}, \Sigma)$\\
-  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interaction}
+  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interacting variables}
 \end{itemize}
 
 
@@ -1423,21 +1443,56 @@ Results with (untuned) T-learner random forest using the \texttt{randomForest} p
 
 
 
-\begin{frame}{Simulation Case 2: Unobserved Interaction}
+\begin{frame}{Simulation Case 2: \textcolor{red}{Unobserved Interaction}}
 
-Results with T-learner logistic regression (glm):
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/unobserved_interaction_glm_tlearner.png}
+Results with T-learner \textsb{logistic regression} (glm):
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/unobserved_interaction_glm_tlearner.png}
+
+
+\vspace{-0.4em}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/unobserved_interaction_glm_tlearner.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+
+\vspace{-1.4em}
+
+\textbf{Interpretation:} 1) Model misses positive ITEs, 2) ITE-ATE plot misleading -- suggests good calibration, but doesn't detect patients that benefit!
 
 \end{frame}
 
-\begin{frame}{Simulation Case 2: Unobserved Interaction}
 
-Results with T-learner tuned random forest (\texttt{comets} package):
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/unobserved_tuned_rf.png}
+
+
+
+\begin{frame}{Simulation Case 2: \textcolor{red}{Unobserved Interaction}}
+
+Results with T-learner \textsb{tuned random forest} (\texttt{comets} package):
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/unobserved_tuned_rf.png}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/unobserved_tuned_rf.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+
+\vspace{-1.0em}
+
+\textbf{Interpretation:} Similar problem as with logistic model!
 
 \end{frame}
 
@@ -1445,12 +1500,12 @@ Results with T-learner tuned random forest (\texttt{comets} package):
 
 
 
-\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
+\begin{frame}{Simulation Case 3: \textcolor{red}{Fully Observed, Small Effects}}
 
 \begin{columns}
 
 % Left column: Text
-\begin{column}{0.52\textwidth}
+\begin{column}{0.56\textwidth}
 
 \vspace{-0.5em}
 \textbf{Setup:}
@@ -1458,7 +1513,7 @@ Results with T-learner tuned random forest (\texttt{comets} package):
   \item $n = 20{,}000$
   \item $T \sim \text{Bernoulli}(0.5)$
   \item $\mathbf{X} = (X_1, \dots, X_5)^\top \sim \mathcal{N}(\mathbf{0}, \Sigma)$\\
-  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interaction}
+  \item $\mathbf{X_{TX}} = (X_1, X_2)^\top$ \textcolor{red}{interacting variables}
 \end{itemize}
 
 
@@ -1490,35 +1545,67 @@ Results with T-learner tuned random forest (\texttt{comets} package):
 
 
 
-\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
+\begin{frame}{Simulation Case 3: \textcolor{red}{Fully Observed, Small Effects}}
 
-Results with T-learner logistic regression (glm):
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/small_interaction_glm_tlearner.png}
+Results with T-learner \textsb{logistic regression} (glm):
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/small_interaction_glm_tlearner.png}
+\vspace{-0.4em}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/small_interaction_glm_tlearner.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+
+\vspace{-1.4em}
+
+
+\textbf{Interpretation:} 1) Predicts too large heterogeneity (model noise?),\\ 2) ITE-ATE plot correctly suggests no significant heterogeneity!
 
 \end{frame}
 
 
-\begin{frame}{Simulation Case 3: Fully Observed, Small Effects}
+\begin{frame}{Simulation Case 3: \textcolor{red}{Fully Observed, Small Effects}}
 
-Results with T-learner tuned random forest (\texttt{comets} package):
-\vfill
-% Below: image
-\includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}
+Results with T-learner \textsb{tuned random forest} (\texttt{comets} package):
+% \vfill
+% % Below: image
+% \includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}
+
+\vspace{-0.4em}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[anchor=south west, inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{img/small_interaction_tuned_rf_tlearner.png}};
+    \begin{scope}[x={(image.south east)}, y={(image.north west)}]
+        % Red rectangle (adjust coordinates to match area you want to box)
+        \draw[red, thick, rounded corners] (0.27,0.03) rectangle (0.5,1.0);
+    \end{scope}
+\end{tikzpicture}
+\end{center}
+\vspace{-1.4em}
+
+\textbf{Interpretation:} 1) Predicts too large heterogeneity (model noise?),\\ 2) ITE-ATE plot correctly suggests no significant heterogeneity!
 
 \end{frame}
 
 
 
-\begin{frame}{Experiment 3:  ITE model robustness in RCTs (simulation)}
+\begin{frame}{Experiment 3:  ITE Model Robustness in RCTs (Simulation)}
 
 \small
 
 \textbf{Key Insights:}
 \begin{itemize}
   \item \textsb{Calibration} and tuning of models are crucial for reliable ITE estimation
-  \item Ignorability alone may not guarantee unbiased ITEs if important \textsb{effect modifiers are unobserved}
+  \item Ignorability (unconfoundedness) assumption alone may not guarantee unbiased ITEs if important \textsb{effect modifiers are unobserved}
+  \item In practice, only the \textsb{ITE-ATE plot} is available -- it checks ITE calibration in predicted subgroups, but can miss true effect heterogeneity
   \item \textsb{Low true heterogeneity} may be mistaken for model failure
 \end{itemize}
 
@@ -1614,7 +1701,7 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
-\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+\begin{frame}{Experiment 4: ITE Estimation with TRAM-DAGs}
 
 \centering
 \includegraphics[width=0.8\textwidth]{img/dag_ITE_observational.png}
@@ -1654,7 +1741,7 @@ These factors may explain the limited ITE performance in the IST dataset.
 
 
 
-\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+\begin{frame}{Experiment 4: ITE Estimation with TRAM-DAGs}
 
 We define the ITE as the difference in medians of potential outcomes:
 
@@ -1674,7 +1761,7 @@ We define the ITE as the difference in medians of potential outcomes:
 
 
 
-\begin{frame}{Experiment 4: ITE estimation with TRAM-DAGs}
+\begin{frame}{Experiment 4: ITE Estimation with TRAM-DAGs}
 
 
 Resulting ITEs from the DGP in terms of difference in medians of potential outcomes: \vspace{-0.5em}
@@ -1725,7 +1812,7 @@ Estimate ITEs with TRAM-DAGs (S-learner approach) from observed data:
 
 
 % \begin{frame}{TRAM-DAGs: Example for ITE estimation (Results)}
-\begin{frame}{ITE estimation with TRAM-DAGs (Results)}
+\begin{frame}{ITE Estimation with TRAM-DAGs (Results)}
 \centering
 
 \begin{minipage}{0.34\textwidth}
@@ -1888,9 +1975,130 @@ Heterogeneity despite no interaction effects in logistic model \citep{hoogland20
 \centering
 \includegraphics[width=0.7\textwidth]{img/hoogland.jpg}
 
+\end{frame}
 
+
+
+
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\textbf{Data-generating process (DGP):}
+
+\vspace{-1cm}
+
+\begin{columns}
+
+% Left column: Descriptions and formulas
+\begin{column}{0.72\textwidth}
+
+\textbf{\(X_1\):} Continuous, bimodal. \textit{Source node} (independent).
+
+\vspace{0.4cm}
+
+\textbf{\(X_2\):} Continuous. Depends on \(X_1\) (\textcolor{red}{linear}):
+
+\vspace{0.15cm}
+{\scriptsize
+\[
+\textcolor{red}{\beta_{12} = 2}, \quad h_I(X_2) = 5 X_2
+\]
+\[
+\boxed{
+h(X_2 \mid X_1) = h_I(X_2) + \textcolor{red}{\beta_{12}} X_1
+}
+\]
+}
+
+\vspace{0.4cm}
+
+\textbf{\(X_3\):} Ordinal. Depends on \(X_1\) (\textcolor{red}{linear}) and \(X_2\) (\textcolor{blue}{complex}):
+
+\vspace{0.15cm}
+{\scriptsize
+\[
+\textcolor{red}{\beta_{13} = 0.2}, \quad \textcolor{blue}{f(X_2) = 0.5 \cdot \exp(X_2)}, \quad \vartheta_k \in \{-2,\, 0.42,\, 1.02\}
+\]
+\[
+\boxed{
+h(X_{3,k} \mid X_1, X_2) = \vartheta_k + \textcolor{red}{\beta_{13}} X_1 + \textcolor{blue}{f(X_2)}
+}
+\]
+}
+
+
+\end{column}
+
+% Right column: Plot
+\begin{column}{0.26\textwidth}
+\includegraphics[width=0.8\linewidth]{img/DGP_Variables.png}
+\end{column}
+
+\end{columns}
 
 \end{frame}
+
+
+
+
+
+\begin{frame}{TRAM-DAGs: Experiment 1 (simulation)}
+
+\textbf{Construct Model: Modular Neural Network}
+
+\begin{columns}
+
+% Left side: Text
+\begin{column}{0.65\textwidth}
+
+\vspace{0.1cm}
+
+\textsb{Inputs:} Observations + assumed structure
+
+\vspace{0.2cm}
+
+\textsb{Outputs:}
+\begin{itemize}
+    \item Simple Intercepts (SI): $\textcolor{violet}{\vartheta}$
+    \item Linear Shifts (LS): $\textcolor{red}{\beta_{12}X_1}, \textcolor{red}{\beta_{13}X_1}$
+    \item Complex Shift (CS):  $\textcolor{blue}{f(X_2)}$
+\end{itemize}
+
+\vspace{0.2cm}
+\textsb{Assemble transformation functions:}
+\begin{align*}
+& \boxed{h(X_i \mid \text{pa}(X_i)) = \text{SI} + \text{LS} + \text{CS}} \\
+& h(X_1) = \textcolor{violet}{h_I(X_1)} \\
+& h(X_2 \mid X_1) = \textcolor{violet}{h_I(X_2)} + \textcolor{red}{\beta_{12} X_1} \\
+& h(X_{3,k} \mid X_1, X_2) = \textcolor{violet}{\vartheta_k} + \textcolor{red}{\beta_{13} X_1} + \textcolor{blue}{f(X_2)}
+\end{align*}
+
+\end{column}
+
+% Right side: Image
+\begin{column}{0.35\textwidth}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.65\linewidth]{img/CS.png}
+  \caption{$\text{CS}_{X_2}$ on $X_3$}
+\end{figure}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+% \begin{frame}{Experiment 1: TRAM-DAGs}
+% \begin{itemize}
+%         \item Samples: 20'000 training observations
+%         \item Learning rate: 0.005
+%         \item Epochs: 400
+%         \item Minimizing negative log likelihood (NLL) during training
+%
+% \end{itemize}
+% \end{frame}
+
+
 
 % 
 % 
